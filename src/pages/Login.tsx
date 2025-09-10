@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { motion } from 'framer-motion';
 import { Mail, Lock, LogIn } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
+import { LoginCredentials } from '../types/auth';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import Card from '../components/ui/Card';
@@ -37,7 +38,7 @@ const Login: React.FC = () => {
 
   const onSubmit = async (data: LoginFormData) => {
     try {
-      await login(data);
+      await login(data as LoginCredentials);
       navigate(ROUTES.DASHBOARD);
     } catch (error) {
       // Error handling is done in the store

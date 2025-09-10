@@ -1,11 +1,17 @@
-import axios, { AxiosInstance, AxiosError } from 'axios';
+import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { API_BASE_URL, STORAGE_KEYS } from '../utils/constants';
+import { Client } from '../types/client';
 import toast from 'react-hot-toast';
 
 interface ApiError {
   message: string;
   status?: number;
   details?: any;
+}
+
+// Extend the Axios request config to include _retry property
+interface RetryableAxiosRequestConfig extends InternalAxiosRequestConfig {
+  _retry?: boolean;
 }
 
 class ApiService {
@@ -71,7 +77,7 @@ class ApiService {
           data: error.response?.data,
         });
 
-        const originalRequest = error.config;
+        const originalRequest = error.config as RetryableAxiosRequestConfig;
 
         // Only attempt token refresh for 401 errors on non-auth endpoints
         if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {

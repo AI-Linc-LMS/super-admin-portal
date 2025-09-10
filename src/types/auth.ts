@@ -11,10 +11,13 @@ export interface LoginCredentials {
 export interface User {
   email: string;
   full_name: string;
+  first_name: string;
+  last_name: string;
   username: string;
   role: 'superadmin';
   client: string;
   profile_picture: string;
+  date_joined: string;
 }
 
 export interface AuthResponse {
