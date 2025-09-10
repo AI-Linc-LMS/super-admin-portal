@@ -51,13 +51,13 @@ export const useCourses = () => {
 };
 
 // Client hooks
-export const useClients = (params?: any) => {
+export const useClients = () => {
   return useQuery({
-    queryKey: ['clients', params],
+    queryKey: ['clients'],
     queryFn: async () => {
-      console.log('🚀 Making API call to clients with params:', params);
+      console.log('🚀 Making API call to clients');
       try {
-        const result = await apiService.get<Client[]>('/superadmin/api/clients/', params);
+        const result = await apiService.get<Client[]>('/superadmin/api/clients/');
         console.log('✅ Clients API response:', result);
         return result;
       } catch (error) {

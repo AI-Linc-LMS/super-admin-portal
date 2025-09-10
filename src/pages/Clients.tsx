@@ -26,15 +26,12 @@ const Clients: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'pending'>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
-  // API call with search and filter parameters
+  // API call without search parameters - we'll filter client-side
   const { 
     data: clients, 
     isLoading, 
     error
-  } = useClients({
-    search: searchQuery,
-    status: statusFilter === 'all' ? undefined : statusFilter,
-  });
+  } = useClients();
 
   // Mock data as fallback when API fails
   const fallbackClients: Client[] = [
@@ -128,9 +125,9 @@ const Clients: React.FC = () => {
   const clientsData = clients || fallbackClients;
 
   const filteredClients = clientsData.filter(client => {
-    const matchesSearch = client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    const matchesSearch = client.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          client.organization_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         client.email.toLowerCase().includes(searchQuery.toLowerCase());
+                         client.email?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === 'all' || client.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
