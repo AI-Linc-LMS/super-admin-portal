@@ -4,6 +4,7 @@ export interface Client {
   slug: string;
   logo_url?: string | null;
   total_students: number;
+  total_courses?: number;
   email?: string;
   logo?: string;
   organization_name?: string;
