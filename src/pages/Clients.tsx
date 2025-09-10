@@ -140,8 +140,8 @@ const Clients: React.FC = () => {
       Phone: client.phone,
       Status: client.status,
       'Subscription Tier': client.subscription_tier,
-      Students: client.students_count,
-      Courses: client.courses_count,
+      Students: client.total_students || client.students_count || 0,
+      Courses: client.total_courses || client.courses_count || 0,
       'Monthly Revenue': client.monthly_revenue,
       'Created Date': formatDate(client.created_at),
     }));
@@ -177,11 +177,11 @@ const Clients: React.FC = () => {
         <div className="space-y-3 mb-4">
           <div className="flex items-center text-sm text-gray-600">
             <Users className="w-4 h-4 mr-2" />
-            {formatNumber(client.students_count)} students
+            {formatNumber(client.total_students || client.students_count || 0)} students
           </div>
           <div className="flex items-center text-sm text-gray-600">
             <BookOpen className="w-4 h-4 mr-2" />
-            {client.courses_count} courses
+            {client.total_courses || client.courses_count || 0} courses
           </div>
           <div className="flex items-center text-sm text-gray-600">
             <TrendingUp className="w-4 h-4 mr-2" />
@@ -370,8 +370,8 @@ const Clients: React.FC = () => {
                           {client.status}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">{formatNumber(client.students_count)}</td>
-                      <td className="px-6 py-4 text-sm text-gray-900">{client.courses_count}</td>
+                      <td className="px-6 py-4 text-sm text-gray-900">{formatNumber(client.total_students || client.students_count || 0)}</td>
+                      <td className="px-6 py-4 text-sm text-gray-900">{client.total_courses || client.courses_count || 0}</td>
                       <td className="px-6 py-4 text-sm text-gray-900">${formatNumber(client.monthly_revenue || 0)}</td>
                       <td className="px-6 py-4 text-right text-sm font-medium">
                         <Link to={`/clients/${client.id}`}>
