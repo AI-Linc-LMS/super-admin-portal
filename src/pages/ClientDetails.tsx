@@ -11,20 +11,32 @@ import {
   Search,
   Eye,
   Edit,
+  User,
+  Phone,
+  Calendar,
 } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import StatsCard from '../components/charts/StatsCard';
+import StudentDetailsModal from '../components/ui/StudentDetailsModal';
 import { formatDate, formatCurrency, getDifficultyColor, getStatusColor } from '../utils/helpers';
 import { useClientDetails } from '../hooks/useApi';
+import { Student } from '../types/client';
 
 const ClientDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState<'courses' | 'students'>('courses');
   const [courseSearch, setCourseSearch] = useState('');
+  const [studentSearch, setStudentSearch] = useState('');
   const [difficultyFilter, setDifficultyFilter] = useState<'all' | 'Easy' | 'Medium' | 'Hard'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'unpublished'>('all');
+  const [studentStatusFilter, setStudentStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  
+  // Modal state
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [isStudentModalOpen, setIsStudentModalOpen] = useState(false);
 
   const clientId = parseInt(id || '0');
   const { data: client, isLoading, error } = useClientDetails(clientId);
@@ -38,16 +50,48 @@ const ClientDetails: React.FC = () => {
     return matchesSearch && matchesDifficulty && matchesStatus;
   }) || [];
 
-  const exportCourses = () => {
-    const csvData = filteredCourses.map(course => ({
-      Title: course.title,
-      Difficulty: course.difficulty_level,
-      Status: course.published ? 'Published' : 'Unpublished',
-      Type: course.is_free ? 'Free' : 'Paid',
-      Enrollments: course.enrolled_students_count,
-      Price: course.price && course.price !== '0' ? formatCurrency(parseFloat(course.price)) : 'Free',
-    }));
-    console.log('Exporting courses:', csvData);
+  const filteredStudents = client?.students?.filter(student => {
+    const matchesSearch = student.name.toLowerCase().includes(studentSearch.toLowerCase()) ||
+                         student.email.toLowerCase().includes(studentSearch.toLowerCase()) ||
+                         student.username.toLowerCase().includes(studentSearch.toLowerCase());
+    const matchesStatus = studentStatusFilter === 'all' || 
+                         (studentStatusFilter === 'active' && student.is_active) ||
+                         (studentStatusFilter === 'inactive' && !student.is_active);
+    return matchesSearch && matchesStatus;
+  }) || [];
+
+  const exportData = () => {
+    if (activeTab === 'courses') {
+      const csvData = filteredCourses.map(course => ({
+        Title: course.title,
+        Difficulty: course.difficulty_level,
+        Status: course.published ? 'Published' : 'Unpublished',
+        Type: course.is_free ? 'Free' : 'Paid',
+        Enrollments: course.enrolled_students_count,
+        Price: course.price && course.price !== '0' ? formatCurrency(parseFloat(course.price)) : 'Free',
+      }));
+      console.log('Exporting courses:', csvData);
+    } else {
+      const csvData = filteredStudents.map(student => ({
+        Name: student.name,
+        Email: student.email,
+        Status: student.is_active ? 'Active' : 'Inactive',
+        'Phone Number': student.phone_number || 'N/A',
+        'Date of Birth': student.date_of_birth ? formatDate(student.date_of_birth) : 'N/A',
+        'Joined Date': formatDate(student.created_at),
+      }));
+      console.log('Exporting students:', csvData);
+    }
+  };
+
+  const handleStudentClick = (student: Student) => {
+    setSelectedStudent(student);
+    setIsStudentModalOpen(true);
+  };
+
+  const closeStudentModal = () => {
+    setIsStudentModalOpen(false);
+    setSelectedStudent(null);
   };
 
   if (isLoading) {
@@ -102,7 +146,7 @@ const ClientDetails: React.FC = () => {
         <Button
           variant="outline"
           leftIcon={<Download className="w-4 h-4" />}
-          onClick={exportCourses}
+          onClick={exportData}
         >
           Export Data
         </Button>
@@ -199,129 +243,302 @@ const ClientDetails: React.FC = () => {
         />
       </motion.div>
 
-      {/* Courses Section */}
+      {/* Tabbed Content Section */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.5 }}
       >
         <Card glassmorphism>
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-            <h3 className="text-lg font-semibold">Courses ({filteredCourses.length})</h3>
-            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  type="text"
-                  placeholder="Search courses..."
-                  value={courseSearch}
-                  onChange={(e) => setCourseSearch(e.target.value)}
-                  className="pl-10 w-full sm:w-64"
-                />
+          {/* Tab Navigation */}
+          <div className="border-b border-gray-200 mb-6">
+            <nav className="-mb-px flex space-x-8">
+              <button
+                onClick={() => setActiveTab('courses')}
+                className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'courses'
+                    ? 'border-primary-500 text-primary-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <BookOpen className="w-4 h-4" />
+                  Courses ({filteredCourses.length})
+                </div>
+              </button>
+              <button
+                onClick={() => setActiveTab('students')}
+                className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'students'
+                    ? 'border-primary-500 text-primary-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <Users className="w-4 h-4" />
+                  Students ({filteredStudents.length})
+                </div>
+              </button>
+            </nav>
+          </div>
+
+          {/* Tab Content */}
+          {activeTab === 'courses' ? (
+            <>
+              {/* Courses Filters */}
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                <h3 className="text-lg font-semibold">Courses</h3>
+                <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Input
+                      type="text"
+                      placeholder="Search courses..."
+                      value={courseSearch}
+                      onChange={(e) => setCourseSearch(e.target.value)}
+                      className="pl-10 w-full sm:w-64"
+                    />
+                  </div>
+                  <select
+                    value={difficultyFilter}
+                    onChange={(e) => setDifficultyFilter(e.target.value as any)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  >
+                    <option value="all">All Difficulties</option>
+                    <option value="Easy">Easy</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Hard">Hard</option>
+                  </select>
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value as any)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="published">Published</option>
+                    <option value="unpublished">Unpublished</option>
+                  </select>
+                </div>
               </div>
-              <select
-                value={difficultyFilter}
-                onChange={(e) => setDifficultyFilter(e.target.value as any)}
-                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-              >
-                <option value="all">All Difficulties</option>
-                <option value="Easy">Easy</option>
-                <option value="Medium">Medium</option>
-                <option value="Hard">Hard</option>
-              </select>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as any)}
-                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-              >
-                <option value="all">All Status</option>
-                <option value="published">Published</option>
-                <option value="unpublished">Unpublished</option>
-              </select>
-            </div>
-          </div>
 
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Course
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Difficulty
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Enrollments
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Price
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredCourses.map((course) => (
-                  <tr key={course.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">{course.title}</div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getDifficultyColor(
-                          course.difficulty_level
-                        )}`}
-                      >
-                        {course.difficulty_level}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                          course.published ? 'published' : 'unpublished'
-                        )}`}
-                      >
-                        {course.published ? 'Published' : 'Unpublished'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-900">{course.enrolled_students_count}</td>
-                    <td className="px-6 py-4 text-sm text-gray-900">
-                      {course.price && course.price !== '0' ? formatCurrency(parseFloat(course.price)) : 'Free'}
-                    </td>
-                    <td className="px-6 py-4 text-sm font-medium">
-                      <div className="flex items-center gap-2">
-                        <button className="text-primary-600 hover:text-primary-900">
-                          <Eye className="w-4 h-4" />
-                        </button>
-                        <button className="text-gray-600 hover:text-gray-900">
-                          <Edit className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              {/* Courses Table */}
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Course
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Difficulty
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Enrollments
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Price
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {filteredCourses.map((course) => (
+                      <tr key={course.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4">
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">{course.title}</div>
+                            {course.subtitle && (
+                              <div className="text-sm text-gray-500">{course.subtitle}</div>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span
+                            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getDifficultyColor(
+                              course.difficulty_level
+                            )}`}
+                          >
+                            {course.difficulty_level}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span
+                            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                              course.published ? 'published' : 'unpublished'
+                            )}`}
+                          >
+                            {course.published ? 'Published' : 'Unpublished'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-900">{course.enrolled_students_count}</td>
+                        <td className="px-6 py-4 text-sm text-gray-900">
+                          {course.price && course.price !== '0' ? formatCurrency(parseFloat(course.price)) : 'Free'}
+                        </td>
+                        <td className="px-6 py-4 text-sm font-medium">
+                          <div className="flex items-center gap-2">
+                            <button className="text-primary-600 hover:text-primary-900">
+                              <Eye className="w-4 h-4" />
+                            </button>
+                            <button className="text-gray-600 hover:text-gray-900">
+                              <Edit className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
 
-          {filteredCourses.length === 0 && (
-            <div className="text-center py-12">
-              <BookOpen className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">No courses found</h3>
-              <p className="mt-1 text-sm text-gray-500">
-                Try adjusting your search or filters to find courses.
-              </p>
-            </div>
+              {filteredCourses.length === 0 && (
+                <div className="text-center py-12">
+                  <BookOpen className="mx-auto h-12 w-12 text-gray-400" />
+                  <h3 className="mt-2 text-sm font-medium text-gray-900">No courses found</h3>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Try adjusting your search or filters to find courses.
+                  </p>
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              {/* Students Filters */}
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                <h3 className="text-lg font-semibold">Students</h3>
+                <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Input
+                      type="text"
+                      placeholder="Search students..."
+                      value={studentSearch}
+                      onChange={(e) => setStudentSearch(e.target.value)}
+                      className="pl-10 w-full sm:w-64"
+                    />
+                  </div>
+                  <select
+                    value={studentStatusFilter}
+                    onChange={(e) => setStudentStatusFilter(e.target.value as any)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Students Table */}
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Student
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Phone
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Joined Date
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {filteredStudents.map((student) => (
+                      <tr key={student.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center">
+                            <div className="flex-shrink-0 h-10 w-10">
+                              {student.profile_pic_url ? (
+                                <img
+                                  className="h-10 w-10 rounded-full object-cover"
+                                  src={student.profile_pic_url}
+                                  alt={student.name}
+                                  onError={(e) => {
+                                    const target = e.target as HTMLImageElement;
+                                    target.style.display = 'none';
+                                    target.nextElementSibling?.classList.remove('hidden');
+                                  }}
+                                />
+                              ) : null}
+                              <div className={`h-10 w-10 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center ${student.profile_pic_url ? 'hidden' : ''}`}>
+                                <span className="text-white font-medium text-sm">
+                                  {student.first_name.charAt(0)}{student.last_name.charAt(0)}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="ml-4">
+                              <div className="text-sm font-medium text-gray-900">{student.name}</div>
+                              <div className="text-sm text-gray-500">{student.email}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span
+                            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                              student.is_active ? 'active' : 'inactive'
+                            )}`}
+                          >
+                            {student.is_active ? 'Active' : 'Inactive'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-900">
+                          {student.phone_number || 'N/A'}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-900">
+                          {formatDate(student.created_at)}
+                        </td>
+                        <td className="px-6 py-4 text-sm font-medium">
+                          <div className="flex items-center gap-2">
+                            <button
+                              className="text-primary-600 hover:text-primary-900 p-1 rounded-md hover:bg-primary-50 transition-colors"
+                              onClick={() => handleStudentClick(student)}
+                              title="View student details"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {filteredStudents.length === 0 && (
+                <div className="text-center py-12">
+                  <Users className="mx-auto h-12 w-12 text-gray-400" />
+                  <h3 className="mt-2 text-sm font-medium text-gray-900">No students found</h3>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Try adjusting your search or filters to find students.
+                  </p>
+                </div>
+              )}
+            </>
           )}
         </Card>
       </motion.div>
+
+      {/* Student Details Modal */}
+      {selectedStudent && (
+        <StudentDetailsModal
+          isOpen={isStudentModalOpen}
+          onClose={closeStudentModal}
+          student={selectedStudent}
+        />
+      )}
     </div>
   );
 };

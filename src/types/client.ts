@@ -37,6 +37,7 @@ export interface Client {
 
 export interface ClientDetails extends Client {
   courses: ClientCourse[];
+  students?: Student[];
   description?: string;
   website?: string;
   contact_person?: string;
@@ -106,4 +107,23 @@ export interface ClientFilters {
   subscription_plan?: string;
   sort_by?: 'name' | 'created_at' | 'student_count';
   sort_order?: 'asc' | 'desc';
+}
+
+export interface Student {
+  id: number;
+  user_id: number;
+  name: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  username: string;
+  profile_pic_url?: string | null;
+  role: string;
+  is_active: boolean;
+  phone_number?: string | null;
+  bio?: string | null;
+  social_links?: Record<string, any>;
+  date_of_birth?: string | null;
+  created_at: string;
+  updated_at: string;
 }

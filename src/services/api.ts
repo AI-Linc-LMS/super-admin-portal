@@ -357,6 +357,62 @@ class ApiService {
             category: 'Web Development'
           }
         ],
+        students: [
+          {
+            id: 1,
+            user_id: 101,
+            name: 'Alice Johnson',
+            first_name: 'Alice',
+            last_name: 'Johnson',
+            email: 'alice.johnson@email.com',
+            username: 'alice.johnson@email.com',
+            profile_pic_url: 'https://lh3.googleusercontent.com/a/demo-profile-1',
+            role: 'student',
+            is_active: true,
+            phone_number: '+1-555-0001',
+            bio: 'Passionate about learning new technologies',
+            social_links: {},
+            date_of_birth: '1995-03-15',
+            created_at: '2025-01-20T10:00:00Z',
+            updated_at: '2025-03-05T15:30:00Z'
+          },
+          {
+            id: 2,
+            user_id: 102,
+            name: 'Bob Smith',
+            first_name: 'Bob',
+            last_name: 'Smith',
+            email: 'bob.smith@email.com',
+            username: 'bob.smith@email.com',
+            profile_pic_url: null,
+            role: 'student',
+            is_active: true,
+            phone_number: null,
+            bio: null,
+            social_links: {},
+            date_of_birth: null,
+            created_at: '2025-02-01T11:00:00Z',
+            updated_at: '2025-03-08T09:15:00Z'
+          },
+          {
+            id: 3,
+            user_id: 103,
+            name: 'Charlie Brown',
+            first_name: 'Charlie',
+            last_name: 'Brown',
+            email: 'charlie.brown@email.com',
+            username: 'charlie.brown@email.com',
+            profile_pic_url: 'https://lh3.googleusercontent.com/a/demo-profile-3',
+            role: 'student',
+            is_active: false,
+            phone_number: '+1-555-0003',
+            bio: 'Currently taking a break from studies',
+            social_links: {},
+            date_of_birth: '1992-07-22',
+            created_at: '2025-01-25T14:30:00Z',
+            updated_at: '2025-03-01T12:15:00Z'
+          }
+        ],
         statistics: {
           total_students: 125,
           total_instructors: 8,
