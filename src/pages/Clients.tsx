@@ -13,27 +13,42 @@ import {
   Grid,
   List,
   Building2,
+  Edit,
+  AlertCircle,
 } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
-import { useClients } from '../hooks/useApi';
+import ClientFormModal from '../components/ui/ClientFormModal';
+import StatusToggle from '../components/ui/StatusToggle';
+import { useClients, useCreateClient, useUpdateClient, useToggleClientStatus } from '../hooks/useClients';
 import { Client } from '../types/client';
 import { formatDate, formatNumber, getStatusColor } from '../utils/helpers';
+import toast from 'react-hot-toast';
 
 const Clients: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'pending'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  
+  // Modal state
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
 
-  // API call without search parameters - we'll filter client-side
+  // API calls without search parameters - we'll filter client-side
   const { 
     data: clients, 
     isLoading, 
     error
   } = useClients();
 
-  // Mock data as fallback when API fails
+  // Mutations
+  const createClientMutation = useCreateClient();
+  const updateClientMutation = useUpdateClient();
+  const toggleStatusMutation = useToggleClientStatus();
+
+  // Mock data as fallback when API fails - updated with is_active field
   const fallbackClients: Client[] = [
     {
       id: 1,
@@ -108,7 +123,7 @@ const Clients: React.FC = () => {
       joining_date: '2024-01-10T16:45:00Z',
       poc_name: 'Michael Davis',
       address: '789 Medical Center Dr, Chicago, IL',
-      status: 'pending',
+      status: 'inactive',
       subscription_tier: 'basic',
       is_active: false,
       total_students: 345,
@@ -138,9 +153,63 @@ const Clients: React.FC = () => {
                          client.organization_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          client.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          client.poc_name?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || client.status === statusFilter;
+    
+    let matchesStatus = true;
+    if (statusFilter === 'active') {
+      matchesStatus = client.is_active === true;
+    } else if (statusFilter === 'inactive') {
+      matchesStatus = client.is_active === false;
+    }
+    
     return matchesSearch && matchesStatus;
   });
+
+  // Modal handlers
+  const handleOpenCreateModal = () => {
+    setModalMode('create');
+    setSelectedClient(null);
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEditModal = (client: Client) => {
+    setModalMode('edit');
+    setSelectedClient(client);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedClient(null);
+  };
+
+  const handleSubmitClient = async (clientData: Partial<Client>) => {
+    try {
+      if (modalMode === 'create') {
+        await createClientMutation.mutateAsync(clientData);
+      } else if (modalMode === 'edit' && selectedClient) {
+        // Use PATCH for partial updates
+        await updateClientMutation.mutateAsync({
+          id: selectedClient.id,
+          data: clientData,
+          method: 'PATCH'
+        });
+      }
+    } catch (error) {
+      console.error('Client submission error:', error);
+      throw error; // Re-throw to let the modal handle the error display
+    }
+  };
+
+  const handleToggleStatus = async (clientId: number, newStatus: boolean) => {
+    try {
+      await toggleStatusMutation.mutateAsync({ id: clientId, isActive: newStatus });
+      toast.success(`Client ${newStatus ? 'activated' : 'deactivated'} successfully!`);
+    } catch (error) {
+      console.error('Status toggle error:', error);
+      toast.error('Failed to update client status. Please try again.');
+      throw error;
+    }
+  };
 
   const exportClients = () => {
     const csvData = filteredClients.map(client => ({
@@ -149,14 +218,33 @@ const Clients: React.FC = () => {
       Email: client.email,
       Phone: client.phone_number || client.phone,
       'POC Name': client.poc_name || client.contact_person,
-      Status: client.status || 'active',
+      Status: client.is_active ? 'Active' : 'Inactive',
       'Subscription Tier': client.subscription_tier,
       Students: client.total_students,
       Courses: client.total_courses,
       'Monthly Revenue': client.monthly_revenue,
       'Joining Date': formatDate(client.joining_date || client.created_at),
     }));
-    console.log('Exporting clients:', csvData);
+    
+    // Create CSV content
+    const headers = Object.keys(csvData[0] || {});
+    const csvContent = [
+      headers.join(','),
+      ...csvData.map(row => headers.map(header => `"${row[header as keyof typeof row] || ''}"`).join(','))
+    ].join('\n');
+    
+    // Download CSV
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `clients-${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast.success('Client data exported successfully!');
   };
 
   const ClientCard: React.FC<{ client: Client; index: number }> = ({ client, index }) => (
@@ -165,65 +253,149 @@ const Clients: React.FC = () => {
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.3, delay: index * 0.05 }}
     >
-      <Card glassmorphism hover className="h-full">
+      <Card 
+        glassmorphism 
+        hover 
+        className={`h-full transition-all duration-300 ${
+          client.is_active === false 
+            ? 'bg-gray-50 border-gray-200 opacity-75' 
+            : 'bg-white border-gray-300'
+        }`}
+      >
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-primary-600 rounded-lg flex items-center justify-center">
+            <div className={`w-12 h-12 rounded-lg flex items-center justify-center transition-all duration-300 ${
+              client.is_active === false
+                ? 'bg-gray-300'
+                : 'bg-gradient-to-br from-primary-500 to-primary-600'
+            }`}>
               {client.logo_url ? (
-                <img src={client.logo_url} alt={client.name} className="w-8 h-8 rounded" />
+                <img 
+                  src={client.logo_url} 
+                  alt={client.name} 
+                  className={`w-8 h-8 rounded transition-all duration-300 ${
+                    client.is_active === false ? 'grayscale' : ''
+                  }`} 
+                />
               ) : (
-                <Building2 className="w-6 h-6 text-white" />
+                <Building2 className={`w-6 h-6 ${
+                  client.is_active === false ? 'text-gray-500' : 'text-white'
+                }`} />
               )}
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900 text-lg">{client.name}</h3>
-              <p className="text-sm text-gray-600">{client.organization_name || client.name}</p>
+              <h3 className={`font-semibold text-lg transition-colors duration-300 ${
+                client.is_active === false ? 'text-gray-500' : 'text-gray-900'
+              }`}>
+                {client.name}
+              </h3>
+              <p className={`text-sm transition-colors duration-300 ${
+                client.is_active === false ? 'text-gray-400' : 'text-gray-600'
+              }`}>
+                {client.organization_name || client.name}
+              </p>
             </div>
           </div>
-          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(client.status || 'active')}`}>
-            {client.status || 'active'}
-          </span>
+          
+          {/* Status Badge */}
+          <div className="flex flex-col items-end gap-2">
+            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+              client.is_active === false
+                ? 'bg-red-100 text-red-800'
+                : 'bg-green-100 text-green-800'
+            }`}>
+              {client.is_active === false ? 'Inactive' : 'Active'}
+            </span>
+          </div>
         </div>
 
+        {/* Warning for inactive clients */}
+        {client.is_active === false && (
+          <div className="flex items-center gap-2 mb-4 p-2 bg-orange-50 border border-orange-200 rounded-lg">
+            <AlertCircle className="w-4 h-4 text-orange-500 flex-shrink-0" />
+            <span className="text-sm text-orange-700">
+              This client is currently inactive and cannot access the platform.
+            </span>
+          </div>
+        )}
+
         <div className="space-y-3 mb-4">
-          <div className="flex items-center text-sm text-gray-600">
+          <div className={`flex items-center text-sm transition-colors duration-300 ${
+            client.is_active === false ? 'text-gray-400' : 'text-gray-600'
+          }`}>
             <Users className="w-4 h-4 mr-2" />
             {formatNumber(client.total_students)} students
           </div>
-          <div className="flex items-center text-sm text-gray-600">
+          <div className={`flex items-center text-sm transition-colors duration-300 ${
+            client.is_active === false ? 'text-gray-400' : 'text-gray-600'
+          }`}>
             <BookOpen className="w-4 h-4 mr-2" />
             {client.total_courses} courses
           </div>
           {client.monthly_revenue && (
-            <div className="flex items-center text-sm text-gray-600">
+            <div className={`flex items-center text-sm transition-colors duration-300 ${
+              client.is_active === false ? 'text-gray-400' : 'text-gray-600'
+            }`}>
               <TrendingUp className="w-4 h-4 mr-2" />
               ${formatNumber(client.monthly_revenue)}/month
             </div>
           )}
-          <div className="flex items-center text-sm text-gray-600">
+          <div className={`flex items-center text-sm transition-colors duration-300 ${
+            client.is_active === false ? 'text-gray-400' : 'text-gray-600'
+          }`}>
             <MapPin className="w-4 h-4 mr-2" />
             {client.industry || 'Not specified'}
           </div>
         </div>
 
         <div className="border-t border-gray-200 pt-3">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-500">Contact</span>
-            <span className="text-gray-900">{client.poc_name || client.contact_person || 'Not available'}</span>
+          <div className={`flex items-center justify-between text-sm transition-colors duration-300`}>
+            <span className={client.is_active === false ? 'text-gray-400' : 'text-gray-500'}>Contact</span>
+            <span className={client.is_active === false ? 'text-gray-500' : 'text-gray-900'}>
+              {client.poc_name || client.contact_person || 'Not available'}
+            </span>
           </div>
           <div className="flex items-center justify-between text-sm mt-1">
-            <span className="text-gray-500">Joined</span>
-            <span className="text-gray-700">{formatDate(client.joining_date || client.created_at)}</span>
+            <span className={client.is_active === false ? 'text-gray-400' : 'text-gray-500'}>Joined</span>
+            <span className={client.is_active === false ? 'text-gray-500' : 'text-gray-700'}>
+              {formatDate(client.joining_date || client.created_at)}
+            </span>
           </div>
           {client.email && (
             <div className="flex items-center justify-between text-sm mt-1">
-              <span className="text-gray-500">Email</span>
-              <span className="text-gray-700 truncate">{client.email}</span>
+              <span className={client.is_active === false ? 'text-gray-400' : 'text-gray-500'}>Email</span>
+              <span className={`truncate transition-colors duration-300 ${
+                client.is_active === false ? 'text-gray-500' : 'text-gray-700'
+              }`}>
+                {client.email}
+              </span>
             </div>
           )}
         </div>
 
+        {/* Status Toggle Section */}
+        <div className="border-t border-gray-200 pt-3 mt-4">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm font-medium text-gray-700">Client Status</span>
+            <StatusToggle
+              isActive={client.is_active !== false}
+              onToggle={(newStatus) => handleToggleStatus(client.id, newStatus)}
+              size="sm"
+              showLabels={false}
+            />
+          </div>
+        </div>
+
         <div className="flex items-center justify-end gap-2 mt-4">
+          <Button
+            variant="outline"
+            size="sm"
+            leftIcon={<Edit className="w-4 h-4" />}
+            onClick={() => handleOpenEditModal(client)}
+            disabled={toggleStatusMutation.isPending}
+          >
+            Edit
+          </Button>
           <Link to={`/clients/${client.id}`}>
             <Button variant="outline" size="sm" leftIcon={<Eye className="w-4 h-4" />}>
               View Details
@@ -304,7 +476,7 @@ const Clients: React.FC = () => {
           >
             Export
           </Button>
-          <Button leftIcon={<Plus className="w-4 h-4" />}>
+          <Button leftIcon={<Plus className="w-4 h-4" />} onClick={handleOpenCreateModal}>
             Add Client
           </Button>
         </div>
@@ -335,7 +507,6 @@ const Clients: React.FC = () => {
                 <option value="all">All Status</option>
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
-                <option value="pending">Pending</option>
               </select>
             </div>
           </div>
@@ -393,6 +564,14 @@ const Clients: React.FC = () => {
                       <td className="px-6 py-4 text-sm text-gray-900">{client.total_courses}</td>
                       <td className="px-6 py-4 text-sm text-gray-900">{client.poc_name || client.contact_person || 'Not available'}</td>
                       <td className="px-6 py-4 text-right text-sm font-medium">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          leftIcon={<Edit className="w-4 h-4" />}
+                          onClick={() => handleOpenEditModal(client)}
+                        >
+                          Edit
+                        </Button>
                         <Link to={`/clients/${client.id}`}>
                           <Button variant="outline" size="sm">
                             <Eye className="w-4 h-4" />
@@ -415,6 +594,15 @@ const Clients: React.FC = () => {
           </div>
         )}
       </motion.div>
+
+      {/* Client Form Modal */}
+      <ClientFormModal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        onSubmit={handleSubmitClient}
+        mode={modalMode}
+        client={selectedClient}
+      />
     </div>
   );
 };

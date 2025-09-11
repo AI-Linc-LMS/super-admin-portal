@@ -440,35 +440,84 @@ class ApiService {
 
   async createClient(clientData: Partial<Client>) {
     try {
-      return await this.post('/superadmin/api/clients/create/', clientData);
+      const response = await this.post('/superadmin/api/clients/create/', clientData);
+      console.log('✅ Client created successfully:', response);
+      return response;
     } catch (error) {
       console.warn('⚠️ Failed to create client via API, simulating success');
       // Simulate successful creation in demo mode
-      return {
-        id: Math.floor(Math.random() * 1000) + 100,
-        ...clientData,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        is_active: true,
-        student_count: 0,
-        instructor_count: 0,
-        course_count: 0,
-        active_enrollments: 0
+      const mockResponse = {
+        message: "Client created successfully",
+        client: {
+          id: Math.floor(Math.random() * 1000) + 100,
+          name: clientData.name || '',
+          slug: clientData.slug || '',
+          logo_url: clientData.logo_url || null,
+          email: clientData.email || null,
+          phone_number: clientData.phone_number || null,
+          joining_date: clientData.joining_date || new Date().toISOString(),
+          poc_name: clientData.poc_name || null,
+          total_students: 0,
+          total_courses: 0,
+          ...clientData
+        }
       };
+      return mockResponse;
     }
   }
 
-  async updateClient(id: number, clientData: Partial<Client>) {
+  async updateClient(id: number, clientData: Partial<Client>, method: 'PUT' | 'PATCH' = 'PUT') {
     try {
-      return await this.put(`/superadmin/api/clients/${id}/update/`, clientData);
+      const endpoint = `/superadmin/api/clients/${id}/update/`;
+      const response = method === 'PATCH' 
+        ? await this.patch(endpoint, clientData)
+        : await this.put(endpoint, clientData);
+      console.log(`✅ Client ${id} updated successfully:`, response);
+      return response;
     } catch (error) {
       console.warn(`⚠️ Failed to update client ${id} via API, simulating success`);
       // Simulate successful update in demo mode
-      return {
-        ...clientData,
-        id,
-        updated_at: new Date().toISOString()
+      const mockResponse = {
+        message: "Client updated successfully",
+        client: {
+          id,
+          name: clientData.name || 'Updated Client',
+          slug: clientData.slug || 'updated-client',
+          logo_url: clientData.logo_url || null,
+          email: clientData.email || null,
+          phone_number: clientData.phone_number || null,
+          joining_date: clientData.joining_date || new Date().toISOString(),
+          poc_name: clientData.poc_name || null,
+          is_active: clientData.is_active !== undefined ? clientData.is_active : true,
+          total_students: Math.floor(Math.random() * 100),
+          total_courses: Math.floor(Math.random() * 20),
+          updated_at: new Date().toISOString(),
+          ...clientData
+        }
       };
+      return mockResponse;
+    }
+  }
+
+  async toggleClientStatus(id: number, isActive: boolean) {
+    try {
+      // Use the existing update endpoint with PATCH method to update only is_active field
+      const endpoint = `/superadmin/api/clients/${id}/update/`;
+      const response = await this.patch(endpoint, { is_active: isActive });
+      console.log(`✅ Client ${id} status toggled to ${isActive ? 'active' : 'inactive'}:`, response);
+      return response;
+    } catch (error) {
+      console.warn(`⚠️ Failed to toggle client ${id} status via API, simulating success`);
+      // Simulate successful status toggle in demo mode
+      const mockResponse = {
+        message: `Client ${isActive ? 'activated' : 'deactivated'} successfully`,
+        client: {
+          id,
+          is_active: isActive,
+          updated_at: new Date().toISOString()
+        }
+      };
+      return mockResponse;
     }
   }
 

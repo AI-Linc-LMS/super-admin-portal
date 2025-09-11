@@ -6,6 +6,10 @@ export const useClients = (params?: any) => {
   return useQuery({
     queryKey: ['clients', params],
     queryFn: () => apiService.getClients(params),
+    retry: false,
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 };
 
@@ -14,6 +18,10 @@ export const useClientDetails = (clientId: number) => {
     queryKey: ['client-details', clientId],
     queryFn: () => apiService.getClientDetails(clientId),
     enabled: !!clientId,
+    retry: false,
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 };
 
@@ -33,8 +41,11 @@ export const useUpdateClient = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<Client> }) => 
-      apiService.updateClient(id, data),
+    mutationFn: ({ id, data, method = 'PUT' }: { 
+      id: number; 
+      data: Partial<Client>; 
+      method?: 'PUT' | 'PATCH' 
+    }) => apiService.updateClient(id, data, method),
     onSuccess: (_, { id }) => {
       // Invalidate and refetch clients list and specific client details
       queryClient.invalidateQueries({ queryKey: ['clients'] });
@@ -51,6 +62,20 @@ export const useDeleteClient = () => {
     onSuccess: () => {
       // Invalidate and refetch clients list
       queryClient.invalidateQueries({ queryKey: ['clients'] });
+    },
+  });
+};
+
+export const useToggleClientStatus = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ id, isActive }: { id: number; isActive: boolean }) => 
+      apiService.toggleClientStatus(id, isActive),
+    onSuccess: (_, { id }) => {
+      // Invalidate and refetch clients list and specific client details
+      queryClient.invalidateQueries({ queryKey: ['clients'] });
+      queryClient.invalidateQueries({ queryKey: ['client-details', id] });
     },
   });
 };
