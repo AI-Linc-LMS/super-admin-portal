@@ -159,20 +159,20 @@ const ClientDetails: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <span className="text-gray-500">Created:</span>
-                  <p className="font-medium">{client.created_at ? formatDate(client.created_at) : 'N/A'}</p>
+                  <span className="text-gray-500">Joined:</span>
+                  <p className="font-medium">{formatDate(client.joining_date || client.created_at)}</p>
                 </div>
                 <div>
                   <span className="text-gray-500">Subscription:</span>
-                  <p className="font-medium">{client.subscription_plan || 'N/A'}</p>
+                  <p className="font-medium">{client.subscription_plan || client.subscription_tier || 'N/A'}</p>
                 </div>
                 <div>
                   <span className="text-gray-500">Contact Person:</span>
-                  <p className="font-medium">{client.contact_person || 'N/A'}</p>
+                  <p className="font-medium">{client.poc_name || client.contact_person || 'N/A'}</p>
                 </div>
                 <div>
-                  <span className="text-gray-500">Expires:</span>
-                  <p className="font-medium">{client.expiry_date ? formatDate(client.expiry_date) : 'N/A'}</p>
+                  <span className="text-gray-500">Phone:</span>
+                  <p className="font-medium">{client.phone_number || client.phone || 'N/A'}</p>
                 </div>
               </div>
             </div>

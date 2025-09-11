@@ -3,9 +3,14 @@ export interface Client {
   name: string;
   slug: string;
   logo_url?: string | null;
+  email?: string | null;
+  phone_number?: string | null;
+  joining_date: string;
+  poc_name?: string | null;
   total_students: number;
-  total_courses?: number;
-  email?: string;
+  total_courses: number;
+
+  // Legacy fields for backward compatibility
   logo?: string;
   organization_name?: string;
   phone?: string;

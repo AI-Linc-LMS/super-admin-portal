@@ -213,55 +213,54 @@ class ApiService {
   // Client-specific API methods
   async getClients(params?: any) {
     try {
-      return await this.get('/superadmin/api/clients/', params);
+      const response = await this.get('/superadmin/api/clients/', params);
+      // The API now returns an array directly, not wrapped in a results object
+      return Array.isArray(response) ? response : response.results || response;
     } catch (error) {
       console.warn('⚠️ Failed to fetch clients from API, using demo data');
-      // Return demo data when API fails
-      return {
-        results: [
-          {
-            id: 1,
-            name: 'John Doe',
-            email: 'john.doe@techcorp.com',
-            organization_name: 'TechCorp Solutions',
-            phone: '+1-555-0123',
-            status: 'active',
-            subscription_plan: 'enterprise',
-            is_active: true,
-            created_at: '2024-01-15T10:30:00Z',
-            updated_at: '2024-03-10T14:20:00Z',
-            last_login: '2024-03-09T16:45:00Z',
-            student_count: 245,
-            instructor_count: 12,
-            course_count: 18,
-            active_enrollments: 189,
-            total_revenue: 24500,
-            monthly_revenue: 4200
-          },
-          {
-            id: 2,
-            name: 'Sarah Wilson',
-            email: 'sarah.wilson@edulearn.org',
-            organization_name: 'EduLearn Institute',
-            phone: '+1-555-0456',
-            status: 'active',
-            subscription_plan: 'professional',
-            is_active: true,
-            created_at: '2024-02-20T09:15:00Z',
-            updated_at: '2024-03-08T11:30:00Z',
-            last_login: '2024-03-08T18:22:00Z',
-            student_count: 156,
-            instructor_count: 8,
-            course_count: 12,
-            active_enrollments: 134,
-            total_revenue: 18300,
-            monthly_revenue: 3100
-          }
-        ],
-        count: 2,
-        next: null,
-        previous: null
-      };
+      // Return demo data that matches the new API format
+      return [
+        {
+          id: 1,
+          name: 'TechCorp Solutions',
+          slug: 'techcorp-solutions',
+          logo_url: null,
+          email: 'admin@techcorp.com',
+          phone_number: '+1-555-0123',
+          joining_date: '2025-01-15T10:30:00',
+          poc_name: 'John Smith',
+          total_students: 245,
+          total_courses: 18,
+          // Legacy fields for backward compatibility
+          organization_name: 'TechCorp Solutions Ltd.',
+          status: 'active',
+          subscription_tier: 'enterprise',
+          is_active: true,
+          created_at: '2025-01-15T10:30:00Z',
+          contact_person: 'John Smith',
+          industry: 'Technology'
+        },
+        {
+          id: 2,
+          name: 'EduLearn Institute',
+          slug: 'edulearn-institute',
+          logo_url: null,
+          email: 'contact@edulearn.org',
+          phone_number: '+1-555-0456',
+          joining_date: '2025-02-20T09:15:00',
+          poc_name: 'Sarah Wilson',
+          total_students: 156,
+          total_courses: 12,
+          // Legacy fields for backward compatibility
+          organization_name: 'EduLearn Institute Inc.',
+          status: 'active',
+          subscription_tier: 'professional',
+          is_active: true,
+          created_at: '2025-02-20T09:15:00Z',
+          contact_person: 'Sarah Wilson',
+          industry: 'Education'
+        }
+      ];
     }
   }
 
@@ -270,20 +269,28 @@ class ApiService {
       return await this.get(`/superadmin/api/clients/${id}/`);
     } catch (error) {
       console.warn(`⚠️ Failed to fetch client ${id} details from API, using demo data`);
-      // Return demo data when API fails
+      // Return demo data that matches the new API format
       return {
         id,
         name: 'Demo Client',
+        slug: 'demo-client',
+        logo_url: null,
         email: 'demo@example.com',
+        phone_number: '+1-555-0123',
+        joining_date: '2025-01-15T10:30:00',
+        poc_name: 'John Demo',
+        total_students: 125,
+        total_courses: 15,
+        // Legacy fields for backward compatibility
         organization_name: 'Demo Organization',
         phone: '+1-555-0123',
         address: '123 Demo Street, Demo City, DC 12345',
         status: 'active',
         subscription_plan: 'professional',
         is_active: true,
-        created_at: '2024-01-15T10:30:00Z',
-        updated_at: '2024-03-10T14:20:00Z',
-        last_login: '2024-03-09T16:45:00Z',
+        created_at: '2025-01-15T10:30:00Z',
+        updated_at: '2025-03-10T14:20:00Z',
+        last_login: '2025-03-09T16:45:00Z',
         student_count: 125,
         instructor_count: 8,
         course_count: 15,
@@ -298,28 +305,54 @@ class ApiService {
           {
             id: 1,
             title: 'Introduction to Programming',
+            subtitle: null,
+            slug: 'intro-programming',
+            description: 'Learn the basics of programming',
+            difficulty_level: 'Easy' as const,
+            duration_in_hours: 40,
+            price: '299.00',
+            is_free: false,
+            certificate_available: true,
+            thumbnail: null,
+            published: true,
+            enrolled_students_count: 45,
+            instructors: [
+              { id: 1, name: 'John Instructor' }
+            ],
+            created_at: '2025-01-20T10:00:00Z',
+            updated_at: '2025-03-05T15:30:00Z',
+            // Legacy fields
             difficulty: 'Easy' as const,
             is_published: true,
-            is_free: false,
             enrollment_count: 45,
             completion_rate: 85,
-            created_at: '2024-01-20T10:00:00Z',
-            updated_at: '2024-03-05T15:30:00Z',
-            price: 299,
             duration: 40,
             category: 'Programming'
           },
           {
             id: 2,
             title: 'Advanced Web Development',
+            subtitle: null,
+            slug: 'advanced-web-dev',
+            description: 'Master advanced web development techniques',
+            difficulty_level: 'Hard' as const,
+            duration_in_hours: 80,
+            price: '599.00',
+            is_free: false,
+            certificate_available: true,
+            thumbnail: null,
+            published: true,
+            enrolled_students_count: 32,
+            instructors: [
+              { id: 2, name: 'Jane Expert' }
+            ],
+            created_at: '2025-02-01T11:00:00Z',
+            updated_at: '2025-03-08T09:15:00Z',
+            // Legacy fields
             difficulty: 'Hard' as const,
             is_published: true,
-            is_free: false,
             enrollment_count: 32,
             completion_rate: 72,
-            created_at: '2024-02-01T11:00:00Z',
-            updated_at: '2024-03-08T09:15:00Z',
-            price: 599,
             duration: 80,
             category: 'Web Development'
           }
@@ -333,11 +366,11 @@ class ApiService {
           revenue_this_month: 2800,
           growth_rate: 12.5,
           enrollment_trend: [
-            { date: '2024-03-01', enrollments: 15, completions: 8 },
-            { date: '2024-03-02', enrollments: 12, completions: 6 },
-            { date: '2024-03-03', enrollments: 18, completions: 10 },
-            { date: '2024-03-04', enrollments: 14, completions: 7 },
-            { date: '2024-03-05', enrollments: 16, completions: 9 }
+            { date: '2025-03-01', enrollments: 15, completions: 8 },
+            { date: '2025-03-02', enrollments: 12, completions: 6 },
+            { date: '2025-03-03', enrollments: 18, completions: 10 },
+            { date: '2025-03-04', enrollments: 14, completions: 7 },
+            { date: '2025-03-05', enrollments: 16, completions: 9 }
           ],
           course_popularity: [
             { course_name: 'Introduction to Programming', enrollments: 45, completion_rate: 85 },

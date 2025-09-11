@@ -127,7 +127,8 @@ const Clients: React.FC = () => {
   const filteredClients = clientsData.filter(client => {
     const matchesSearch = client.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          client.organization_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         client.email?.toLowerCase().includes(searchQuery.toLowerCase());
+                         client.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         client.poc_name?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === 'all' || client.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -135,15 +136,16 @@ const Clients: React.FC = () => {
   const exportClients = () => {
     const csvData = filteredClients.map(client => ({
       Name: client.name,
-      Organization: client.organization_name,
+      Organization: client.organization_name || client.name,
       Email: client.email,
-      Phone: client.phone,
-      Status: client.status,
+      Phone: client.phone_number || client.phone,
+      'POC Name': client.poc_name || client.contact_person,
+      Status: client.status || 'active',
       'Subscription Tier': client.subscription_tier,
-      Students: client.total_students || client.students_count || 0,
-      Courses: client.total_courses || client.courses_count || 0,
+      Students: client.total_students,
+      Courses: client.total_courses,
       'Monthly Revenue': client.monthly_revenue,
-      'Created Date': formatDate(client.created_at),
+      'Joining Date': formatDate(client.joining_date || client.created_at),
     }));
     console.log('Exporting clients:', csvData);
   };
@@ -166,27 +168,29 @@ const Clients: React.FC = () => {
             </div>
             <div>
               <h3 className="font-semibold text-gray-900 text-lg">{client.name}</h3>
-              <p className="text-sm text-gray-600">{client.organization_name}</p>
+              <p className="text-sm text-gray-600">{client.organization_name || client.name}</p>
             </div>
           </div>
-          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(client.status)}`}>
-            {client.status}
+          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(client.status || 'active')}`}>
+            {client.status || 'active'}
           </span>
         </div>
 
         <div className="space-y-3 mb-4">
           <div className="flex items-center text-sm text-gray-600">
             <Users className="w-4 h-4 mr-2" />
-            {formatNumber(client.total_students || client.students_count || 0)} students
+            {formatNumber(client.total_students)} students
           </div>
           <div className="flex items-center text-sm text-gray-600">
             <BookOpen className="w-4 h-4 mr-2" />
-            {client.total_courses || client.courses_count || 0} courses
+            {client.total_courses} courses
           </div>
-          <div className="flex items-center text-sm text-gray-600">
-            <TrendingUp className="w-4 h-4 mr-2" />
-            ${formatNumber(client.monthly_revenue || 0)}/month
-          </div>
+          {client.monthly_revenue && (
+            <div className="flex items-center text-sm text-gray-600">
+              <TrendingUp className="w-4 h-4 mr-2" />
+              ${formatNumber(client.monthly_revenue)}/month
+            </div>
+          )}
           <div className="flex items-center text-sm text-gray-600">
             <MapPin className="w-4 h-4 mr-2" />
             {client.industry || 'Not specified'}
@@ -196,12 +200,18 @@ const Clients: React.FC = () => {
         <div className="border-t border-gray-200 pt-3">
           <div className="flex items-center justify-between text-sm">
             <span className="text-gray-500">Contact</span>
-            <span className="text-gray-900">{client.contact_person || 'Not available'}</span>
+            <span className="text-gray-900">{client.poc_name || client.contact_person || 'Not available'}</span>
           </div>
           <div className="flex items-center justify-between text-sm mt-1">
             <span className="text-gray-500">Joined</span>
-            <span className="text-gray-700">{formatDate(client.created_at)}</span>
+            <span className="text-gray-700">{formatDate(client.joining_date || client.created_at)}</span>
           </div>
+          {client.email && (
+            <div className="flex items-center justify-between text-sm mt-1">
+              <span className="text-gray-500">Email</span>
+              <span className="text-gray-700 truncate">{client.email}</span>
+            </div>
+          )}
         </div>
 
         <div className="flex items-center justify-end gap-2 mt-4">
@@ -237,7 +247,7 @@ const Clients: React.FC = () => {
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 0 00-1-1z" clipRule="evenodd" />
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
               </svg>
             </div>
             <div className="ml-3">
@@ -345,7 +355,7 @@ const Clients: React.FC = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Students</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Courses</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Revenue</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
@@ -366,13 +376,13 @@ const Clients: React.FC = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(client.status)}`}>
-                          {client.status}
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(client.status || 'active')}`}>
+                          {client.status || 'active'}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">{formatNumber(client.total_students || client.students_count || 0)}</td>
-                      <td className="px-6 py-4 text-sm text-gray-900">{client.total_courses || client.courses_count || 0}</td>
-                      <td className="px-6 py-4 text-sm text-gray-900">${formatNumber(client.monthly_revenue || 0)}</td>
+                      <td className="px-6 py-4 text-sm text-gray-900">{formatNumber(client.total_students)}</td>
+                      <td className="px-6 py-4 text-sm text-gray-900">{client.total_courses}</td>
+                      <td className="px-6 py-4 text-sm text-gray-900">{client.poc_name || client.contact_person || 'Not available'}</td>
                       <td className="px-6 py-4 text-right text-sm font-medium">
                         <Link to={`/clients/${client.id}`}>
                           <Button variant="outline" size="sm">
