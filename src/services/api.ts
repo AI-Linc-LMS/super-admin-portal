@@ -211,11 +211,11 @@ class ApiService {
   }
 
   // Client-specific API methods
-  async getClients(params?: any) {
+  async getClients(params?: any): Promise<Client[]> {
     try {
-      const response = await this.get('/superadmin/api/clients/', params);
+      const response = await this.get<Client[] | { results: Client[] }>('/superadmin/api/clients/', params);
       // The API now returns an array directly, not wrapped in a results object
-      return Array.isArray(response) ? response : response.results || response;
+      return Array.isArray(response) ? response : response.results || [];
     } catch (error) {
       console.warn('⚠️ Failed to fetch clients from API, using demo data');
       // Return demo data that matches the new API format

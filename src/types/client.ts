@@ -5,7 +5,7 @@ export interface Client {
   logo_url?: string | null;
   email?: string | null;
   phone_number?: string | null;
-  joining_date: string;
+  joining_date?: string; // Make optional for backward compatibility
   poc_name?: string | null;
   total_students: number;
   total_courses: number;
