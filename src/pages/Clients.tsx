@@ -536,47 +536,104 @@ const Clients: React.FC = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Students</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Courses</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Toggle</th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {filteredClients.map((client) => (
-                    <tr key={client.id} className="hover:bg-gray-50">
+                    <tr 
+                      key={client.id} 
+                      className={`hover:bg-gray-50 transition-all duration-300 ${
+                        client.is_active === false ? 'bg-gray-50 opacity-75' : 'bg-white'
+                      }`}
+                    >
                       <td className="px-6 py-4">
                         <div className="flex items-center">
                           <div className="flex-shrink-0 h-10 w-10">
-                            <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-lg flex items-center justify-center">
-                              <Building2 className="w-5 h-5 text-white" />
+                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-300 ${
+                              client.is_active === false
+                                ? 'bg-gray-300'
+                                : 'bg-gradient-to-br from-primary-500 to-primary-600'
+                            }`}>
+                              {client.logo_url ? (
+                                <img 
+                                  src={client.logo_url} 
+                                  alt={client.name} 
+                                  className={`w-6 h-6 rounded transition-all duration-300 ${
+                                    client.is_active === false ? 'grayscale' : ''
+                                  }`} 
+                                />
+                              ) : (
+                                <Building2 className={`w-5 h-5 ${
+                                  client.is_active === false ? 'text-gray-500' : 'text-white'
+                                }`} />
+                              )}
                             </div>
                           </div>
                           <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">{client.name}</div>
-                            <div className="text-sm text-gray-500">{client.email}</div>
+                            <div className={`text-sm font-medium transition-colors duration-300 ${
+                              client.is_active === false ? 'text-gray-500' : 'text-gray-900'
+                            }`}>
+                              {client.name}
+                            </div>
+                            <div className={`text-sm transition-colors duration-300 ${
+                              client.is_active === false ? 'text-gray-400' : 'text-gray-500'
+                            }`}>
+                              {client.email || 'No email provided'}
+                            </div>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(client.status || 'active')}`}>
-                          {client.status || 'active'}
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                          client.is_active === false
+                            ? 'bg-red-100 text-red-800'
+                            : 'bg-green-100 text-green-800'
+                        }`}>
+                          {client.is_active === false ? 'Inactive' : 'Active'}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">{formatNumber(client.total_students)}</td>
-                      <td className="px-6 py-4 text-sm text-gray-900">{client.total_courses}</td>
-                      <td className="px-6 py-4 text-sm text-gray-900">{client.poc_name || client.contact_person || 'Not available'}</td>
-                      <td className="px-6 py-4 text-right text-sm font-medium">
-                        <Button
-                          variant="outline"
+                      <td className={`px-6 py-4 text-sm transition-colors duration-300 ${
+                        client.is_active === false ? 'text-gray-400' : 'text-gray-900'
+                      }`}>
+                        {formatNumber(client.total_students)}
+                      </td>
+                      <td className={`px-6 py-4 text-sm transition-colors duration-300 ${
+                        client.is_active === false ? 'text-gray-400' : 'text-gray-900'
+                      }`}>
+                        {client.total_courses}
+                      </td>
+                      <td className={`px-6 py-4 text-sm transition-colors duration-300 ${
+                        client.is_active === false ? 'text-gray-400' : 'text-gray-900'
+                      }`}>
+                        {client.poc_name || client.contact_person || 'Not available'}
+                      </td>
+                      <td className="px-6 py-4">
+                        <StatusToggle
+                          isActive={client.is_active !== false}
+                          onToggle={(newStatus) => handleToggleStatus(client.id, newStatus)}
                           size="sm"
-                          leftIcon={<Edit className="w-4 h-4" />}
-                          onClick={() => handleOpenEditModal(client)}
-                        >
-                          Edit
-                        </Button>
-                        <Link to={`/clients/${client.id}`}>
-                          <Button variant="outline" size="sm">
-                            <Eye className="w-4 h-4" />
+                          showLabels={false}
+                        />
+                      </td>
+                      <td className="px-6 py-4 text-right text-sm font-medium">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            leftIcon={<Edit className="w-4 h-4" />}
+                            onClick={() => handleOpenEditModal(client)}
+                            disabled={toggleStatusMutation.isPending}
+                          >
+                            Edit
                           </Button>
-                        </Link>
+                          <Link to={`/clients/${client.id}`}>
+                            <Button variant="outline" size="sm" leftIcon={<Eye className="w-4 h-4" />}>
+                              View
+                            </Button>
+                          </Link>
+                        </div>
                       </td>
                     </tr>
                   ))}
