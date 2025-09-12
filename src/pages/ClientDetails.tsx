@@ -14,29 +14,41 @@ import {
   User,
   Phone,
   Calendar,
+  Shield,
+  ShieldCheck,
 } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import StatsCard from '../components/charts/StatsCard';
 import StudentDetailsModal from '../components/ui/StudentDetailsModal';
+import AdminDetailsModal from '../components/ui/AdminDetailsModal';
+import SuperAdminDetailsModal from '../components/ui/SuperAdminDetailsModal';
 import { formatDate, formatCurrency, getDifficultyColor, getStatusColor } from '../utils/helpers';
 import { useClientDetails } from '../hooks/useApi';
-import { Student } from '../types/client';
+import { Student, Admin, SuperAdmin } from '../types/client';
 
 const ClientDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'courses' | 'students'>('courses');
+  const [activeTab, setActiveTab] = useState<'courses' | 'students' | 'admins' | 'superadmins'>('courses');
   const [courseSearch, setCourseSearch] = useState('');
   const [studentSearch, setStudentSearch] = useState('');
+  const [adminSearch, setAdminSearch] = useState('');
+  const [superAdminSearch, setSuperAdminSearch] = useState('');
   const [difficultyFilter, setDifficultyFilter] = useState<'all' | 'Easy' | 'Medium' | 'Hard'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'unpublished'>('all');
   const [studentStatusFilter, setStudentStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [adminStatusFilter, setAdminStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [superAdminStatusFilter, setSuperAdminStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   
   // Modal state
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [selectedAdmin, setSelectedAdmin] = useState<Admin | null>(null);
+  const [selectedSuperAdmin, setSelectedSuperAdmin] = useState<SuperAdmin | null>(null);
   const [isStudentModalOpen, setIsStudentModalOpen] = useState(false);
+  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
+  const [isSuperAdminModalOpen, setIsSuperAdminModalOpen] = useState(false);
 
   const clientId = parseInt(id || '0');
   const { data: client, isLoading, error } = useClientDetails(clientId);
@@ -60,6 +72,26 @@ const ClientDetails: React.FC = () => {
     return matchesSearch && matchesStatus;
   }) || [];
 
+  const filteredAdmins = client?.admins?.filter(admin => {
+    const matchesSearch = admin.name.toLowerCase().includes(adminSearch.toLowerCase()) ||
+                         admin.email.toLowerCase().includes(adminSearch.toLowerCase()) ||
+                         admin.username.toLowerCase().includes(adminSearch.toLowerCase());
+    const matchesStatus = adminStatusFilter === 'all' || 
+                         (adminStatusFilter === 'active' && admin.is_active) ||
+                         (adminStatusFilter === 'inactive' && !admin.is_active);
+    return matchesSearch && matchesStatus;
+  }) || [];
+
+  const filteredSuperAdmins = client?.superadmins?.filter(superadmin => {
+    const matchesSearch = superadmin.name.toLowerCase().includes(superAdminSearch.toLowerCase()) ||
+                         superadmin.email.toLowerCase().includes(superAdminSearch.toLowerCase()) ||
+                         superadmin.username.toLowerCase().includes(superAdminSearch.toLowerCase());
+    const matchesStatus = superAdminStatusFilter === 'all' || 
+                         (superAdminStatusFilter === 'active' && superadmin.is_active) ||
+                         (superAdminStatusFilter === 'inactive' && !superadmin.is_active);
+    return matchesSearch && matchesStatus;
+  }) || [];
+
   const exportData = () => {
     if (activeTab === 'courses') {
       const csvData = filteredCourses.map(course => ({
@@ -71,7 +103,7 @@ const ClientDetails: React.FC = () => {
         Price: course.price && course.price !== '0' ? formatCurrency(parseFloat(course.price)) : 'Free',
       }));
       console.log('Exporting courses:', csvData);
-    } else {
+    } else if (activeTab === 'students') {
       const csvData = filteredStudents.map(student => ({
         Name: student.name,
         Email: student.email,
@@ -81,6 +113,26 @@ const ClientDetails: React.FC = () => {
         'Joined Date': formatDate(student.created_at),
       }));
       console.log('Exporting students:', csvData);
+    } else if (activeTab === 'admins') {
+      const csvData = filteredAdmins.map(admin => ({
+        Name: admin.name,
+        Email: admin.email,
+        Status: admin.is_active ? 'Active' : 'Inactive',
+        'Phone Number': admin.phone_number || 'N/A',
+        'Date of Birth': admin.date_of_birth ? formatDate(admin.date_of_birth) : 'N/A',
+        'Joined Date': formatDate(admin.created_at),
+      }));
+      console.log('Exporting admins:', csvData);
+    } else if (activeTab === 'superadmins') {
+      const csvData = filteredSuperAdmins.map(superadmin => ({
+        Name: superadmin.name,
+        Email: superadmin.email,
+        Status: superadmin.is_active ? 'Active' : 'Inactive',
+        'Phone Number': superadmin.phone_number || 'N/A',
+        'Date of Birth': superadmin.date_of_birth ? formatDate(superadmin.date_of_birth) : 'N/A',
+        'Joined Date': formatDate(superadmin.created_at),
+      }));
+      console.log('Exporting superadmins:', csvData);
     }
   };
 
@@ -89,9 +141,29 @@ const ClientDetails: React.FC = () => {
     setIsStudentModalOpen(true);
   };
 
+  const handleAdminClick = (admin: Admin) => {
+    setSelectedAdmin(admin);
+    setIsAdminModalOpen(true);
+  };
+
+  const handleSuperAdminClick = (superadmin: SuperAdmin) => {
+    setSelectedSuperAdmin(superadmin);
+    setIsSuperAdminModalOpen(true);
+  };
+
   const closeStudentModal = () => {
     setIsStudentModalOpen(false);
     setSelectedStudent(null);
+  };
+
+  const closeAdminModal = () => {
+    setIsAdminModalOpen(false);
+    setSelectedAdmin(null);
+  };
+
+  const closeSuperAdminModal = () => {
+    setIsSuperAdminModalOpen(false);
+    setSelectedSuperAdmin(null);
   };
 
   if (isLoading) {
@@ -241,6 +313,16 @@ const ClientDetails: React.FC = () => {
           value={client.courses?.length || 0}
           icon={BookOpen}
         />
+        <StatsCard
+          title="Total Admins"
+          value={client.total_admins || client.admins?.length || 0}
+          icon={Shield}
+        />
+        <StatsCard
+          title="Total SuperAdmins"
+          value={client.total_superadmins || client.superadmins?.length || 0}
+          icon={ShieldCheck}
+        />
       </motion.div>
 
       {/* Tabbed Content Section */}
@@ -277,6 +359,32 @@ const ClientDetails: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <Users className="w-4 h-4" />
                   Students ({filteredStudents.length})
+                </div>
+              </button>
+              <button
+                onClick={() => setActiveTab('admins')}
+                className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'admins'
+                    ? 'border-primary-500 text-primary-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <Shield className="w-4 h-4" />
+                  Admins ({filteredAdmins.length})
+                </div>
+              </button>
+              <button
+                onClick={() => setActiveTab('superadmins')}
+                className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'superadmins'
+                    ? 'border-primary-500 text-primary-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4" />
+                  SuperAdmins ({filteredSuperAdmins.length})
                 </div>
               </button>
             </nav>
@@ -405,7 +513,7 @@ const ClientDetails: React.FC = () => {
                 </div>
               )}
             </>
-          ) : (
+          ) : activeTab === 'students' ? (
             <>
               {/* Students Filters */}
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
@@ -527,6 +635,250 @@ const ClientDetails: React.FC = () => {
                 </div>
               )}
             </>
+          ) : activeTab === 'admins' ? (
+            <>
+              {/* Admins Filters */}
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                <h3 className="text-lg font-semibold">Admins</h3>
+                <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Input
+                      type="text"
+                      placeholder="Search admins..."
+                      value={adminSearch}
+                      onChange={(e) => setAdminSearch(e.target.value)}
+                      className="pl-10 w-full sm:w-64"
+                    />
+                  </div>
+                  <select
+                    value={adminStatusFilter}
+                    onChange={(e) => setAdminStatusFilter(e.target.value as any)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Admins Table */}
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Admin
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Phone
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Joined Date
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {filteredAdmins.map((admin) => (
+                      <tr key={admin.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center">
+                            <div className="flex-shrink-0 h-10 w-10">
+                              {admin.profile_pic_url ? (
+                                <img
+                                  className="h-10 w-10 rounded-full object-cover"
+                                  src={admin.profile_pic_url}
+                                  alt={admin.name}
+                                  onError={(e) => {
+                                    const target = e.target as HTMLImageElement;
+                                    target.style.display = 'none';
+                                    target.nextElementSibling?.classList.remove('hidden');
+                                  }}
+                                />
+                              ) : null}
+                              <div className={`h-10 w-10 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center ${admin.profile_pic_url ? 'hidden' : ''}`}>
+                                <span className="text-white font-medium text-sm">
+                                  {admin.first_name.charAt(0)}{admin.last_name.charAt(0)}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="ml-4">
+                              <div className="text-sm font-medium text-gray-900">{admin.name}</div>
+                              <div className="text-sm text-gray-500">{admin.email}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span
+                            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                              admin.is_active ? 'active' : 'inactive'
+                            )}`}
+                          >
+                            {admin.is_active ? 'Active' : 'Inactive'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-900">
+                          {admin.phone_number || 'N/A'}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-900">
+                          {formatDate(admin.created_at)}
+                        </td>
+                        <td className="px-6 py-4 text-sm font-medium">
+                          <div className="flex items-center gap-2">
+                            <button
+                              className="text-primary-600 hover:text-primary-900 p-1 rounded-md hover:bg-primary-50 transition-colors"
+                              onClick={() => handleAdminClick(admin)}
+                              title="View admin details"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {filteredAdmins.length === 0 && (
+                <div className="text-center py-12">
+                  <Shield className="mx-auto h-12 w-12 text-gray-400" />
+                  <h3 className="mt-2 text-sm font-medium text-gray-900">No admins found</h3>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Try adjusting your search or filters to find admins.
+                  </p>
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              {/* SuperAdmins Filters */}
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                <h3 className="text-lg font-semibold">SuperAdmins</h3>
+                <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Input
+                      type="text"
+                      placeholder="Search superadmins..."
+                      value={superAdminSearch}
+                      onChange={(e) => setSuperAdminSearch(e.target.value)}
+                      className="pl-10 w-full sm:w-64"
+                    />
+                  </div>
+                  <select
+                    value={superAdminStatusFilter}
+                    onChange={(e) => setSuperAdminStatusFilter(e.target.value as any)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* SuperAdmins Table */}
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        SuperAdmin
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Phone
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Joined Date
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {filteredSuperAdmins.map((superadmin) => (
+                      <tr key={superadmin.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center">
+                            <div className="flex-shrink-0 h-10 w-10">
+                              {superadmin.profile_pic_url ? (
+                                <img
+                                  className="h-10 w-10 rounded-full object-cover"
+                                  src={superadmin.profile_pic_url}
+                                  alt={superadmin.name}
+                                  onError={(e) => {
+                                    const target = e.target as HTMLImageElement;
+                                    target.style.display = 'none';
+                                    target.nextElementSibling?.classList.remove('hidden');
+                                  }}
+                                />
+                              ) : null}
+                              <div className={`h-10 w-10 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center ${superadmin.profile_pic_url ? 'hidden' : ''}`}>
+                                <span className="text-white font-medium text-sm">
+                                  {superadmin.first_name.charAt(0)}{superadmin.last_name.charAt(0)}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="ml-4">
+                              <div className="text-sm font-medium text-gray-900">{superadmin.name}</div>
+                              <div className="text-sm text-gray-500">{superadmin.email}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span
+                            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                              superadmin.is_active ? 'active' : 'inactive'
+                            )}`}
+                          >
+                            {superadmin.is_active ? 'Active' : 'Inactive'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-900">
+                          {superadmin.phone_number || 'N/A'}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-900">
+                          {formatDate(superadmin.created_at)}
+                        </td>
+                        <td className="px-6 py-4 text-sm font-medium">
+                          <div className="flex items-center gap-2">
+                            <button
+                              className="text-primary-600 hover:text-primary-900 p-1 rounded-md hover:bg-primary-50 transition-colors"
+                              onClick={() => handleSuperAdminClick(superadmin)}
+                              title="View superadmin details"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {filteredSuperAdmins.length === 0 && (
+                <div className="text-center py-12">
+                  <ShieldCheck className="mx-auto h-12 w-12 text-gray-400" />
+                  <h3 className="mt-2 text-sm font-medium text-gray-900">No superadmins found</h3>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Try adjusting your search or filters to find superadmins.
+                  </p>
+                </div>
+              )}
+            </>
           )}
         </Card>
       </motion.div>
@@ -537,6 +889,24 @@ const ClientDetails: React.FC = () => {
           isOpen={isStudentModalOpen}
           onClose={closeStudentModal}
           student={selectedStudent}
+        />
+      )}
+
+      {/* Admin Details Modal */}
+      {selectedAdmin && (
+        <AdminDetailsModal
+          isOpen={isAdminModalOpen}
+          onClose={closeAdminModal}
+          admin={selectedAdmin}
+        />
+      )}
+
+      {/* SuperAdmin Details Modal */}
+      {selectedSuperAdmin && (
+        <SuperAdminDetailsModal
+          isOpen={isSuperAdminModalOpen}
+          onClose={closeSuperAdminModal}
+          superAdmin={selectedSuperAdmin}
         />
       )}
     </div>

@@ -9,6 +9,8 @@ export interface Client {
   poc_name?: string | null;
   total_students: number;
   total_courses: number;
+  total_admins?: number;
+  total_superadmins?: number;
 
   // Legacy fields for backward compatibility
   logo?: string;
@@ -38,6 +40,8 @@ export interface Client {
 export interface ClientDetails extends Client {
   courses: ClientCourse[];
   students?: Student[];
+  admins?: Admin[];
+  superadmins?: SuperAdmin[];
   description?: string;
   website?: string;
   contact_person?: string;
@@ -110,6 +114,44 @@ export interface ClientFilters {
 }
 
 export interface Student {
+  id: number;
+  user_id: number;
+  name: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  username: string;
+  profile_pic_url?: string | null;
+  role: string;
+  is_active: boolean;
+  phone_number?: string | null;
+  bio?: string | null;
+  social_links?: Record<string, any>;
+  date_of_birth?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Admin {
+  id: number;
+  user_id: number;
+  name: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  username: string;
+  profile_pic_url?: string | null;
+  role: string;
+  is_active: boolean;
+  phone_number?: string | null;
+  bio?: string | null;
+  social_links?: Record<string, any>;
+  date_of_birth?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SuperAdmin {
   id: number;
   user_id: number;
   name: string;
