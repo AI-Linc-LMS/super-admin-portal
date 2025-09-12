@@ -97,3 +97,21 @@ export const useChangeUserRole = () => {
     },
   });
 };
+
+export const useUpdateCourse = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ clientId, courseId, courseData }: { 
+      clientId: number; 
+      courseId: number; 
+      courseData: { price?: number; is_free?: boolean; published?: boolean } 
+    }) => apiService.updateCourse(clientId, courseId, courseData),
+    onSuccess: (_, { clientId }) => {
+      // Invalidate and refetch client details to update the course list
+      queryClient.invalidateQueries({ queryKey: ['client-details', clientId] });
+      // Also invalidate clients list in case it affects summary counts
+      queryClient.invalidateQueries({ queryKey: ['clients'] });
+    },
+  });
+};

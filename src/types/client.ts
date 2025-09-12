@@ -53,6 +53,7 @@ export interface ClientDetails extends Client {
 export interface Instructor {
   id: number;
   name: string;
+  bio?: string;
 }
 
 export interface ClientCourse {
@@ -70,6 +71,7 @@ export interface ClientCourse {
   published: boolean;
   enrolled_students_count: number;
   instructors: Instructor[];
+  modules_count?: number;
   created_at: string;
   updated_at: string;
   // Deprecated fields for backward compatibility

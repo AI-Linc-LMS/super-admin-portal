@@ -9,7 +9,7 @@ import {
   Users,
   Star,
   Clock,
-  DollarSign,
+  IndianRupee,
   Download,
   Grid,
   List,
@@ -114,7 +114,7 @@ const Courses: React.FC = () => {
       Difficulty: course.difficulty_level,
       Status: course.published ? 'Published' : 'Unpublished',
       Type: course.is_free ? 'Free' : 'Paid',
-      Price: course.is_free ? 'Free' : `$${course.price}`,
+      Price: course.is_free ? 'Free' : `₹${course.price}`,
       Enrollments: course.enrolled_students_count,
       Duration: `${course.duration_in_hours}h`,
       Instructor: course.instructors[0]?.name || 'Unknown',
@@ -168,8 +168,8 @@ const Courses: React.FC = () => {
             {course.modules_count}
           </div>
           <div className="flex items-center text-gray-600">
-            <DollarSign className="w-4 h-4 mr-1" />
-            {course.price ? `$${course.price}` : 'Free'}
+            <IndianRupee className="w-4 h-4 mr-1" />
+            {course.price ? `₹${course.price}` : 'Free'}
           </div>
         </div>
 
@@ -378,7 +378,7 @@ const Courses: React.FC = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-900">
-                        {course.price ? `$${course.price}` : 'Free'}
+                        {course.price ? `₹${course.price}` : 'Free'}
                       </td>
                       <td className="px-6 py-4 text-right text-sm font-medium">
                         <div className="flex items-center justify-end gap-2">

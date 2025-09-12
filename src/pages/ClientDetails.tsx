@@ -17,6 +17,7 @@ import {
   Shield,
   ShieldCheck,
   UserCog,
+  Settings,
 } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -26,9 +27,11 @@ import StudentDetailsModal from '../components/ui/StudentDetailsModal';
 import AdminDetailsModal from '../components/ui/AdminDetailsModal';
 import SuperAdminDetailsModal from '../components/ui/SuperAdminDetailsModal';
 import ChangeRoleModal from '../components/ui/ChangeRoleModal';
+import CourseUpdateModal from '../components/ui/CourseUpdateModal';
+import CourseDetailsModal from '../components/ui/CourseDetailsModal';
 import { formatDate, formatCurrency, getDifficultyColor, getStatusColor } from '../utils/helpers';
-import { useClientDetails, useChangeUserRole } from '../hooks/useClients';
-import { Student, Admin, SuperAdmin } from '../types/client';
+import { useClientDetails, useChangeUserRole, useUpdateCourse } from '../hooks/useClients';
+import { Student, Admin, SuperAdmin, ClientCourse } from '../types/client';
 import toast from 'react-hot-toast';
 
 const ClientDetails: React.FC = () => {
@@ -57,9 +60,18 @@ const ClientDetails: React.FC = () => {
   const [selectedUserForRoleChange, setSelectedUserForRoleChange] = useState<Student | Admin | SuperAdmin | null>(null);
   const [isChangeRoleModalOpen, setIsChangeRoleModalOpen] = useState(false);
 
+  // Course update modal state
+  const [selectedCourse, setSelectedCourse] = useState<ClientCourse | null>(null);
+  const [isCourseUpdateModalOpen, setIsCourseUpdateModalOpen] = useState(false);
+
+  // Course details modal state
+  const [selectedCourseForDetails, setSelectedCourseForDetails] = useState<ClientCourse | null>(null);
+  const [isCourseDetailsModalOpen, setIsCourseDetailsModalOpen] = useState(false);
+
   const clientId = parseInt(id || '0');
   const { data: client, isLoading, error } = useClientDetails(clientId);
   const changeRoleMutation = useChangeUserRole();
+  const updateCourseMutation = useUpdateCourse();
 
   const filteredCourses = client?.courses?.filter(course => {
     const matchesSearch = course.title.toLowerCase().includes(courseSearch.toLowerCase());
@@ -198,6 +210,43 @@ const ClientDetails: React.FC = () => {
   const closeChangeRoleModal = () => {
     setIsChangeRoleModalOpen(false);
     setSelectedUserForRoleChange(null);
+  };
+
+  // Course update handlers
+  const handleCourseUpdate = (course: ClientCourse) => {
+    setSelectedCourse(course);
+    setIsCourseUpdateModalOpen(true);
+  };
+
+  const handleCourseUpdateConfirm = async (courseId: number, courseData: { price?: number; is_free?: boolean; published?: boolean }) => {
+    try {
+      await updateCourseMutation.mutateAsync({
+        clientId,
+        courseId,
+        courseData
+      });
+      toast.success('Course updated successfully!');
+    } catch (error) {
+      console.error('Failed to update course:', error);
+      toast.error('Failed to update course. Please try again.');
+      throw error; // Re-throw to let the modal handle the error
+    }
+  };
+
+  const closeCourseUpdateModal = () => {
+    setIsCourseUpdateModalOpen(false);
+    setSelectedCourse(null);
+  };
+
+  // Course details handlers
+  const handleCourseView = (course: ClientCourse) => {
+    setSelectedCourseForDetails(course);
+    setIsCourseDetailsModalOpen(true);
+  };
+
+  const closeCourseDetailsModal = () => {
+    setIsCourseDetailsModalOpen(false);
+    setSelectedCourseForDetails(null);
   };
 
   if (isLoading) {
@@ -523,11 +572,20 @@ const ClientDetails: React.FC = () => {
                         </td>
                         <td className="px-6 py-4 text-sm font-medium">
                           <div className="flex items-center gap-2">
-                            <button className="text-primary-600 hover:text-primary-900">
+                            <button 
+                              className="text-primary-600 hover:text-primary-900 p-1 rounded-md hover:bg-primary-50 transition-colors"
+                              onClick={() => handleCourseView(course)}
+                              title="View course details"
+                            >
                               <Eye className="w-4 h-4" />
                             </button>
-                            <button className="text-gray-600 hover:text-gray-900">
-                              <Edit className="w-4 h-4" />
+                            <button 
+                              className="text-green-600 hover:text-green-900 p-1 rounded-md hover:bg-green-50 transition-colors"
+                              onClick={() => handleCourseUpdate(course)}
+                              title="Update course settings"
+                              disabled={updateCourseMutation.isPending}
+                            >
+                              <Settings className="w-4 h-4" />
                             </button>
                           </div>
                         </td>
@@ -977,6 +1035,26 @@ const ClientDetails: React.FC = () => {
           user={selectedUserForRoleChange}
           clientId={clientId}
           isLoading={changeRoleMutation.isPending}
+        />
+      )}
+
+      {/* Course Update Modal */}
+      {selectedCourse && (
+        <CourseUpdateModal
+          isOpen={isCourseUpdateModalOpen}
+          onClose={closeCourseUpdateModal}
+          onConfirm={handleCourseUpdateConfirm}
+          course={selectedCourse}
+          isLoading={updateCourseMutation.isPending}
+        />
+      )}
+
+      {/* Course Details Modal */}
+      {selectedCourseForDetails && (
+        <CourseDetailsModal
+          isOpen={isCourseDetailsModalOpen}
+          onClose={closeCourseDetailsModal}
+          course={selectedCourseForDetails}
         />
       )}
     </div>

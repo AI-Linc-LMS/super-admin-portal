@@ -554,6 +554,27 @@ class ApiService {
       return mockResponse;
     }
   }
+
+  async updateCourse(clientId: number, courseId: number, courseData: { price?: number; is_free?: boolean; published?: boolean }) {
+    try {
+      const endpoint = `/superadmin/api/clients/${clientId}/courses/${courseId}/update/`;
+      const response = await this.patch(endpoint, courseData);
+      console.log(`✅ Course ${courseId} updated successfully for client ${clientId}:`, response);
+      return response;
+    } catch (error) {
+      console.warn(`⚠️ Failed to update course ${courseId} via API, simulating success`);
+      // Simulate successful course update in demo mode
+      const mockResponse = {
+        message: 'Course updated successfully',
+        course: {
+          id: courseId,
+          ...courseData,
+          updated_at: new Date().toISOString()
+        }
+      };
+      return mockResponse;
+    }
+  }
 }
 
 export const apiService = new ApiService();
