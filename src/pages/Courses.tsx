@@ -13,13 +13,19 @@ import {
   Download,
   Grid,
   List,
+  EyeOff,
+  AlertTriangle,
 } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
+import CourseDetailsModal from '../components/ui/CourseDetailsModal';
+import CourseUpdateModal from '../components/ui/CourseUpdateModal';
 import { Course } from '../types/course';
 import { getDifficultyColor, getStatusColor } from '../utils/helpers';
 import { useCourses } from '../hooks/useApi';
+import { useUpdateCourse } from '../hooks/useClients';
+import toast from 'react-hot-toast';
 
 const Courses: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -27,8 +33,53 @@ const Courses: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'unpublished'>('all');
   const [pricingFilter, setPricingFilter] = useState<'all' | 'free' | 'paid'>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  
+  // Modal state for course details and updates
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+  const [selectedCourseForDetails, setSelectedCourseForDetails] = useState<Course | null>(null);
+  const [isCourseUpdateModalOpen, setIsCourseUpdateModalOpen] = useState(false);
+  const [isCourseDetailsModalOpen, setIsCourseDetailsModalOpen] = useState(false);
 
   const { data: coursesResponse, isLoading, error } = useCourses();
+  const updateCourseMutation = useUpdateCourse();
+
+  // Course handlers
+  const handleCourseView = (course: Course) => {
+    setSelectedCourseForDetails(course);
+    setIsCourseDetailsModalOpen(true);
+  };
+
+  const handleCourseUpdate = (course: Course) => {
+    setSelectedCourse(course);
+    setIsCourseUpdateModalOpen(true);
+  };
+
+  const handleCourseUpdateConfirm = async (courseId: number, courseData: { price?: number; is_free?: boolean; published?: boolean }) => {
+    try {
+      // Note: For global courses, we'll use a mock client ID since this is a global course management
+      // In a real implementation, you might need a different API endpoint for global course updates
+      await updateCourseMutation.mutateAsync({
+        clientId: 1, // Mock client ID for global courses
+        courseId,
+        courseData
+      });
+      toast.success('Course updated successfully!');
+    } catch (error) {
+      console.error('Failed to update course:', error);
+      toast.error('Failed to update course. Please try again.');
+      throw error;
+    }
+  };
+
+  const closeCourseDetailsModal = () => {
+    setIsCourseDetailsModalOpen(false);
+    setSelectedCourseForDetails(null);
+  };
+
+  const closeCourseUpdateModal = () => {
+    setIsCourseUpdateModalOpen(false);
+    setSelectedCourse(null);
+  };
 
   // Mock data for demonstration - updated to match API structure
   const mockCourses: Course[] = [
@@ -129,16 +180,41 @@ const Courses: React.FC = () => {
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.3, delay: index * 0.05 }}
     >
-      <Card glassmorphism hover className="h-full">
+      <Card 
+        glassmorphism 
+        hover 
+        className={`h-full relative ${!course.published ? 'bg-gray-50/80 border-2 border-dashed border-gray-300' : ''}`}
+      >
+        {/* Unpublished overlay banner */}
+        {!course.published && (
+          <div className="absolute top-0 right-0 bg-red-500 text-white px-3 py-1 text-xs font-medium rounded-bl-lg rounded-tr-lg flex items-center gap-1 z-10">
+            <EyeOff className="w-3 h-3" />
+            DRAFT
+          </div>
+        )}
+        
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1">
-            {course.published && (
+            {/* Show unpublished warning instead of featured for unpublished courses */}
+            {!course.published ? (
+              <div className="flex items-center gap-2 mb-2">
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                  <AlertTriangle className="w-3 h-3 mr-1" />
+                  Unpublished
+                </span>
+                <span className="text-xs text-gray-500">Not visible to students</span>
+              </div>
+            ) : (
               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-accent-100 text-accent-700 mb-2">
                 ⭐ Featured
               </span>
             )}
-            <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">{course.title}</h3>
-            <p className="text-sm text-gray-600 mb-3 line-clamp-2">{course.description}</p>
+            <h3 className={`font-semibold mb-2 line-clamp-2 ${!course.published ? 'text-gray-600' : 'text-gray-900'}`}>
+              {course.title}
+            </h3>
+            <p className={`text-sm mb-3 line-clamp-2 ${!course.published ? 'text-gray-500' : 'text-gray-600'}`}>
+              {course.description}
+            </p>
           </div>
         </div>
 
@@ -147,48 +223,62 @@ const Courses: React.FC = () => {
             {course.difficulty_level}
           </span>
           <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(course.published ? 'published' : 'unpublished')}`}>
-            {course.published ? 'Published' : 'Unpublished'}
+            {course.published ? (
+              <>
+                <Eye className="w-3 h-3 mr-1" />
+                Published
+              </>
+            ) : (
+              <>
+                <EyeOff className="w-3 h-3 mr-1" />
+                Unpublished
+              </>
+            )}
           </span>
           <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${course.is_free ? 'bg-secondary-100 text-secondary-700' : 'bg-accent-100 text-accent-700'}`}>
             {course.is_free ? 'Free' : 'Paid'}
           </span>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
-          <div className="flex items-center text-gray-600">
+        <div className={`grid grid-cols-2 gap-4 mb-4 text-sm ${!course.published ? 'text-gray-500' : 'text-gray-600'}`}>
+          <div className="flex items-center">
             <Users className="w-4 h-4 mr-1" />
             {course.enrolled_students_count.toLocaleString()}
           </div>
-          <div className="flex items-center text-gray-600">
+          <div className="flex items-center">
             <Clock className="w-4 h-4 mr-1" />
             {course.duration_in_hours}h
           </div>
-          <div className="flex items-center text-gray-600">
+          <div className="flex items-center">
             <Star className="w-4 h-4 mr-1 text-yellow-500" />
             {course.modules_count}
           </div>
-          <div className="flex items-center text-gray-600">
+          <div className="flex items-center">
             <IndianRupee className="w-4 h-4 mr-1" />
             {course.price ? `₹${course.price}` : 'Free'}
           </div>
         </div>
 
-        <div className="border-t border-gray-200 pt-3">
+        <div className={`border-t border-gray-200 pt-3 ${!course.published ? 'border-gray-300' : ''}`}>
           <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-500">Instructor</span>
-            <span className="font-medium text-gray-900">{course.instructors[0]?.name || 'Unknown'}</span>
+            <span className={!course.published ? 'text-gray-400' : 'text-gray-500'}>Instructor</span>
+            <span className={`font-medium ${!course.published ? 'text-gray-600' : 'text-gray-900'}`}>
+              {course.instructors[0]?.name || 'Unknown'}
+            </span>
           </div>
           <div className="flex items-center justify-between text-sm mt-1">
-            <span className="text-gray-500">Category</span>
-            <span className="text-gray-700">{course.subtitle}</span>
+            <span className={!course.published ? 'text-gray-400' : 'text-gray-500'}>Category</span>
+            <span className={!course.published ? 'text-gray-600' : 'text-gray-700'}>
+              {course.subtitle}
+            </span>
           </div>
         </div>
 
         <div className="flex items-center justify-end gap-2 mt-4">
-          <Button variant="ghost" size="sm">
+          <Button variant="ghost" size="sm" onClick={() => { setSelectedCourseForDetails(course); setIsCourseDetailsModalOpen(true); }}>
             <Eye className="w-4 h-4" />
           </Button>
-          <Button variant="ghost" size="sm">
+          <Button variant="ghost" size="sm" onClick={() => { setSelectedCourse(course); setIsCourseUpdateModalOpen(true); }}>
             <Edit className="w-4 h-4" />
           </Button>
         </div>
@@ -352,14 +442,32 @@ const Courses: React.FC = () => {
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {filteredCourses.map((course) => (
-                    <tr key={course.id} className="hover:bg-gray-50">
+                    <tr 
+                      key={course.id} 
+                      className={`hover:bg-gray-50 ${!course.published ? 'bg-gray-50/50 opacity-75' : ''}`}
+                    >
                       <td className="px-6 py-4">
-                        <div>
-                          <p className="font-medium text-gray-900">{course.title}</p>
-                          <p className="text-sm text-gray-500">{course.instructors[0]?.name || 'Unknown'}</p>
+                        <div className="relative">
+                          {!course.published && (
+                            <div className="absolute -left-2 top-0 bottom-0 w-1 bg-red-400 rounded-full"></div>
+                          )}
+                          <p className={`font-medium ${!course.published ? 'text-gray-600' : 'text-gray-900'}`}>
+                            {course.title}
+                            {!course.published && (
+                              <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700">
+                                <EyeOff className="w-3 h-3 mr-1" />
+                                DRAFT
+                              </span>
+                            )}
+                          </p>
+                          <p className={`text-sm ${!course.published ? 'text-gray-400' : 'text-gray-500'}`}>
+                            {course.instructors[0]?.name || 'Unknown'}
+                          </p>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">{course.subtitle}</td>
+                      <td className={`px-6 py-4 text-sm ${!course.published ? 'text-gray-600' : 'text-gray-900'}`}>
+                        {course.subtitle}
+                      </td>
                       <td className="px-6 py-4">
                         <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getDifficultyColor(course.difficulty_level)}`}>
                           {course.difficulty_level}
@@ -367,25 +475,39 @@ const Courses: React.FC = () => {
                       </td>
                       <td className="px-6 py-4">
                         <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(course.published ? 'published' : 'unpublished')}`}>
-                          {course.published ? 'Published' : 'Unpublished'}
+                          {course.published ? (
+                            <>
+                              <Eye className="w-3 h-3 mr-1" />
+                              Published
+                            </>
+                          ) : (
+                            <>
+                              <EyeOff className="w-3 h-3 mr-1" />
+                              Unpublished
+                            </>
+                          )}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">{course.enrolled_students_count.toLocaleString()}</td>
+                      <td className={`px-6 py-4 text-sm ${!course.published ? 'text-gray-600' : 'text-gray-900'}`}>
+                        {course.enrolled_students_count.toLocaleString()}
+                      </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center">
-                          <Star className="w-4 h-4 text-yellow-400 mr-1" />
-                          <span className="text-sm text-gray-900">{course.modules_count}</span>
+                          <Star className={`w-4 h-4 mr-1 ${!course.published ? 'text-gray-400' : 'text-yellow-400'}`} />
+                          <span className={`text-sm ${!course.published ? 'text-gray-600' : 'text-gray-900'}`}>
+                            {course.modules_count}
+                          </span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
+                      <td className={`px-6 py-4 text-sm ${!course.published ? 'text-gray-600' : 'text-gray-900'}`}>
                         {course.price ? `₹${course.price}` : 'Free'}
                       </td>
                       <td className="px-6 py-4 text-right text-sm font-medium">
                         <div className="flex items-center justify-end gap-2">
-                          <Button variant="ghost" size="sm">
+                          <Button variant="ghost" size="sm" onClick={() => { setSelectedCourseForDetails(course); setIsCourseDetailsModalOpen(true); }}>
                             <Eye className="w-4 h-4" />
                           </Button>
-                          <Button variant="ghost" size="sm">
+                          <Button variant="ghost" size="sm" onClick={() => { setSelectedCourse(course); setIsCourseUpdateModalOpen(true); }}>
                             <Edit className="w-4 h-4" />
                           </Button>
                         </div>
@@ -406,6 +528,26 @@ const Courses: React.FC = () => {
           </div>
         )}
       </motion.div>
+
+      {/* Course Details Modal */}
+      {selectedCourseForDetails && (
+        <CourseDetailsModal
+          isOpen={isCourseDetailsModalOpen}
+          onClose={closeCourseDetailsModal}
+          course={selectedCourseForDetails}
+        />
+      )}
+
+      {/* Course Update Modal */}
+      {selectedCourse && (
+        <CourseUpdateModal
+          isOpen={isCourseUpdateModalOpen}
+          onClose={closeCourseUpdateModal}
+          course={selectedCourse}
+          onConfirm={handleCourseUpdateConfirm}
+          isLoading={updateCourseMutation.isPending}
+        />
+      )}
     </div>
   );
 };
