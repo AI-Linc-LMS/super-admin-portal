@@ -191,7 +191,7 @@ const ChangeRoleModal: React.FC<ChangeRoleModalProps> = ({
             variant="primary"
             onClick={handleSubmit}
             disabled={isSubmitting || selectedRole === user.role}
-            loading={isSubmitting}
+            isLoading={isSubmitting}
           >
             {selectedRole === user.role ? 'No Changes' : 'Change Role'}
           </Button>

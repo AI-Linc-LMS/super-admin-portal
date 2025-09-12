@@ -1,6 +1,6 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { API_BASE_URL, STORAGE_KEYS } from '../utils/constants';
-import { Client } from '../types/client';
+import { Client, ClientDetails } from '../types/client';
 import toast from 'react-hot-toast';
 
 interface ApiError {
@@ -264,9 +264,9 @@ class ApiService {
     }
   }
 
-  async getClientDetails(id: number) {
+  async getClientDetails(id: number): Promise<ClientDetails> {
     try {
-      return await this.get(`/superadmin/api/clients/${id}/`);
+      return await this.get<ClientDetails>(`/superadmin/api/clients/${id}/`);
     } catch (error) {
       console.warn(`⚠️ Failed to fetch client ${id} details from API, using demo data`);
       // Return demo data that matches the new API format

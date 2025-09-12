@@ -14,7 +14,7 @@ export const useClients = (params?: any) => {
 };
 
 export const useClientDetails = (clientId: number) => {
-  return useQuery({
+  return useQuery<ClientDetails | null>({
     queryKey: ['client-details', clientId],
     queryFn: () => apiService.getClientDetails(clientId),
     enabled: !!clientId,
