@@ -79,3 +79,21 @@ export const useToggleClientStatus = () => {
     },
   });
 };
+
+export const useChangeUserRole = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ clientId, userId, newRole }: { 
+      clientId: number; 
+      userId: number; 
+      newRole: string 
+    }) => apiService.changeUserRole(clientId, userId, newRole),
+    onSuccess: (_, { clientId }) => {
+      // Invalidate and refetch client details to update the user lists
+      queryClient.invalidateQueries({ queryKey: ['client-details', clientId] });
+      // Also invalidate clients list in case it affects summary counts
+      queryClient.invalidateQueries({ queryKey: ['clients'] });
+    },
+  });
+};

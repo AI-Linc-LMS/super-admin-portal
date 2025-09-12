@@ -16,6 +16,7 @@ import {
   Calendar,
   Shield,
   ShieldCheck,
+  UserCog,
 } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -24,9 +25,11 @@ import StatsCard from '../components/charts/StatsCard';
 import StudentDetailsModal from '../components/ui/StudentDetailsModal';
 import AdminDetailsModal from '../components/ui/AdminDetailsModal';
 import SuperAdminDetailsModal from '../components/ui/SuperAdminDetailsModal';
+import ChangeRoleModal from '../components/ui/ChangeRoleModal';
 import { formatDate, formatCurrency, getDifficultyColor, getStatusColor } from '../utils/helpers';
-import { useClientDetails } from '../hooks/useApi';
+import { useClientDetails, useChangeUserRole } from '../hooks/useClients';
 import { Student, Admin, SuperAdmin } from '../types/client';
+import toast from 'react-hot-toast';
 
 const ClientDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -50,8 +53,13 @@ const ClientDetails: React.FC = () => {
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
   const [isSuperAdminModalOpen, setIsSuperAdminModalOpen] = useState(false);
 
+  // Role change modal state
+  const [selectedUserForRoleChange, setSelectedUserForRoleChange] = useState<Student | Admin | SuperAdmin | null>(null);
+  const [isChangeRoleModalOpen, setIsChangeRoleModalOpen] = useState(false);
+
   const clientId = parseInt(id || '0');
   const { data: client, isLoading, error } = useClientDetails(clientId);
+  const changeRoleMutation = useChangeUserRole();
 
   const filteredCourses = client?.courses?.filter(course => {
     const matchesSearch = course.title.toLowerCase().includes(courseSearch.toLowerCase());
@@ -164,6 +172,32 @@ const ClientDetails: React.FC = () => {
   const closeSuperAdminModal = () => {
     setIsSuperAdminModalOpen(false);
     setSelectedSuperAdmin(null);
+  };
+
+  // Role change handlers
+  const handleChangeRole = (user: Student | Admin | SuperAdmin) => {
+    setSelectedUserForRoleChange(user);
+    setIsChangeRoleModalOpen(true);
+  };
+
+  const handleRoleChangeConfirm = async (userId: number, newRole: string) => {
+    try {
+      await changeRoleMutation.mutateAsync({
+        clientId,
+        userId,
+        newRole
+      });
+      toast.success(`User role changed to ${newRole} successfully!`);
+    } catch (error) {
+      console.error('Failed to change user role:', error);
+      toast.error('Failed to change user role. Please try again.');
+      throw error; // Re-throw to let the modal handle the error
+    }
+  };
+
+  const closeChangeRoleModal = () => {
+    setIsChangeRoleModalOpen(false);
+    setSelectedUserForRoleChange(null);
   };
 
   if (isLoading) {
@@ -617,6 +651,14 @@ const ClientDetails: React.FC = () => {
                             >
                               <Eye className="w-4 h-4" />
                             </button>
+                            <button
+                              className="text-orange-600 hover:text-orange-900 p-1 rounded-md hover:bg-orange-50 transition-colors"
+                              onClick={() => handleChangeRole(student)}
+                              title="Change user role"
+                              disabled={changeRoleMutation.isPending}
+                            >
+                              <UserCog className="w-4 h-4" />
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -738,6 +780,14 @@ const ClientDetails: React.FC = () => {
                               title="View admin details"
                             >
                               <Eye className="w-4 h-4" />
+                            </button>
+                            <button
+                              className="text-orange-600 hover:text-orange-900 p-1 rounded-md hover:bg-orange-50 transition-colors"
+                              onClick={() => handleChangeRole(admin)}
+                              title="Change user role"
+                              disabled={changeRoleMutation.isPending}
+                            >
+                              <UserCog className="w-4 h-4" />
                             </button>
                           </div>
                         </td>
@@ -861,6 +911,14 @@ const ClientDetails: React.FC = () => {
                             >
                               <Eye className="w-4 h-4" />
                             </button>
+                            <button
+                              className="text-orange-600 hover:text-orange-900 p-1 rounded-md hover:bg-orange-50 transition-colors"
+                              onClick={() => handleChangeRole(superadmin)}
+                              title="Change user role"
+                              disabled={changeRoleMutation.isPending}
+                            >
+                              <UserCog className="w-4 h-4" />
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -907,6 +965,18 @@ const ClientDetails: React.FC = () => {
           isOpen={isSuperAdminModalOpen}
           onClose={closeSuperAdminModal}
           superAdmin={selectedSuperAdmin}
+        />
+      )}
+
+      {/* Change Role Modal */}
+      {selectedUserForRoleChange && (
+        <ChangeRoleModal
+          isOpen={isChangeRoleModalOpen}
+          onClose={closeChangeRoleModal}
+          onConfirm={handleRoleChangeConfirm}
+          user={selectedUserForRoleChange}
+          clientId={clientId}
+          isLoading={changeRoleMutation.isPending}
         />
       )}
     </div>
