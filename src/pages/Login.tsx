@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { motion } from 'framer-motion';
 import { Mail, Lock, LogIn } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../store/authStore';
 import { LoginCredentials } from '../types/auth';
 import Button from '../components/ui/Button';
@@ -12,16 +13,17 @@ import Input from '../components/ui/Input';
 import Card from '../components/ui/Card';
 import { ROUTES } from '../utils/constants';
 
-const loginSchema = z.object({
-  email: z.string().email('Please enter a valid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-});
-
-type LoginFormData = z.infer<typeof loginSchema>;
-
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const { login, isAuthenticated, isLoading } = useAuthStore();
+  const { t } = useTranslation();
+
+  const loginSchema = z.object({
+    email: z.string().email(t('forms.invalidEmail')),
+    password: z.string().min(6, t('forms.passwordTooShort')),
+  });
+
+  type LoginFormData = z.infer<typeof loginSchema>;
 
   const {
     register,
@@ -59,23 +61,23 @@ const Login: React.FC = () => {
               <span className="text-white font-bold text-2xl">AI</span>
             </div>
             <h1 className="text-2xl font-bold text-gray-900 mb-2">SuperAdmin Dashboard</h1>
-            <p className="text-gray-600">Sign in to manage AI-Linc platform</p>
+            <p className="text-gray-600">{t('auth.signInToAccount')}</p>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <Input
-              label="Email Address"
+              label={t('auth.email')}
               type="email"
-              placeholder="Enter your email"
+              placeholder={t('auth.email')}
               leftIcon={<Mail className="w-5 h-5" />}
               error={errors.email?.message}
               {...register('email')}
             />
 
             <Input
-              label="Password"
+              label={t('auth.password')}
               type="password"
-              placeholder="Enter your password"
+              placeholder={t('auth.password')}
               leftIcon={<Lock className="w-5 h-5" />}
               error={errors.password?.message}
               {...register('password')}
@@ -87,7 +89,7 @@ const Login: React.FC = () => {
               isLoading={isLoading}
               leftIcon={<LogIn className="w-5 h-5" />}
             >
-              Sign In
+              {t('auth.signIn')}
             </Button>
           </form>
 

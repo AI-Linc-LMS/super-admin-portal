@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import {
   Search,
   Plus,
@@ -28,6 +29,7 @@ import { useUpdateCourse } from '../hooks/useClients';
 import toast from 'react-hot-toast';
 
 const Courses: React.FC = () => {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [difficultyFilter, setDifficultyFilter] = useState<'all' | 'Easy' | 'Medium' | 'Hard'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'unpublished'>('all');
@@ -63,10 +65,10 @@ const Courses: React.FC = () => {
         courseId,
         courseData
       });
-      toast.success('Course updated successfully!');
+      toast.success(t('messages.itemUpdatedSuccessfully'));
     } catch (error) {
       console.error('Failed to update course:', error);
-      toast.error('Failed to update course. Please try again.');
+      toast.error(t('errors.somethingWentWrong'));
       throw error;
     }
   };
@@ -172,6 +174,26 @@ const Courses: React.FC = () => {
       Modules: course.modules_count,
     }));
     console.log('Exporting courses:', csvData);
+    toast.success(t('messages.dataLoadedSuccessfully'));
+  };
+
+  // Function to get localized difficulty level
+  const getDifficultyLevel = (level: string) => {
+    switch (level.toLowerCase()) {
+      case 'easy':
+        return t('courses.easy');
+      case 'medium':
+        return t('courses.medium');
+      case 'hard':
+        return t('courses.hard');
+      default:
+        return level;
+    }
+  };
+
+  // Function to get localized status
+  const getStatusText = (published: boolean) => {
+    return published ? t('courses.published', { defaultValue: 'Published' }) : t('courses.unpublished', { defaultValue: 'Unpublished' });
   };
 
   const CourseCard: React.FC<{ course: Course; index: number }> = ({ course, index }) => (
@@ -189,7 +211,7 @@ const Courses: React.FC = () => {
         {!course.published && (
           <div className="absolute top-0 right-0 bg-red-500 text-white px-3 py-1 text-xs font-medium rounded-bl-lg rounded-tr-lg flex items-center gap-1 z-10">
             <EyeOff className="w-3 h-3" />
-            DRAFT
+            {t('courses.draft', { defaultValue: 'DRAFT' })}
           </div>
         )}
         
@@ -200,13 +222,13 @@ const Courses: React.FC = () => {
               <div className="flex items-center gap-2 mb-2">
                 <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
                   <AlertTriangle className="w-3 h-3 mr-1" />
-                  Unpublished
+                  {t('courses.unpublished', { defaultValue: 'Unpublished' })}
                 </span>
-                <span className="text-xs text-gray-500">Not visible to students</span>
+                <span className="text-xs text-gray-500">{t('courses.notVisibleToStudents', { defaultValue: 'Not visible to students' })}</span>
               </div>
             ) : (
               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-accent-100 text-accent-700 mb-2">
-                ⭐ Featured
+                ⭐ {t('courses.featured', { defaultValue: 'Featured' })}
               </span>
             )}
             <h3 className={`font-semibold mb-2 line-clamp-2 ${!course.published ? 'text-gray-600' : 'text-gray-900'}`}>
@@ -220,23 +242,23 @@ const Courses: React.FC = () => {
 
         <div className="flex items-center gap-2 mb-3">
           <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getDifficultyColor(course.difficulty_level)}`}>
-            {course.difficulty_level}
+            {getDifficultyLevel(course.difficulty_level)}
           </span>
           <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(course.published ? 'published' : 'unpublished')}`}>
             {course.published ? (
               <>
                 <Eye className="w-3 h-3 mr-1" />
-                Published
+                {t('courses.published', { defaultValue: 'Published' })}
               </>
             ) : (
               <>
                 <EyeOff className="w-3 h-3 mr-1" />
-                Unpublished
+                {t('courses.unpublished', { defaultValue: 'Unpublished' })}
               </>
             )}
           </span>
           <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${course.is_free ? 'bg-secondary-100 text-secondary-700' : 'bg-accent-100 text-accent-700'}`}>
-            {course.is_free ? 'Free' : 'Paid'}
+            {course.is_free ? t('courses.free', { defaultValue: 'Free' }) : t('courses.paid', { defaultValue: 'Paid' })}
           </span>
         </div>
 
@@ -247,7 +269,7 @@ const Courses: React.FC = () => {
           </div>
           <div className="flex items-center">
             <Clock className="w-4 h-4 mr-1" />
-            {course.duration_in_hours}h
+            {course.duration_in_hours}{t('dashboard.hours')}
           </div>
           <div className="flex items-center">
             <Star className="w-4 h-4 mr-1 text-yellow-500" />
@@ -255,19 +277,19 @@ const Courses: React.FC = () => {
           </div>
           <div className="flex items-center">
             <IndianRupee className="w-4 h-4 mr-1" />
-            {course.price ? `₹${course.price}` : 'Free'}
+            {course.price ? `₹${course.price}` : t('courses.free', { defaultValue: 'Free' })}
           </div>
         </div>
 
         <div className={`border-t border-gray-200 pt-3 ${!course.published ? 'border-gray-300' : ''}`}>
           <div className="flex items-center justify-between text-sm">
-            <span className={!course.published ? 'text-gray-400' : 'text-gray-500'}>Instructor</span>
+            <span className={!course.published ? 'text-gray-400' : 'text-gray-500'}>{t('courses.instructor')}</span>
             <span className={`font-medium ${!course.published ? 'text-gray-600' : 'text-gray-900'}`}>
-              {course.instructors[0]?.name || 'Unknown'}
+              {course.instructors[0]?.name || t('common.noDataAvailable')}
             </span>
           </div>
           <div className="flex items-center justify-between text-sm mt-1">
-            <span className={!course.published ? 'text-gray-400' : 'text-gray-500'}>Category</span>
+            <span className={!course.published ? 'text-gray-400' : 'text-gray-500'}>{t('courses.category')}</span>
             <span className={!course.published ? 'text-gray-600' : 'text-gray-700'}>
               {course.subtitle}
             </span>
@@ -291,7 +313,7 @@ const Courses: React.FC = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="loading-spinner h-8 w-8"></div>
-        <span className="ml-3 text-gray-600">Loading courses...</span>
+        <span className="ml-3 text-gray-600">{t('courses.loadingCourses')}</span>
       </div>
     );
   }
@@ -313,7 +335,7 @@ const Courses: React.FC = () => {
             </div>
             <div className="ml-3">
               <p className="text-sm text-yellow-800">
-                <strong>Demo Mode:</strong> Unable to connect to API. Showing demo data for preview purposes.
+                <strong>{t('dashboard.demoMode')}:</strong> {t('dashboard.apiWarning')}
               </p>
             </div>
           </div>
@@ -328,8 +350,8 @@ const Courses: React.FC = () => {
         className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
       >
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">AI-Linc Courses</h1>
-          <p className="text-gray-600">Manage global AI-Linc course catalog</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('courses.title')}</h1>
+          <p className="text-gray-600">{t('courses.subtitle', { defaultValue: 'Manage global AI-Linc course catalog' })}</p>
         </div>
         
         <div className="flex items-center gap-3">
@@ -354,10 +376,10 @@ const Courses: React.FC = () => {
             leftIcon={<Download className="w-4 h-4" />}
             onClick={exportCourses}
           >
-            Export
+            {t('common.export', { defaultValue: 'Export' })}
           </Button>
           <Button leftIcon={<Plus className="w-4 h-4" />}>
-            Add Course
+            {t('courses.addCourse')}
           </Button>
         </div>
       </motion.div>
@@ -372,7 +394,7 @@ const Courses: React.FC = () => {
           <div className="flex flex-col lg:flex-row gap-4">
             <div className="flex-1">
               <Input
-                placeholder="Search courses..."
+                placeholder={t('courses.searchCourses')}
                 leftIcon={<Search className="w-4 h-4" />}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -384,28 +406,28 @@ const Courses: React.FC = () => {
                 onChange={(e) => setDifficultyFilter(e.target.value as any)}
                 className="px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
-                <option value="all">All Difficulties</option>
-                <option value="Easy">Easy</option>
-                <option value="Medium">Medium</option>
-                <option value="Hard">Hard</option>
+                <option value="all">{t('filters.all')} {t('courses.difficultyLevel')}</option>
+                <option value="Easy">{t('courses.easy')}</option>
+                <option value="Medium">{t('courses.medium')}</option>
+                <option value="Hard">{t('courses.hard')}</option>
               </select>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value as any)}
                 className="px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
-                <option value="all">All Status</option>
-                <option value="published">Published</option>
-                <option value="unpublished">Unpublished</option>
+                <option value="all">{t('filters.all')} {t('clients.status')}</option>
+                <option value="published">{t('courses.published', { defaultValue: 'Published' })}</option>
+                <option value="unpublished">{t('courses.unpublished', { defaultValue: 'Unpublished' })}</option>
               </select>
               <select
                 value={pricingFilter}
                 onChange={(e) => setPricingFilter(e.target.value as any)}
                 className="px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
-                <option value="all">All Pricing</option>
-                <option value="free">Free</option>
-                <option value="paid">Paid</option>
+                <option value="all">{t('filters.all')} {t('courses.pricing', { defaultValue: 'Pricing' })}</option>
+                <option value="free">{t('courses.free', { defaultValue: 'Free' })}</option>
+                <option value="paid">{t('courses.paid', { defaultValue: 'Paid' })}</option>
               </select>
             </div>
           </div>
@@ -523,8 +545,8 @@ const Courses: React.FC = () => {
         {filteredCourses.length === 0 && (
           <div className="text-center py-12">
             <BookOpen className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No courses found</h3>
-            <p className="text-gray-500">Try adjusting your search or filter criteria</p>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">{t('courses.noCoursesAvailable')}</h3>
+            <p className="text-gray-500">{t('filters.tryAdjusting', { defaultValue: 'Try adjusting your search or filter criteria' })}</p>
           </div>
         )}
       </motion.div>

@@ -11,43 +11,40 @@ import {
   ChevronLeft,
   Menu,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../store/authStore';
 import { useUIStore } from '../../store/uiStore';
 import { cn } from '../../utils/helpers';
 import { ROUTES } from '../../utils/constants';
 
-const navigation = [
-  {
-    name: 'Dashboard',
-    href: ROUTES.DASHBOARD,
-    icon: LayoutDashboard,
-  },
-  {
-    name: 'Clients',
-    href: ROUTES.CLIENTS,
-    icon: Users,
-  },
-  {
-    name: 'Courses',
-    href: ROUTES.COURSES,
-    icon: BookOpen,
-  },
-  {
-    name: 'Analytics',
-    href: ROUTES.ANALYTICS,
-    icon: BarChart3,
-  },
-  {
-    name: 'Settings',
-    href: ROUTES.SETTINGS,
-    icon: Settings,
-  },
-];
-
 const Sidebar: React.FC = () => {
   const location = useLocation();
   const { logout } = useAuthStore();
   const { sidebarCollapsed, isMobile, sidebarOpen, toggleSidebar, setSidebarOpen } = useUIStore();
+  const { t } = useTranslation();
+
+  const navigation = [
+    {
+      name: t('navigation.dashboard'),
+      href: ROUTES.DASHBOARD,
+      icon: LayoutDashboard,
+    },
+    {
+      name: t('navigation.clients'),
+      href: ROUTES.CLIENTS,
+      icon: Users,
+    },
+    {
+      name: t('navigation.courses'),
+      href: ROUTES.COURSES,
+      icon: BookOpen,
+    },
+    {
+      name: t('navigation.settings'),
+      href: ROUTES.SETTINGS,
+      icon: Settings,
+    },
+  ];
 
   const handleLogout = () => {
     logout();
@@ -201,7 +198,7 @@ const Sidebar: React.FC = () => {
                   exit="collapsed"
                   className="ml-3 font-medium text-gray-700 group-hover:text-danger-600 transition-colors duration-200"
                 >
-                  Logout
+                  {t('navigation.logout')}
                 </motion.span>
               )}
             </AnimatePresence>

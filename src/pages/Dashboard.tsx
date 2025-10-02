@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Users,
   GraduationCap,
@@ -18,6 +19,7 @@ import { DEBUG_MODE } from '../utils/constants';
 const Dashboard: React.FC = () => {
   console.log('📊 Dashboard component rendered');
   const navigate = useNavigate();
+  const { t } = useTranslation();
   
   const { data: dashboardStats, isLoading: statsLoading, error: statsError } = useDashboardStats();
   const { data: coursesData, isLoading: coursesLoading, error: coursesError } = useCourses();
@@ -63,7 +65,7 @@ const Dashboard: React.FC = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="loading-spinner h-8 w-8"></div>
-        <span className="ml-3 text-gray-600">Loading dashboard data...</span>
+        <span className="ml-3 text-gray-600">{t('common.loadingDashboard')}</span>
       </div>
     );
   }
@@ -72,6 +74,20 @@ const Dashboard: React.FC = () => {
   const courses = coursesData?.courses?.slice(0, 4) || [];
   const clients = clientsData?.slice(0, 4) || [];
   const showApiWarning = !dashboardStats || !coursesData || !clientsData;
+
+  // Function to get localized difficulty level
+  const getDifficultyLevel = (level: string) => {
+    switch (level.toLowerCase()) {
+      case 'easy':
+        return t('courses.easy');
+      case 'medium':
+        return t('courses.medium');
+      case 'hard':
+        return t('courses.hard');
+      default:
+        return level;
+    }
+  };
 
   return (
     <div className="space-y-8">
@@ -90,7 +106,7 @@ const Dashboard: React.FC = () => {
             </div>
             <div className="ml-3">
               <p className="text-sm text-yellow-800">
-                <strong>Demo Mode:</strong> Some API calls may be using fallback data for preview purposes.
+                <strong>{t('dashboard.demoMode')}:</strong> {t('dashboard.apiWarning')}
               </p>
             </div>
           </div>
@@ -103,8 +119,8 @@ const Dashboard: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard Overview</h1>
-        <p className="text-gray-600">Welcome to the AI-Linc SuperAdmin Dashboard</p>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('dashboard.overview')}</h1>
+        <p className="text-gray-600">{t('dashboard.welcome')}</p>
       </motion.div>
 
       {/* Statistics Cards */}
@@ -115,26 +131,26 @@ const Dashboard: React.FC = () => {
         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
       >
         <StatsCard
-          title="Total Students"
+          title={t('dashboard.totalStudents')}
           value={stats.total_students}
           icon={GraduationCap}
           color="primary"
           format="number"
         />
         <StatsCard
-          title="Total Clients"
+          title={t('dashboard.totalClients')}
           value={stats.total_clients}
           icon={Building2}
           color="secondary"
         />
         <StatsCard
-          title="Total Courses"
+          title={t('dashboard.totalCourses')}
           value={stats.total_courses}
           icon={BookOpen}
           color="accent"
         />
         <StatsCard
-          title="Active Clients"
+          title={t('dashboard.activeClients')}
           value={stats.total_active_clients}
           icon={UserCheck}
           color="primary"
@@ -151,13 +167,13 @@ const Dashboard: React.FC = () => {
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center">
             <BookOpen className="h-6 w-6 text-primary-600 mr-2" />
-            <h2 className="text-xl font-semibold text-gray-900">Recent Courses</h2>
+            <h2 className="text-xl font-semibold text-gray-900">{t('dashboard.recentCourses')}</h2>
           </div>
           <button
             onClick={() => navigate('/courses')}
             className="flex items-center text-primary-600 hover:text-primary-700 font-medium transition-colors"
           >
-            View All Courses
+            {t('dashboard.viewAllCourses')}
             <ChevronRight className="h-4 w-4 ml-1" />
           </button>
         </div>
@@ -175,22 +191,22 @@ const Dashboard: React.FC = () => {
                   course.difficulty_level === 'Medium' ? 'bg-yellow-100 text-yellow-800' :
                   'bg-red-100 text-red-800'
                 }`}>
-                  {course.difficulty_level}
+                  {getDifficultyLevel(course.difficulty_level)}
                 </span>
               </div>
               <p className="text-sm text-gray-600 mb-3 line-clamp-2">{course.description}</p>
               <div className="flex items-center justify-between text-sm text-gray-500">
                 <div className="flex items-center">
                   <Clock className="h-4 w-4 mr-1" />
-                  {course.duration_in_hours}h
+                  {course.duration_in_hours}{t('dashboard.hours')}
                 </div>
                 <div className="flex items-center">
                   <Users className="h-4 w-4 mr-1" />
-                  {course.enrolled_students_count} students
+                  {course.enrolled_students_count} {t('dashboard.students')}
                 </div>
                 <div className="flex items-center">
                   <Award className="h-4 w-4 mr-1" />
-                  {course.modules_count} modules
+                  {course.modules_count} {t('dashboard.modules')}
                 </div>
               </div>
             </div>
@@ -200,7 +216,7 @@ const Dashboard: React.FC = () => {
         {courses.length === 0 && (
           <div className="text-center py-8 text-gray-500">
             <BookOpen className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-            <p>No courses available</p>
+            <p>{t('courses.noCoursesAvailable')}</p>
           </div>
         )}
       </motion.div>
@@ -215,13 +231,13 @@ const Dashboard: React.FC = () => {
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center">
             <Building2 className="h-6 w-6 text-primary-600 mr-2" />
-            <h2 className="text-xl font-semibold text-gray-900">Recent Clients</h2>
+            <h2 className="text-xl font-semibold text-gray-900">{t('dashboard.recentClients')}</h2>
           </div>
           <button
             onClick={() => navigate('/clients')}
             className="flex items-center text-primary-600 hover:text-primary-700 font-medium transition-colors"
           >
-            View All Clients
+            {t('dashboard.viewAllClients')}
             <ChevronRight className="h-4 w-4 ml-1" />
           </button>
         </div>
@@ -245,11 +261,11 @@ const Dashboard: React.FC = () => {
               <div className="flex items-center justify-between text-sm text-gray-500">
                 <div className="flex items-center">
                   <GraduationCap className="h-4 w-4 mr-1" />
-                  {client.total_students} students
+                  {client.total_students} {t('dashboard.students')}
                 </div>
                 <div className="flex items-center">
                   <BookOpen className="h-4 w-4 mr-1" />
-                  {client.total_courses} courses
+                  {client.total_courses} {t('navigation.courses').toLowerCase()}
                 </div>
               </div>
             </div>
@@ -259,7 +275,7 @@ const Dashboard: React.FC = () => {
         {clients.length === 0 && (
           <div className="text-center py-8 text-gray-500">
             <Building2 className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-            <p>No clients available</p>
+            <p>{t('clients.noClientsAvailable')}</p>
           </div>
         )}
       </motion.div>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Search,
   Plus,
@@ -27,6 +28,7 @@ import { formatDate, formatNumber, getStatusColor } from '../utils/helpers';
 import toast from 'react-hot-toast';
 
 const Clients: React.FC = () => {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -203,10 +205,13 @@ const Clients: React.FC = () => {
   const handleToggleStatus = async (clientId: number, newStatus: boolean) => {
     try {
       await toggleStatusMutation.mutateAsync({ id: clientId, isActive: newStatus });
-      toast.success(`Client ${newStatus ? 'activated' : 'deactivated'} successfully!`);
+      const message = newStatus 
+        ? t('messages.itemUpdatedSuccessfully') 
+        : t('messages.itemUpdatedSuccessfully');
+      toast.success(message);
     } catch (error) {
       console.error('Status toggle error:', error);
-      toast.error('Failed to update client status. Please try again.');
+      toast.error(t('errors.somethingWentWrong'));
       throw error;
     }
   };
@@ -244,7 +249,12 @@ const Clients: React.FC = () => {
     link.click();
     document.body.removeChild(link);
     
-    toast.success('Client data exported successfully!');
+    toast.success(t('messages.dataLoadedSuccessfully'));
+  };
+
+  // Function to get localized status text
+  const getStatusText = (isActive: boolean) => {
+    return isActive ? t('clients.active') : t('clients.inactive');
   };
 
   const ClientCard: React.FC<{ client: Client; index: number }> = ({ client, index }) => (
@@ -304,7 +314,7 @@ const Clients: React.FC = () => {
                 ? 'bg-red-100 text-red-800'
                 : 'bg-green-100 text-green-800'
             }`}>
-              {client.is_active === false ? 'Inactive' : 'Active'}
+              {getStatusText(client.is_active !== false)}
             </span>
           </div>
         </div>
@@ -314,7 +324,7 @@ const Clients: React.FC = () => {
           <div className="flex items-center gap-2 mb-4 p-2 bg-orange-50 border border-orange-200 rounded-lg">
             <AlertCircle className="w-4 h-4 text-orange-500 flex-shrink-0" />
             <span className="text-sm text-orange-700">
-              This client is currently inactive and cannot access the platform.
+              {t('clients.inactiveWarning', { defaultValue: 'This client is currently inactive and cannot access the platform.' })}
             </span>
           </div>
         )}
@@ -324,13 +334,13 @@ const Clients: React.FC = () => {
             client.is_active === false ? 'text-gray-400' : 'text-gray-600'
           }`}>
             <Users className="w-4 h-4 mr-2" />
-            {formatNumber(client.total_students)} students
+            {formatNumber(client.total_students)} {t('dashboard.students')}
           </div>
           <div className={`flex items-center text-sm transition-colors duration-300 ${
             client.is_active === false ? 'text-gray-400' : 'text-gray-600'
           }`}>
             <BookOpen className="w-4 h-4 mr-2" />
-            {client.total_courses} courses
+            {client.total_courses} {t('navigation.courses').toLowerCase()}
           </div>
           {client.monthly_revenue && (
             <div className={`flex items-center text-sm transition-colors duration-300 ${
@@ -344,26 +354,32 @@ const Clients: React.FC = () => {
             client.is_active === false ? 'text-gray-400' : 'text-gray-600'
           }`}>
             <MapPin className="w-4 h-4 mr-2" />
-            {client.industry || 'Not specified'}
+            {client.industry || t('common.noDataAvailable')}
           </div>
         </div>
 
         <div className="border-t border-gray-200 pt-3">
           <div className={`flex items-center justify-between text-sm transition-colors duration-300`}>
-            <span className={client.is_active === false ? 'text-gray-400' : 'text-gray-500'}>Contact</span>
+            <span className={client.is_active === false ? 'text-gray-400' : 'text-gray-500'}>
+              {t('clients.contact', { defaultValue: 'Contact' })}
+            </span>
             <span className={client.is_active === false ? 'text-gray-500' : 'text-gray-900'}>
-              {client.poc_name || client.contact_person || 'Not available'}
+              {client.poc_name || client.contact_person || t('common.noDataAvailable')}
             </span>
           </div>
           <div className="flex items-center justify-between text-sm mt-1">
-            <span className={client.is_active === false ? 'text-gray-400' : 'text-gray-500'}>Joined</span>
+            <span className={client.is_active === false ? 'text-gray-400' : 'text-gray-500'}>
+              {t('clients.joinedDate')}
+            </span>
             <span className={client.is_active === false ? 'text-gray-500' : 'text-gray-700'}>
               {formatDate(client.joining_date || client.created_at)}
             </span>
           </div>
           {client.email && (
             <div className="flex items-center justify-between text-sm mt-1">
-              <span className={client.is_active === false ? 'text-gray-400' : 'text-gray-500'}>Email</span>
+              <span className={client.is_active === false ? 'text-gray-400' : 'text-gray-500'}>
+                {t('clients.email')}
+              </span>
               <span className={`truncate transition-colors duration-300 ${
                 client.is_active === false ? 'text-gray-500' : 'text-gray-700'
               }`}>
@@ -376,7 +392,7 @@ const Clients: React.FC = () => {
         {/* Status Toggle Section */}
         <div className="border-t border-gray-200 pt-3 mt-4">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-medium text-gray-700">Client Status</span>
+            <span className="text-sm font-medium text-gray-700">{t('clients.status')}</span>
             <StatusToggle
               isActive={client.is_active !== false}
               onToggle={(newStatus) => handleToggleStatus(client.id, newStatus)}
@@ -394,11 +410,11 @@ const Clients: React.FC = () => {
             onClick={() => handleOpenEditModal(client)}
             disabled={toggleStatusMutation.isPending}
           >
-            Edit
+            {t('common.edit')}
           </Button>
           <Link to={`/clients/${client.id}`}>
             <Button variant="outline" size="sm" leftIcon={<Eye className="w-4 h-4" />}>
-              View Details
+              {t('common.view')} {t('clients.clientDetails')}
             </Button>
           </Link>
         </div>
@@ -411,7 +427,7 @@ const Clients: React.FC = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="loading-spinner h-8 w-8"></div>
-        <span className="ml-3 text-gray-600">Loading clients...</span>
+        <span className="ml-3 text-gray-600">{t('clients.loadingClients')}</span>
       </div>
     );
   }
@@ -433,7 +449,7 @@ const Clients: React.FC = () => {
             </div>
             <div className="ml-3">
               <p className="text-sm text-yellow-800">
-                <strong>Demo Mode:</strong> Unable to connect to API. Showing demo data for preview purposes.
+                <strong>{t('dashboard.demoMode')}:</strong> {t('dashboard.apiWarning')}
               </p>
             </div>
           </div>
@@ -448,8 +464,8 @@ const Clients: React.FC = () => {
         className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
       >
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Clients</h1>
-          <p className="text-gray-600">Manage your AI-Linc platform clients</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('clients.title')}</h1>
+          <p className="text-gray-600">{t('clients.subtitle', { defaultValue: 'Manage your AI-Linc platform clients' })}</p>
         </div>
         
         <div className="flex items-center gap-3">
@@ -474,10 +490,10 @@ const Clients: React.FC = () => {
             leftIcon={<Download className="w-4 h-4" />}
             onClick={exportClients}
           >
-            Export
+            {t('common.export', { defaultValue: 'Export' })}
           </Button>
           <Button leftIcon={<Plus className="w-4 h-4" />} onClick={handleOpenCreateModal}>
-            Add Client
+            {t('clients.addClient')}
           </Button>
         </div>
       </motion.div>
@@ -492,7 +508,7 @@ const Clients: React.FC = () => {
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
               <Input
-                placeholder="Search clients..."
+                placeholder={t('clients.searchClients')}
                 leftIcon={<Search className="w-4 h-4" />}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -504,9 +520,9 @@ const Clients: React.FC = () => {
                 onChange={(e) => setStatusFilter(e.target.value as any)}
                 className="px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
-                <option value="all">All Status</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
+                <option value="all">{t('filters.all')} {t('clients.status')}</option>
+                <option value="active">{t('clients.active')}</option>
+                <option value="inactive">{t('clients.inactive')}</option>
               </select>
             </div>
           </div>
@@ -591,7 +607,7 @@ const Clients: React.FC = () => {
                             ? 'bg-red-100 text-red-800'
                             : 'bg-green-100 text-green-800'
                         }`}>
-                          {client.is_active === false ? 'Inactive' : 'Active'}
+                          {getStatusText(client.is_active !== false)}
                         </span>
                       </td>
                       <td className={`px-6 py-4 text-sm transition-colors duration-300 ${
@@ -626,11 +642,11 @@ const Clients: React.FC = () => {
                             onClick={() => handleOpenEditModal(client)}
                             disabled={toggleStatusMutation.isPending}
                           >
-                            Edit
+                            {t('common.edit')}
                           </Button>
                           <Link to={`/clients/${client.id}`}>
                             <Button variant="outline" size="sm" leftIcon={<Eye className="w-4 h-4" />}>
-                              View
+                              {t('common.view')}
                             </Button>
                           </Link>
                         </div>
@@ -646,8 +662,8 @@ const Clients: React.FC = () => {
         {filteredClients.length === 0 && (
           <div className="text-center py-12">
             <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No clients found</h3>
-            <p className="text-gray-500">Try adjusting your search or filter criteria</p>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">{t('clients.noClientsAvailable')}</h3>
+            <p className="text-gray-500">{t('filters.tryAdjusting', { defaultValue: 'Try adjusting your search or filter criteria' })}</p>
           </div>
         )}
       </motion.div>

@@ -1,13 +1,16 @@
 import React from 'react';
 import { Bell, Search, User, Menu } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../store/authStore';
 import { useUIStore } from '../../store/uiStore';
 import { generateInitials } from '../../utils/helpers';
 import Button from '../ui/Button';
+import LanguageSwitcher from '../ui/LanguageSwitcher';
 
 const Header: React.FC = () => {
   const { user } = useAuthStore();
   const { isMobile, setSidebarOpen } = useUIStore();
+  const { t } = useTranslation();
 
   const userInitials = user 
     ? generateInitials(user.first_name, user.last_name)
@@ -32,13 +35,16 @@ const Header: React.FC = () => {
             </div>
             <input
               type="text"
-              placeholder="Search..."
+              placeholder={t('common.search')}
               className="block w-full pl-10 pr-3 py-2 border border-white/20 rounded-lg bg-white/10 backdrop-blur-sm placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             />
           </div>
         </div>
 
         <div className="flex items-center space-x-4">
+          {/* Language Switcher */}
+          <LanguageSwitcher />
+
           {/* Notifications */}
           <button className="relative p-2 text-gray-600 hover:text-gray-900 rounded-lg hover:bg-white/10 transition-colors duration-200">
             <Bell className="w-5 h-5" />

@@ -11,6 +11,7 @@ import Courses from './pages/Courses';
 import Settings from './pages/Settings';
 import { useAuthStore } from './store/authStore';
 import { ROUTES } from './utils/constants';
+import './i18n'; // Initialize i18n
 
 // Create a client for React Query
 const queryClient = new QueryClient({
