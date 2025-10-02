@@ -35,6 +35,10 @@ export interface Client {
   contact_person?: string;
   industry?: string;
   expiry_date?: string;
+
+  api_url?: string;
+  google_client_id?: string;
+  payment_encryption_key?: string;
 }
 
 export interface ClientDetails extends Client {
