@@ -16,6 +16,15 @@ export const API_ENDPOINTS = {
   
   // AI-Linc Courses
   AI_LINC_COURSES: '/superadmin/api/ai-linc/courses/',
+
+  // Course Operations
+  COURSE_OPERATIONS: {
+    DUPLICATE: '/lms/course-operations/duplicate/',
+    BULK_DUPLICATE: '/lms/course-operations/bulk-duplicate/',
+    DELETE: '/lms/course-operations/delete/',
+    STATUS: (operationId: string) => `/lms/course-operations/${operationId}/status/`,
+    LIST: '/lms/course-operations/',
+  },
 } as const;
 
 export const ROUTES = {

@@ -18,6 +18,8 @@ import {
   ShieldCheck,
   UserCog,
   Settings,
+  Copy,
+  Trash2,
 } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -29,9 +31,18 @@ import SuperAdminDetailsModal from '../components/ui/SuperAdminDetailsModal';
 import ChangeRoleModal from '../components/ui/ChangeRoleModal';
 import CourseUpdateModal from '../components/ui/CourseUpdateModal';
 import CourseDetailsModal from '../components/ui/CourseDetailsModal';
+import CourseDuplicationModal from '../components/ui/CourseDuplicationModal';
+import CourseDeletionModal from '../components/ui/CourseDeletionModal';
+import OperationProgressModal from '../components/ui/OperationProgressModal';
 import Modal from '../components/ui/Modal';
 import { formatDate, formatCurrency, getDifficultyColor, getStatusColor } from '../utils/helpers';
-import { useClientDetails, useChangeUserRole, useUpdateCourse } from '../hooks/useClients';
+import { 
+  useClientDetails, 
+  useChangeUserRole, 
+  useUpdateCourse,
+  useDuplicateCourse,
+  useDeleteCourse 
+} from '../hooks/useClients';
 import { Student, Admin, SuperAdmin, ClientCourse } from '../types/client';
 import toast from 'react-hot-toast';
 import { getSiteByName, createSite } from '../services/netlify';
@@ -70,6 +81,15 @@ const ClientDetails: React.FC = () => {
   const [selectedCourseForDetails, setSelectedCourseForDetails] = useState<ClientCourse | null>(null);
   const [isCourseDetailsModalOpen, setIsCourseDetailsModalOpen] = useState(false);
 
+  // Course Operations modal state
+  const [selectedCourseForDuplication, setSelectedCourseForDuplication] = useState<ClientCourse | null>(null);
+  const [selectedCourseForDeletion, setSelectedCourseForDeletion] = useState<ClientCourse | null>(null);
+  const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isProgressModalOpen, setIsProgressModalOpen] = useState(false);
+  const [currentOperationId, setCurrentOperationId] = useState<string>('');
+  const [currentOperationType, setCurrentOperationType] = useState<'duplicate' | 'bulk_duplicate' | 'delete'>('duplicate');
+
   // Netlify deploy modal state
   const [isDeployModalOpen, setIsDeployModalOpen] = useState(false);
   const [deployEnv, setDeployEnv] = useState({
@@ -86,6 +106,8 @@ const ClientDetails: React.FC = () => {
   const { data: client, isLoading, error } = useClientDetails(clientId);
   const changeRoleMutation = useChangeUserRole();
   const updateCourseMutation = useUpdateCourse();
+  const duplicateCourseMutation = useDuplicateCourse();
+  const deleteCourseMutation = useDeleteCourse();
 
   const [netlifyStatus, setNetlifyStatus] = useState<'checking' | 'deployed' | 'not-deployed' | 'error'>('checking');
   const [netlifySite, setNetlifySite] = useState<any>(null);
@@ -325,6 +347,85 @@ const ClientDetails: React.FC = () => {
   const closeCourseDetailsModal = () => {
     setIsCourseDetailsModalOpen(false);
     setSelectedCourseForDetails(null);
+  };
+
+  // Course Operations handlers
+  const handleCourseDuplicate = (course: ClientCourse) => {
+    setSelectedCourseForDuplication(course);
+    setIsDuplicateModalOpen(true);
+  };
+
+  const handleCourseDelete = (course: ClientCourse) => {
+    setSelectedCourseForDeletion(course);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleDuplicateConfirm = async (courseId: number, fromClientId: number, toClientId: number) => {
+    try {
+      const response = await duplicateCourseMutation.mutateAsync({
+        course_id: courseId,
+        from_client_id: fromClientId,
+        to_client_id: toClientId,
+      });
+      
+      // Show progress modal
+      setCurrentOperationId(response.operation_id);
+      setCurrentOperationType('duplicate');
+      setIsProgressModalOpen(true);
+      
+      toast.success('Course duplication initiated successfully!');
+    } catch (error) {
+      console.error('Failed to initiate course duplication:', error);
+      toast.error('Failed to initiate course duplication. Please try again.');
+      throw error;
+    }
+  };
+
+  const handleDeleteConfirm = async (courseId: number, clientId: number) => {
+    try {
+      const response = await deleteCourseMutation.mutateAsync({
+        course_id: courseId,
+        client_id: clientId,
+        confirm_deletion: true,
+      });
+      
+      // Show progress modal
+      setCurrentOperationId(response.operation_id);
+      setCurrentOperationType('delete');
+      setIsProgressModalOpen(true);
+      
+      toast.success('Course deletion initiated successfully!');
+    } catch (error) {
+      console.error('Failed to initiate course deletion:', error);
+      toast.error('Failed to initiate course deletion. Please try again.');
+      throw error;
+    }
+  };
+
+  const closeDuplicateModal = () => {
+    setIsDuplicateModalOpen(false);
+    setSelectedCourseForDuplication(null);
+  };
+
+  const closeDeleteModal = () => {
+    setIsDeleteModalOpen(false);
+    setSelectedCourseForDeletion(null);
+  };
+
+  const closeProgressModal = () => {
+    setIsProgressModalOpen(false);
+    setCurrentOperationId('');
+  };
+
+  const handleOperationComplete = (result: any) => {
+    // Handle successful operation completion
+    if (currentOperationType === 'duplicate') {
+      toast.success(`Course duplicated successfully! New course ID: ${result.new_course_id}`);
+    } else if (currentOperationType === 'delete') {
+      toast.success('Course deleted successfully!');
+      // Refresh client details to update course list
+      window.location.reload();
+    }
   };
 
   if (isLoading) {
@@ -709,6 +810,22 @@ const ClientDetails: React.FC = () => {
                               disabled={updateCourseMutation.isPending}
                             >
                               <Settings className="w-4 h-4" />
+                            </button>
+                            <button 
+                              className="text-blue-600 hover:text-blue-900 p-1 rounded-md hover:bg-blue-50 transition-colors"
+                              onClick={() => handleCourseDuplicate(course)}
+                              title="Duplicate course to another client"
+                              disabled={duplicateCourseMutation.isPending}
+                            >
+                              <Copy className="w-4 h-4" />
+                            </button>
+                            <button 
+                              className="text-red-600 hover:text-red-900 p-1 rounded-md hover:bg-red-50 transition-colors"
+                              onClick={() => handleCourseDelete(course)}
+                              title="Delete course permanently"
+                              disabled={deleteCourseMutation.isPending}
+                            >
+                              <Trash2 className="w-4 h-4" />
                             </button>
                           </div>
                         </td>
@@ -1178,6 +1295,41 @@ const ClientDetails: React.FC = () => {
           isOpen={isCourseDetailsModalOpen}
           onClose={closeCourseDetailsModal}
           course={selectedCourseForDetails}
+        />
+      )}
+
+      {/* Course Duplication Modal */}
+      {selectedCourseForDuplication && (
+        <CourseDuplicationModal
+          isOpen={isDuplicateModalOpen}
+          onClose={closeDuplicateModal}
+          onConfirm={handleDuplicateConfirm}
+          course={selectedCourseForDuplication}
+          currentClientId={clientId}
+          isLoading={duplicateCourseMutation.isPending}
+        />
+      )}
+
+      {/* Course Deletion Modal */}
+      {selectedCourseForDeletion && (
+        <CourseDeletionModal
+          isOpen={isDeleteModalOpen}
+          onClose={closeDeleteModal}
+          onConfirm={handleDeleteConfirm}
+          course={selectedCourseForDeletion}
+          clientId={clientId}
+          isLoading={deleteCourseMutation.isPending}
+        />
+      )}
+
+      {/* Operation Progress Modal */}
+      {currentOperationId && (
+        <OperationProgressModal
+          isOpen={isProgressModalOpen}
+          onClose={closeProgressModal}
+          operationId={currentOperationId}
+          operationType={currentOperationType}
+          onComplete={handleOperationComplete}
         />
       )}
 

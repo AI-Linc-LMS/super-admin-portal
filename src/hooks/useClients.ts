@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiService } from '../services/api';
-import { Client, ClientDetails } from '../types/client';
+import { Client, ClientDetails, CourseOperationRequest } from '../types/client';
 
 export const useClients = (params?: any) => {
   return useQuery({
@@ -113,5 +113,72 @@ export const useUpdateCourse = () => {
       // Also invalidate clients list in case it affects summary counts
       queryClient.invalidateQueries({ queryKey: ['clients'] });
     },
+  });
+};
+
+// Course Operations hooks
+export const useDuplicateCourse = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (request: CourseOperationRequest) => apiService.duplicateCourse(request),
+    onSuccess: () => {
+      // Invalidate operations list to show the new operation
+      queryClient.invalidateQueries({ queryKey: ['course-operations'] });
+    },
+  });
+};
+
+export const useBulkDuplicateCourses = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (request: CourseOperationRequest) => apiService.bulkDuplicateCourses(request),
+    onSuccess: () => {
+      // Invalidate operations list to show the new operation
+      queryClient.invalidateQueries({ queryKey: ['course-operations'] });
+    },
+  });
+};
+
+export const useDeleteCourse = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (request: CourseOperationRequest) => apiService.deleteCourse(request),
+    onSuccess: () => {
+      // Invalidate operations list to show the new operation
+      queryClient.invalidateQueries({ queryKey: ['course-operations'] });
+    },
+  });
+};
+
+export const useOperationStatus = (operationId: string, enabled: boolean = true) => {
+  return useQuery({
+    queryKey: ['operation-status', operationId],
+    queryFn: () => apiService.getOperationStatus(operationId),
+    enabled: enabled && !!operationId,
+    refetchInterval: (data) => {
+      // Auto-refresh every 2 seconds if operation is still in progress
+      if (data?.status === 'pending' || data?.status === 'in_progress') {
+        return 2000;
+      }
+      return false;
+    },
+    staleTime: 1000, // Consider data stale after 1 second
+  });
+};
+
+export const useOperationsList = (params?: { 
+  type?: string; 
+  status?: string; 
+  limit?: number; 
+  offset?: number; 
+}) => {
+  return useQuery({
+    queryKey: ['course-operations', params],
+    queryFn: () => apiService.getOperationsList(params),
+    staleTime: 30 * 1000, // 30 seconds
+    refetchOnWindowFocus: false,
   });
 };

@@ -175,3 +175,87 @@ export interface SuperAdmin {
   created_at: string;
   updated_at: string;
 }
+
+// Course Operations Types
+export interface CourseOperationRequest {
+  // Single course duplication
+  course_id?: number;
+  from_client_id?: number;
+  to_client_id?: number;
+  
+  // Bulk course duplication
+  course_filter?: 'all' | 'free_only' | 'paid_only' | 'published_only' | 'free_published';
+  
+  // Course deletion
+  client_id?: number;
+  confirm_deletion?: boolean;
+}
+
+export interface CourseOperationResponse {
+  message: string;
+  operation_id: string;
+  status: 'pending' | 'in_progress' | 'completed' | 'failed';
+  estimated_time: string;
+  status_check_url: string;
+  
+  // For duplication operations
+  source_course?: {
+    id: number;
+    title: string;
+    client: string;
+  };
+  destination_client?: string;
+  courses_to_duplicate?: number;
+  
+  // For deletion operations
+  course?: {
+    id: number;
+    title: string;
+    client: string;
+  };
+  deletion_summary?: {
+    modules: number;
+    submodules: number;
+    content_items: number;
+    video_tutorials: number;
+    quizzes: number;
+    mcq_questions: number;
+    articles: number;
+    coding_problems: number;
+    assignments: number;
+    comments: number;
+    enrolled_students: number;
+    likes: number;
+  };
+  warning?: string;
+}
+
+export interface CourseOperationStatus {
+  operation_id: string;
+  operation_type: 'duplicate' | 'bulk_duplicate' | 'delete';
+  status: 'pending' | 'in_progress' | 'completed' | 'failed';
+  progress: number;
+  message: string;
+  created_at: string;
+  completed_at?: string;
+  result_data?: {
+    new_course_id?: number;
+    new_course_title?: string;
+    new_course_slug?: string;
+    modules_count?: number;
+    submodules_count?: number;
+    content_count?: number;
+    published?: boolean;
+  };
+  error_details?: {
+    error_type: string;
+    error_message: string;
+  };
+}
+
+export interface CourseOperationsList {
+  total_count: number;
+  limit: number;
+  offset: number;
+  operations: CourseOperationStatus[];
+}

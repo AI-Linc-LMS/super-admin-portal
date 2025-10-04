@@ -1,6 +1,13 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { API_BASE_URL, STORAGE_KEYS } from '../utils/constants';
-import { Client, ClientDetails } from '../types/client';
+import { 
+  Client, 
+  ClientDetails, 
+  CourseOperationRequest, 
+  CourseOperationResponse, 
+  CourseOperationStatus, 
+  CourseOperationsList 
+} from '../types/client';
 import toast from 'react-hot-toast';
 
 interface ApiError {
@@ -573,6 +580,186 @@ class ApiService {
         }
       };
       return mockResponse;
+    }
+  }
+
+  // Course Operations API methods
+  async duplicateCourse(request: CourseOperationRequest): Promise<CourseOperationResponse> {
+    try {
+      const response = await this.post<CourseOperationResponse>('/lms/course-operations/duplicate/', request);
+      console.log('✅ Course duplication initiated:', response);
+      return response;
+    } catch (error) {
+      console.warn('⚠️ Failed to initiate course duplication via API, using mock response');
+      // Mock response for demo
+      const mockResponse: CourseOperationResponse = {
+        message: 'Course duplication initiated successfully',
+        operation_id: `dup_${Math.random().toString(36).substr(2, 12)}`,
+        status: 'pending',
+        estimated_time: '2-5 minutes',
+        status_check_url: `/lms/course-operations/dup_${Math.random().toString(36).substr(2, 12)}/status/`,
+        source_course: {
+          id: request.course_id!,
+          title: 'Mock Course Title',
+          client: 'Source Client'
+        },
+        destination_client: 'Destination Client'
+      };
+      return mockResponse;
+    }
+  }
+
+  async bulkDuplicateCourses(request: CourseOperationRequest): Promise<CourseOperationResponse> {
+    try {
+      const response = await this.post<CourseOperationResponse>('/lms/course-operations/bulk-duplicate/', request);
+      console.log('✅ Bulk course duplication initiated:', response);
+      return response;
+    } catch (error) {
+      console.warn('⚠️ Failed to initiate bulk course duplication via API, using mock response');
+      // Mock response for demo
+      const mockResponse: CourseOperationResponse = {
+        message: 'Bulk course duplication initiated successfully',
+        operation_id: `bulk_${Math.random().toString(36).substr(2, 12)}`,
+        status: 'pending',
+        estimated_time: '10-25 minutes',
+        status_check_url: `/lms/course-operations/bulk_${Math.random().toString(36).substr(2, 12)}/status/`,
+        courses_to_duplicate: Math.floor(Math.random() * 20) + 5,
+        destination_client: 'Destination Client'
+      };
+      return mockResponse;
+    }
+  }
+
+  async deleteCourse(request: CourseOperationRequest): Promise<CourseOperationResponse> {
+    try {
+      const response = await this.post<CourseOperationResponse>('/lms/course-operations/delete/', request);
+      console.log('✅ Course deletion initiated:', response);
+      return response;
+    } catch (error) {
+      console.warn('⚠️ Failed to initiate course deletion via API, using mock response');
+      // Mock response for demo
+      const mockResponse: CourseOperationResponse = {
+        message: 'Course deletion initiated successfully',
+        operation_id: `del_${Math.random().toString(36).substr(2, 12)}`,
+        status: 'pending',
+        estimated_time: '1-3 minutes',
+        status_check_url: `/lms/course-operations/del_${Math.random().toString(36).substr(2, 12)}/status/`,
+        course: {
+          id: request.course_id!,
+          title: 'Mock Course Title',
+          client: 'Client Name'
+        },
+        deletion_summary: {
+          modules: 3,
+          submodules: 8,
+          content_items: 45,
+          video_tutorials: 25,
+          quizzes: 20,
+          mcq_questions: 60,
+          articles: 0,
+          coding_problems: 0,
+          assignments: 0,
+          comments: 5,
+          enrolled_students: Math.floor(Math.random() * 50),
+          likes: Math.floor(Math.random() * 20)
+        },
+        warning: 'This action is irreversible. All course content and student progress will be permanently deleted.'
+      };
+      return mockResponse;
+    }
+  }
+
+  async getOperationStatus(operationId: string): Promise<CourseOperationStatus> {
+    try {
+      const response = await this.get<CourseOperationStatus>(`/lms/course-operations/${operationId}/status/`);
+      console.log(`✅ Operation status fetched for ${operationId}:`, response);
+      return response;
+    } catch (error) {
+      console.warn(`⚠️ Failed to fetch operation status for ${operationId}, using mock response`);
+      // Mock response for demo - simulate different statuses
+      const statuses: Array<'pending' | 'in_progress' | 'completed' | 'failed'> = ['pending', 'in_progress', 'completed'];
+      const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
+      const progress = randomStatus === 'completed' ? 100 : randomStatus === 'in_progress' ? Math.floor(Math.random() * 80) + 10 : 0;
+      
+      const mockResponse: CourseOperationStatus = {
+        operation_id: operationId,
+        operation_type: operationId.startsWith('dup_') ? 'duplicate' : operationId.startsWith('bulk_') ? 'bulk_duplicate' : 'delete',
+        status: randomStatus,
+        progress,
+        message: randomStatus === 'completed' ? 'Operation completed successfully' : 
+                randomStatus === 'in_progress' ? 'Operation in progress...' : 'Operation pending...',
+        created_at: new Date(Date.now() - Math.random() * 300000).toISOString(), // Random time in last 5 minutes
+        completed_at: randomStatus === 'completed' ? new Date().toISOString() : undefined,
+        result_data: randomStatus === 'completed' ? {
+          new_course_id: Math.floor(Math.random() * 1000) + 100,
+          new_course_title: 'Duplicated Course Title',
+          new_course_slug: 'duplicated-course-slug',
+          modules_count: Math.floor(Math.random() * 10) + 1,
+          content_count: Math.floor(Math.random() * 50) + 10,
+          published: false
+        } : undefined
+      };
+      return mockResponse;
+    }
+  }
+
+  async getOperationsList(params?: { 
+    type?: string; 
+    status?: string; 
+    limit?: number; 
+    offset?: number; 
+  }): Promise<CourseOperationsList> {
+    try {
+      const response = await this.get<CourseOperationsList>('/lms/course-operations/', params);
+      console.log('✅ Operations list fetched:', response);
+      return response;
+    } catch (error) {
+      console.warn('⚠️ Failed to fetch operations list, using mock response');
+      // Mock response for demo
+      const mockOperations: CourseOperationStatus[] = [
+        {
+          operation_id: 'dup_mock1',
+          operation_type: 'duplicate',
+          status: 'completed',
+          progress: 100,
+          message: 'Course duplication completed successfully',
+          created_at: new Date(Date.now() - 3600000).toISOString(),
+          completed_at: new Date(Date.now() - 3400000).toISOString(),
+          result_data: {
+            new_course_id: 205,
+            new_course_title: 'Introduction to React - Copy',
+            published: false
+          }
+        },
+        {
+          operation_id: 'bulk_mock2',
+          operation_type: 'bulk_duplicate',
+          status: 'in_progress',
+          progress: 65,
+          message: 'Bulk duplication in progress...',
+          created_at: new Date(Date.now() - 1800000).toISOString()
+        },
+        {
+          operation_id: 'del_mock3',
+          operation_type: 'delete',
+          status: 'failed',
+          progress: 0,
+          message: 'Course deletion failed',
+          created_at: new Date(Date.now() - 900000).toISOString(),
+          completed_at: new Date(Date.now() - 800000).toISOString(),
+          error_details: {
+            error_type: 'ValidationError',
+            error_message: 'Cannot delete course with active enrollments'
+          }
+        }
+      ];
+
+      return {
+        total_count: mockOperations.length,
+        limit: params?.limit || 20,
+        offset: params?.offset || 0,
+        operations: mockOperations
+      };
     }
   }
 }
