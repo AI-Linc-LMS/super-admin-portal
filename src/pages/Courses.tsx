@@ -16,16 +16,22 @@ import {
   List,
   EyeOff,
   AlertTriangle,
+  CheckSquare,
+  Square,
+  Settings,
 } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import CourseDetailsModal from '../components/ui/CourseDetailsModal';
 import CourseUpdateModal from '../components/ui/CourseUpdateModal';
+import BulkOperationsModal from '../components/ui/BulkOperationsModal';
+import BulkOperationProgressModal from '../components/ui/BulkOperationProgressModal';
 import { Course } from '../types/course';
 import { getDifficultyColor, getStatusColor } from '../utils/helpers';
 import { useCourses } from '../hooks/useApi';
 import { useUpdateCourse } from '../hooks/useClients';
+import { useBulkCourseOperations } from '../hooks/useBulkCourseOperations';
 import toast from 'react-hot-toast';
 
 const Courses: React.FC = () => {
@@ -36,6 +42,13 @@ const Courses: React.FC = () => {
   const [pricingFilter, setPricingFilter] = useState<'all' | 'free' | 'paid'>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   
+  // Bulk operations state
+  const [selectedCourses, setSelectedCourses] = useState<Course[]>([]);
+  const [isBulkOperationsModalOpen, setIsBulkOperationsModalOpen] = useState(false);
+  const [isBulkProgressModalOpen, setIsBulkProgressModalOpen] = useState(false);
+  const [currentBulkOperation, setCurrentBulkOperation] = useState<'publish' | 'unpublish' | 'make_free' | 'make_paid' | null>(null);
+  const [currentBulkPrice, setCurrentBulkPrice] = useState<number | undefined>(undefined);
+  
   // Modal state for course details and updates
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [selectedCourseForDetails, setSelectedCourseForDetails] = useState<Course | null>(null);
@@ -44,6 +57,7 @@ const Courses: React.FC = () => {
 
   const { data: coursesResponse, isLoading, error } = useCourses();
   const updateCourseMutation = useUpdateCourse();
+  const bulkOperations = useBulkCourseOperations();
 
   // Course handlers
   const handleCourseView = (course: Course) => {
@@ -81,6 +95,56 @@ const Courses: React.FC = () => {
   const closeCourseUpdateModal = () => {
     setIsCourseUpdateModalOpen(false);
     setSelectedCourse(null);
+  };
+
+  // Bulk operation handlers
+  const handleCourseSelection = (course: Course, isSelected: boolean) => {
+    if (isSelected) {
+      setSelectedCourses(prev => [...prev, course]);
+    } else {
+      setSelectedCourses(prev => prev.filter(c => c.id !== course.id));
+    }
+  };
+
+  const handleSelectAll = () => {
+    if (selectedCourses.length === filteredCourses.length) {
+      setSelectedCourses([]);
+    } else {
+      setSelectedCourses([...filteredCourses]);
+    }
+  };
+
+  const handleBulkOperation = () => {
+    if (selectedCourses.length === 0) {
+      toast.error('Please select at least one course');
+      return;
+    }
+    setIsBulkOperationsModalOpen(true);
+  };
+
+  const handleBulkOperationConfirm = async (operation: 'publish' | 'unpublish' | 'make_free' | 'make_paid', price?: number) => {
+    setCurrentBulkOperation(operation);
+    setCurrentBulkPrice(price);
+    setIsBulkOperationsModalOpen(false);
+    setIsBulkProgressModalOpen(true);
+
+    try {
+      await bulkOperations.executeBulkOperation(selectedCourses, operation, price);
+    } catch (error) {
+      console.error('Bulk operation failed:', error);
+    }
+  };
+
+  const handleBulkOperationComplete = () => {
+    setIsBulkProgressModalOpen(false);
+    setSelectedCourses([]);
+    setCurrentBulkOperation(null);
+    setCurrentBulkPrice(undefined);
+    bulkOperations.resetState();
+  };
+
+  const isCourseSelected = (course: Course) => {
+    return selectedCourses.some(c => c.id === course.id);
   };
 
   // Mock data for demonstration - updated to match API structure
@@ -196,17 +260,39 @@ const Courses: React.FC = () => {
     return published ? t('courses.published', { defaultValue: 'Published' }) : t('courses.unpublished', { defaultValue: 'Unpublished' });
   };
 
-  const CourseCard: React.FC<{ course: Course; index: number }> = ({ course, index }) => (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.3, delay: index * 0.05 }}
-    >
-      <Card 
-        glassmorphism 
-        hover 
-        className={`h-full relative ${!course.published ? 'bg-gray-50/80 border-2 border-dashed border-gray-300' : ''}`}
+  const CourseCard: React.FC<{ course: Course; index: number }> = ({ course, index }) => {
+    const isSelected = isCourseSelected(course);
+    
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.3, delay: index * 0.05 }}
       >
+        <Card 
+          glassmorphism 
+          hover 
+          className={`h-full relative ${!course.published ? 'bg-gray-50/80 border-2 border-dashed border-gray-300' : ''} ${
+            isSelected ? 'ring-2 ring-primary-500 bg-primary-50/50' : ''
+          }`}
+        >
+        {/* Selection checkbox */}
+        <div className="absolute top-2 left-2 z-20">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleCourseSelection(course, !isSelected);
+            }}
+            className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
+              isSelected 
+                ? 'bg-primary-600 border-primary-600 text-white' 
+                : 'bg-white border-gray-300 hover:border-primary-500'
+            }`}
+          >
+            {isSelected && <CheckSquare className="w-3 h-3" />}
+          </button>
+        </div>
+
         {/* Unpublished overlay banner */}
         {!course.published && (
           <div className="absolute top-0 right-0 bg-red-500 text-white px-3 py-1 text-xs font-medium rounded-bl-lg rounded-tr-lg flex items-center gap-1 z-10">
@@ -306,7 +392,8 @@ const Courses: React.FC = () => {
         </div>
       </Card>
     </motion.div>
-  );
+    );
+  };
 
   // Loading state
   if (isLoading && !coursesResponse) {
@@ -384,6 +471,49 @@ const Courses: React.FC = () => {
         </div>
       </motion.div>
 
+      {/* Bulk Operations Bar */}
+      {selectedCourses.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-primary-50 border border-primary-200 rounded-lg p-4"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <CheckSquare className="w-5 h-5 text-primary-600" />
+                <span className="font-medium text-primary-900">
+                  {selectedCourses.length} course{selectedCourses.length !== 1 ? 's' : ''} selected
+                </span>
+              </div>
+              <button
+                onClick={handleSelectAll}
+                className="text-sm text-primary-600 hover:text-primary-800 underline"
+              >
+                {selectedCourses.length === filteredCourses.length ? 'Deselect All' : 'Select All'}
+              </button>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectedCourses([])}
+              >
+                Clear Selection
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                leftIcon={<Settings className="w-4 h-4" />}
+                onClick={handleBulkOperation}
+              >
+                Bulk Operations
+              </Button>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
       {/* Filters */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -452,6 +582,19 @@ const Courses: React.FC = () => {
               <table className="w-full">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <button
+                        onClick={handleSelectAll}
+                        className="flex items-center gap-2 hover:text-gray-700"
+                      >
+                        {selectedCourses.length === filteredCourses.length ? (
+                          <CheckSquare className="w-4 h-4" />
+                        ) : (
+                          <Square className="w-4 h-4" />
+                        )}
+                        Select All
+                      </button>
+                    </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Course</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Difficulty</th>
@@ -463,12 +606,28 @@ const Courses: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {filteredCourses.map((course) => (
-                    <tr 
-                      key={course.id} 
-                      className={`hover:bg-gray-50 ${!course.published ? 'bg-gray-50/50 opacity-75' : ''}`}
-                    >
-                      <td className="px-6 py-4">
+                  {filteredCourses.map((course) => {
+                    const isSelected = isCourseSelected(course);
+                    return (
+                      <tr 
+                        key={course.id} 
+                        className={`hover:bg-gray-50 ${!course.published ? 'bg-gray-50/50 opacity-75' : ''} ${
+                          isSelected ? 'bg-primary-50' : ''
+                        }`}
+                      >
+                        <td className="px-6 py-4">
+                          <button
+                            onClick={() => handleCourseSelection(course, !isSelected)}
+                            className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
+                              isSelected 
+                                ? 'bg-primary-600 border-primary-600 text-white' 
+                                : 'bg-white border-gray-300 hover:border-primary-500'
+                            }`}
+                          >
+                            {isSelected && <CheckSquare className="w-3 h-3" />}
+                          </button>
+                        </td>
+                        <td className="px-6 py-4">
                         <div className="relative">
                           {!course.published && (
                             <div className="absolute -left-2 top-0 bottom-0 w-1 bg-red-400 rounded-full"></div>
@@ -535,7 +694,8 @@ const Courses: React.FC = () => {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -570,6 +730,32 @@ const Courses: React.FC = () => {
           isLoading={updateCourseMutation.isPending}
         />
       )}
+
+      {/* Bulk Operations Modal */}
+      <BulkOperationsModal
+        isOpen={isBulkOperationsModalOpen}
+        onClose={() => setIsBulkOperationsModalOpen(false)}
+        selectedCourses={selectedCourses}
+        onConfirm={handleBulkOperationConfirm}
+        isLoading={bulkOperations.isExecuting}
+      />
+
+      {/* Bulk Operation Progress Modal */}
+      <BulkOperationProgressModal
+        isOpen={isBulkProgressModalOpen}
+        onClose={handleBulkOperationComplete}
+        operation={currentBulkOperation!}
+        price={currentBulkPrice}
+        totalCourses={selectedCourses.length}
+        completedCourses={bulkOperations.progress.completed}
+        results={bulkOperations.progress.results}
+        isComplete={!bulkOperations.isExecuting}
+        onRetry={() => {
+          if (currentBulkOperation) {
+            handleBulkOperationConfirm(currentBulkOperation, currentBulkPrice);
+          }
+        }}
+      />
     </div>
   );
 };
