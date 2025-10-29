@@ -14,12 +14,12 @@ import {
 } from 'lucide-react';
 import Modal from './Modal';
 import Button from './Button';
-import { Course } from '../../types/course';
+// Accept a lightweight course-like shape to work across pages
 
 interface BulkOperationsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  selectedCourses: Course[];
+  selectedCourses: Array<{ id: number; title: string; published: boolean; is_free: boolean; price: string | number }>;
   onConfirm: (operation: 'publish' | 'unpublish' | 'make_free' | 'make_paid', price?: number) => Promise<void>;
   isLoading?: boolean;
 }

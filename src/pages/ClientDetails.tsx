@@ -20,6 +20,8 @@ import {
   Settings,
   Copy,
   Trash2,
+  CheckSquare,
+  Square,
 } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -34,6 +36,8 @@ import CourseDetailsModal from '../components/ui/CourseDetailsModal';
 import CourseDuplicationModal from '../components/ui/CourseDuplicationModal';
 import CourseDeletionModal from '../components/ui/CourseDeletionModal';
 import OperationProgressModal from '../components/ui/OperationProgressModal';
+import BulkOperationsModal from '../components/ui/BulkOperationsModal';
+import BulkOperationProgressModal from '../components/ui/BulkOperationProgressModal';
 import Modal from '../components/ui/Modal';
 import { formatDate, formatCurrency, getDifficultyColor, getStatusColor } from '../utils/helpers';
 import { 
@@ -43,6 +47,7 @@ import {
   useDuplicateCourse,
   useDeleteCourse 
 } from '../hooks/useClients';
+import { useBulkCourseOperations } from '../hooks/useBulkCourseOperations';
 import { Student, Admin, SuperAdmin, ClientCourse } from '../types/client';
 import toast from 'react-hot-toast';
 import { getSiteByName, createSite } from '../services/netlify';
@@ -90,6 +95,13 @@ const ClientDetails: React.FC = () => {
   const [currentOperationId, setCurrentOperationId] = useState<string>('');
   const [currentOperationType, setCurrentOperationType] = useState<'duplicate' | 'bulk_duplicate' | 'delete'>('duplicate');
 
+  // Bulk operations state (Courses tab)
+  const [selectedCourses, setSelectedCourses] = useState<ClientCourse[]>([]);
+  const [isBulkOperationsModalOpen, setIsBulkOperationsModalOpen] = useState(false);
+  const [isBulkProgressModalOpen, setIsBulkProgressModalOpen] = useState(false);
+  const [currentBulkOperation, setCurrentBulkOperation] = useState<'publish' | 'unpublish' | 'make_free' | 'make_paid' | null>(null);
+  const [currentBulkPrice, setCurrentBulkPrice] = useState<number | undefined>(undefined);
+
   // Netlify deploy modal state
   const [isDeployModalOpen, setIsDeployModalOpen] = useState(false);
   const [deployEnv, setDeployEnv] = useState({
@@ -108,6 +120,7 @@ const ClientDetails: React.FC = () => {
   const updateCourseMutation = useUpdateCourse();
   const duplicateCourseMutation = useDuplicateCourse();
   const deleteCourseMutation = useDeleteCourse();
+  const bulkOperations = useBulkCourseOperations();
 
   const [netlifyStatus, setNetlifyStatus] = useState<'checking' | 'deployed' | 'not-deployed' | 'error'>('checking');
   const [netlifySite, setNetlifySite] = useState<any>(null);
@@ -181,6 +194,47 @@ const ClientDetails: React.FC = () => {
                          (statusFilter === 'unpublished' && !course.published);
     return matchesSearch && matchesDifficulty && matchesStatus;
   }) || [];
+
+  // Bulk selection helpers
+  const isCourseSelected = (course: ClientCourse) => selectedCourses.some(c => c.id === course.id);
+  const handleCourseSelection = (course: ClientCourse, isSelected: boolean) => {
+    if (isSelected) setSelectedCourses(prev => [...prev, course]);
+    else setSelectedCourses(prev => prev.filter(c => c.id !== course.id));
+  };
+  const handleSelectAllCourses = () => {
+    if (selectedCourses.length === filteredCourses.length) setSelectedCourses([]);
+    else setSelectedCourses([...filteredCourses]);
+  };
+  const handleBulkOperationOpen = () => {
+    if (selectedCourses.length === 0) {
+      toast.error('Please select at least one course');
+      return;
+    }
+    setIsBulkOperationsModalOpen(true);
+  };
+  const handleBulkOperationConfirm = async (operation: 'publish' | 'unpublish' | 'make_free' | 'make_paid', price?: number) => {
+    setCurrentBulkOperation(operation);
+    setCurrentBulkPrice(price);
+    setIsBulkOperationsModalOpen(false);
+    setIsBulkProgressModalOpen(true);
+    try {
+      await bulkOperations.executeBulkOperation(
+        selectedCourses.map(c => ({ id: c.id, title: c.title })),
+        operation,
+        price,
+        clientId
+      );
+    } catch (e) {
+      // handled in hook
+    }
+  };
+  const handleBulkOperationComplete = () => {
+    setIsBulkProgressModalOpen(false);
+    setSelectedCourses([]);
+    setCurrentBulkOperation(null);
+    setCurrentBulkPrice(undefined);
+    bulkOperations.resetState();
+  };
 
   const filteredStudents = client?.students?.filter(student => {
     const matchesSearch = student.name.toLowerCase().includes(studentSearch.toLowerCase()) ||
@@ -736,11 +790,44 @@ const ClientDetails: React.FC = () => {
                 </div>
               </div>
 
+              {/* Bulk Operations Bar */}
+              {selectedCourses.length > 0 && (
+                <div className="bg-primary-50 border border-primary-200 rounded-lg p-4 mb-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2">
+                        <CheckSquare className="w-5 h-5 text-primary-600" />
+                        <span className="font-medium text-primary-900">
+                          {selectedCourses.length} course{selectedCourses.length !== 1 ? 's' : ''} selected
+                        </span>
+                      </div>
+                      <button onClick={handleSelectAllCourses} className="text-sm text-primary-600 hover:text-primary-800 underline">
+                        {selectedCourses.length === filteredCourses.length ? 'Deselect All' : 'Select All'}
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" size="sm" onClick={() => setSelectedCourses([])}>Clear Selection</Button>
+                      <Button variant="primary" size="sm" leftIcon={<Settings className="w-4 h-4" />} onClick={handleBulkOperationOpen}>Bulk Operations</Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Courses Table */}
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <button onClick={handleSelectAllCourses} className="flex items-center gap-2 hover:text-gray-700">
+                          {selectedCourses.length === filteredCourses.length ? (
+                            <CheckSquare className="w-4 h-4" />
+                          ) : (
+                            <Square className="w-4 h-4" />
+                          )}
+                          Select All
+                        </button>
+                      </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Course
                       </th>
@@ -762,8 +849,20 @@ const ClientDetails: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredCourses.map((course) => (
-                      <tr key={course.id} className="hover:bg-gray-50">
+                    {filteredCourses.map((course) => {
+                      const selected = isCourseSelected(course);
+                      return (
+                      <tr key={course.id} className={`hover:bg-gray-50 ${selected ? 'bg-primary-50' : ''}`}>
+                        <td className="px-6 py-4">
+                          <button
+                            onClick={() => handleCourseSelection(course, !selected)}
+                            className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
+                              selected ? 'bg-primary-600 border-primary-600 text-white' : 'bg-white border-gray-300 hover:border-primary-500'
+                            }`}
+                          >
+                            {selected && <CheckSquare className="w-3 h-3" />}
+                          </button>
+                        </td>
                         <td className="px-6 py-4">
                           <div>
                             <div className="text-sm font-medium text-gray-900">{course.title}</div>
@@ -830,7 +929,7 @@ const ClientDetails: React.FC = () => {
                           </div>
                         </td>
                       </tr>
-                    ))}
+                    )})}
                   </tbody>
                 </table>
               </div>
@@ -1295,6 +1394,30 @@ const ClientDetails: React.FC = () => {
           isOpen={isCourseDetailsModalOpen}
           onClose={closeCourseDetailsModal}
           course={selectedCourseForDetails}
+        />
+      )}
+
+      {/* Bulk Operations Modal (Courses) */}
+      <BulkOperationsModal
+        isOpen={isBulkOperationsModalOpen}
+        onClose={() => setIsBulkOperationsModalOpen(false)}
+        selectedCourses={selectedCourses.map(c => ({ id: c.id, title: c.title, published: c.published, is_free: c.is_free, price: c.price }))}
+        onConfirm={handleBulkOperationConfirm}
+        isLoading={bulkOperations.isExecuting}
+      />
+
+      {/* Bulk Operation Progress Modal (Courses) */}
+      {currentBulkOperation && (
+        <BulkOperationProgressModal
+          isOpen={isBulkProgressModalOpen}
+          onClose={handleBulkOperationComplete}
+          operation={currentBulkOperation}
+          price={currentBulkPrice}
+          totalCourses={selectedCourses.length}
+          completedCourses={bulkOperations.progress.completed}
+          results={bulkOperations.progress.results}
+          isComplete={!bulkOperations.isExecuting}
+          onRetry={() => handleBulkOperationConfirm(currentBulkOperation, currentBulkPrice)}
         />
       )}
 

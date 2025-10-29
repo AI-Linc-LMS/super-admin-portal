@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react';
 import { useUpdateCourse } from './useClients';
-import { Course } from '../types/course';
 import toast from 'react-hot-toast';
 
 interface OperationResult {
@@ -32,9 +31,10 @@ export const useBulkCourseOperations = () => {
   const updateCourseMutation = useUpdateCourse();
 
   const executeBulkOperation = useCallback(async (
-    courses: Course[],
+    courses: Array<{ id: number; title: string }>,
     operation: 'publish' | 'unpublish' | 'make_free' | 'make_paid',
-    price?: number
+    price?: number,
+    clientId?: number
   ): Promise<OperationResult[]> => {
     setState({
       isExecuting: true,
@@ -77,7 +77,7 @@ export const useBulkCourseOperations = () => {
 
           // Call the update API
           await updateCourseMutation.mutateAsync({
-            clientId: 1, // Mock client ID for global courses
+            clientId: clientId ?? 1,
             courseId: course.id,
             courseData: updateData
           });
