@@ -93,7 +93,7 @@ const BulkOperationProgressModal: React.FC<BulkOperationProgressModalProps> = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={isComplete ? onClose : undefined} title={getOperationTitle()}>
+    <Modal isOpen={isOpen} onClose={onClose} title={getOperationTitle()}>
       <div className="space-y-6">
         {/* Progress Header */}
         <div className="text-center">
