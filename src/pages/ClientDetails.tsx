@@ -1407,17 +1407,17 @@ const ClientDetails: React.FC = () => {
       />
 
       {/* Bulk Operation Progress Modal (Courses) */}
-      {currentBulkOperation && (
+      {isBulkProgressModalOpen && currentBulkOperation && (
         <BulkOperationProgressModal
           isOpen={isBulkProgressModalOpen}
           onClose={handleBulkOperationComplete}
-          operation={currentBulkOperation}
+          operation={currentBulkOperation || 'publish'}
           price={currentBulkPrice}
           totalCourses={selectedCourses.length}
           completedCourses={bulkOperations.progress.completed}
           results={bulkOperations.progress.results}
           isComplete={!bulkOperations.isExecuting}
-          onRetry={() => handleBulkOperationConfirm(currentBulkOperation, currentBulkPrice)}
+          onRetry={currentBulkOperation ? () => handleBulkOperationConfirm(currentBulkOperation, currentBulkPrice) : undefined}
         />
       )}
 
