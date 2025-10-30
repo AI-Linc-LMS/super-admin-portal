@@ -48,9 +48,11 @@ import {
   useDeleteCourse 
 } from '../hooks/useClients';
 import { useBulkCourseOperations } from '../hooks/useBulkCourseOperations';
+import { useBulkDuplicateCoursesProgress } from '../hooks/useBulkDuplicateCourses';
 import { Student, Admin, SuperAdmin, ClientCourse } from '../types/client';
 import toast from 'react-hot-toast';
 import { getSiteByName, createSite } from '../services/netlify';
+import BulkDuplicateCoursesModal from '../components/ui/BulkDuplicateCoursesModal';
 
 const ClientDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -101,6 +103,12 @@ const ClientDetails: React.FC = () => {
   const [isBulkProgressModalOpen, setIsBulkProgressModalOpen] = useState(false);
   const [currentBulkOperation, setCurrentBulkOperation] = useState<'publish' | 'unpublish' | 'make_free' | 'make_paid' | null>(null);
   const [currentBulkPrice, setCurrentBulkPrice] = useState<number | undefined>(undefined);
+
+  // Bulk duplicate modal state
+  const [isBulkDuplicateModalOpen, setIsBulkDuplicateModalOpen] = useState(false);
+  const [isBulkDuplicateProgressModalOpen, setIsBulkDuplicateProgressModalOpen] = useState(false);
+  const [bulkDuplicateTargetClientId, setBulkDuplicateTargetClientId] = useState<number | null>(null);
+  const bulkDuplicate = useBulkDuplicateCoursesProgress();
 
   // Netlify deploy modal state
   const [isDeployModalOpen, setIsDeployModalOpen] = useState(false);
@@ -482,6 +490,32 @@ const ClientDetails: React.FC = () => {
     }
   };
 
+  const handleBulkDuplicateOpen = () => {
+    if (selectedCourses.length === 0) {
+      toast.error('Please select at least one course');
+      return;
+    }
+    setIsBulkDuplicateModalOpen(true);
+  };
+
+  const handleBulkDuplicateConfirm = async (destinationClientId: number) => {
+    setBulkDuplicateTargetClientId(destinationClientId);
+    setIsBulkDuplicateModalOpen(false);
+    setIsBulkDuplicateProgressModalOpen(true);
+    await bulkDuplicate.executeBulkDuplicate(
+      selectedCourses.map(c => ({ id: c.id, title: c.title })),
+      clientId,
+      destinationClientId
+    );
+  };
+
+  const handleBulkDuplicateProgressComplete = () => {
+    setIsBulkDuplicateProgressModalOpen(false);
+    setBulkDuplicateTargetClientId(null);
+    setSelectedCourses([]);
+    bulkDuplicate.resetState();
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -808,6 +842,9 @@ const ClientDetails: React.FC = () => {
                     <div className="flex items-center gap-2">
                       <Button variant="outline" size="sm" onClick={() => setSelectedCourses([])}>Clear Selection</Button>
                       <Button variant="primary" size="sm" leftIcon={<Settings className="w-4 h-4" />} onClick={handleBulkOperationOpen}>Bulk Operations</Button>
+                      <Button variant="primary" size="sm" leftIcon={<Copy className="w-4 h-4" />} onClick={handleBulkDuplicateOpen}>
+                        Bulk Duplicate
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -1453,6 +1490,44 @@ const ClientDetails: React.FC = () => {
           operationId={currentOperationId}
           operationType={currentOperationType}
           onComplete={handleOperationComplete}
+        />
+      )}
+
+      {/* Bulk Duplicate Modal */}
+      <BulkDuplicateCoursesModal
+        isOpen={isBulkDuplicateModalOpen}
+        onClose={() => setIsBulkDuplicateModalOpen(false)}
+        onConfirm={handleBulkDuplicateConfirm}
+        selectedCourses={selectedCourses.map(c => ({ id: c.id, title: c.title }))}
+        currentClientId={clientId}
+        isLoading={bulkDuplicate.isExecuting}
+      />
+
+      {/* Bulk Duplicate Operation Progress Modal */}
+      {isBulkDuplicateProgressModalOpen && (
+        <BulkOperationProgressModal
+          isOpen={isBulkDuplicateProgressModalOpen}
+          onClose={handleBulkDuplicateProgressComplete}
+          operation="make_free"
+          price={undefined}
+          totalCourses={selectedCourses.length}
+          completedCourses={bulkDuplicate.progress.completed}
+          results={bulkDuplicate.progress.results.map(r => ({
+            courseId: r.courseId,
+            courseTitle: r.courseTitle,
+            success: r.success,
+            error: r.error
+          }))}
+          isComplete={!bulkDuplicate.isExecuting}
+          onRetry={
+            bulkDuplicateTargetClientId
+              ? () => bulkDuplicate.executeBulkDuplicate(
+                  selectedCourses.map(c => ({ id: c.id, title: c.title })),
+                  clientId,
+                  bulkDuplicateTargetClientId
+              )
+              : undefined
+          }
         />
       )}
 
