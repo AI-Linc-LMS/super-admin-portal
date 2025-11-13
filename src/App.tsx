@@ -8,6 +8,7 @@ import Dashboard from './pages/Dashboard';
 import Clients from './pages/Clients';
 import ClientDetails from './pages/ClientDetails';
 import Courses from './pages/Courses';
+import Chatbots from './pages/Chatbots';
 import Settings from './pages/Settings';
 import { useAuthStore } from './store/authStore';
 import { ROUTES } from './utils/constants';
@@ -94,6 +95,7 @@ function App() {
               <Route path="clients" element={<Clients />} />
               <Route path="clients/:id" element={<ClientDetails />} />
               <Route path="courses" element={<Courses />} />
+              <Route path="chatbots" element={<Chatbots />} />
               <Route path="settings" element={<Settings />} />
             </Route>
             

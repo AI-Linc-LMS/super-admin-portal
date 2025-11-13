@@ -33,6 +33,7 @@ export const ROUTES = {
   CLIENTS: '/clients',
   CLIENT_DETAILS: (id: string | number) => `/clients/${id}`,
   COURSES: '/courses',
+  CHATBOTS: '/chatbots',
   ANALYTICS: '/analytics',
   SETTINGS: '/settings',
 } as const;

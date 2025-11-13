@@ -10,6 +10,7 @@ import {
   LogOut,
   ChevronLeft,
   Menu,
+  Bot,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../store/authStore';
@@ -38,6 +39,11 @@ const Sidebar: React.FC = () => {
       name: t('navigation.courses'),
       href: ROUTES.COURSES,
       icon: BookOpen,
+    },
+    {
+      name: t('navigation.chatbots'),
+      href: ROUTES.CHATBOTS,
+      icon: Bot,
     },
     {
       name: t('navigation.settings'),
