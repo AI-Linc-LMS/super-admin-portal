@@ -22,6 +22,7 @@ import {
   Trash2,
   CheckSquare,
   Square,
+  Sparkles,
 } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -45,7 +46,10 @@ import {
   useChangeUserRole, 
   useUpdateCourse,
   useDuplicateCourse,
-  useDeleteCourse 
+  useDeleteCourse,
+  useAvailableFeatures,
+  useClientFeatures,
+  useUpdateClientFeatures
 } from '../hooks/useClients';
 import { useBulkCourseOperations } from '../hooks/useBulkCourseOperations';
 import { useBulkDuplicateCoursesProgress } from '../hooks/useBulkDuplicateCourses';
@@ -53,6 +57,7 @@ import { Student, Admin, SuperAdmin, ClientCourse } from '../types/client';
 import toast from 'react-hot-toast';
 import { getSiteByName, createSite } from '../services/netlify';
 import BulkDuplicateCoursesModal from '../components/ui/BulkDuplicateCoursesModal';
+import ClientFeaturesSelector from '../components/ui/ClientFeaturesSelector';
 
 const ClientDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -129,6 +134,9 @@ const ClientDetails: React.FC = () => {
   const duplicateCourseMutation = useDuplicateCourse();
   const deleteCourseMutation = useDeleteCourse();
   const bulkOperations = useBulkCourseOperations();
+  const { data: availableFeaturesData, isLoading: isLoadingFeatures } = useAvailableFeatures();
+  const { data: clientFeaturesData, isLoading: isLoadingClientFeatures } = useClientFeatures(clientId);
+  const updateClientFeaturesMutation = useUpdateClientFeatures();
 
   const [netlifyStatus, setNetlifyStatus] = useState<'checking' | 'deployed' | 'not-deployed' | 'error'>('checking');
   const [netlifySite, setNetlifySite] = useState<any>(null);
@@ -170,6 +178,16 @@ const ClientDetails: React.FC = () => {
 
   const handleDeployInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     // All fields are non-editable, so do nothing
+  };
+
+  const handleUpdateFeatures = async (clientId: number, featureIds: number[]) => {
+    try {
+      await updateClientFeaturesMutation.mutateAsync({ clientId, featureIds });
+      toast.success('Client features updated successfully!');
+    } catch (error) {
+      // Error is handled by API service error handler
+      console.error('Failed to update client features:', error);
+    }
   };
 
   const handleConfirmDeploy = async () => {
@@ -717,6 +735,27 @@ const ClientDetails: React.FC = () => {
               </a>
             )}
           </div>
+        </Card>
+      </motion.div>
+
+      {/* Client Features Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+      >
+        <Card glassmorphism className="mb-6">
+          <div className="flex items-center gap-4 mb-4">
+            <Sparkles className="w-6 h-6 text-primary-500" />
+            <h2 className="text-lg font-bold">Client Features</h2>
+          </div>
+          <ClientFeaturesSelector
+            availableFeatures={availableFeaturesData?.features || []}
+            currentFeatureIds={clientFeaturesData?.features?.map(f => f.id) || client?.features?.map(f => f.id) || []}
+            clientId={clientId}
+            onUpdate={handleUpdateFeatures}
+            isLoading={isLoadingFeatures || isLoadingClientFeatures}
+          />
         </Card>
       </motion.div>
 

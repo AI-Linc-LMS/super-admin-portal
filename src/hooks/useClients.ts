@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiService } from '../services/api';
-import { Client, ClientDetails, CourseOperationRequest } from '../types/client';
+import { Client, ClientDetails, Feature, CourseOperationRequest } from '../types/client';
 
 export const useClients = (params?: any) => {
   return useQuery({
@@ -111,6 +111,49 @@ export const useUpdateCourse = () => {
       // Invalidate and refetch client details to update the course list
       queryClient.invalidateQueries({ queryKey: ['client-details', clientId] });
       // Also invalidate clients list in case it affects summary counts
+      queryClient.invalidateQueries({ queryKey: ['clients'] });
+    },
+  });
+};
+
+// Features hooks
+export const useAvailableFeatures = () => {
+  return useQuery({
+    queryKey: ['available-features'],
+    queryFn: () => apiService.getAvailableFeatures(),
+    retry: false,
+    staleTime: 10 * 60 * 1000, // 10 minutes - features don't change often
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+  });
+};
+
+export const useClientFeatures = (clientId: number) => {
+  return useQuery({
+    queryKey: ['client-features', clientId],
+    queryFn: () => apiService.getClientFeatures(clientId),
+    enabled: !!clientId,
+    retry: false,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+  });
+};
+
+export const useUpdateClientFeatures = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ clientId, featureIds }: { 
+      clientId: number; 
+      featureIds: number[] 
+    }) => apiService.updateClientFeatures(clientId, featureIds),
+    onSuccess: (_, { clientId }) => {
+      // Invalidate and refetch client features
+      queryClient.invalidateQueries({ queryKey: ['client-features', clientId] });
+      // Invalidate and refetch client details to update the features list
+      queryClient.invalidateQueries({ queryKey: ['client-details', clientId] });
+      // Also invalidate clients list in case it affects summary
       queryClient.invalidateQueries({ queryKey: ['clients'] });
     },
   });

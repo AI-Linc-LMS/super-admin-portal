@@ -3,6 +3,7 @@ import { API_BASE_URL, STORAGE_KEYS } from '../utils/constants';
 import { 
   Client, 
   ClientDetails, 
+  Feature,
   CourseOperationRequest, 
   CourseOperationResponse, 
   CourseOperationStatus, 
@@ -578,6 +579,75 @@ class ApiService {
           ...courseData,
           updated_at: new Date().toISOString()
         }
+      };
+      return mockResponse;
+    }
+  }
+
+  // Features API methods
+  async getAvailableFeatures(): Promise<{ total_features: number; features: Feature[] }> {
+    try {
+      const response = await this.get<{ total_features: number; features: Feature[] }>('/accounts/features/');
+      console.log('✅ Available features fetched:', response);
+      return response;
+    } catch (error) {
+      console.warn('⚠️ Failed to fetch available features via API, using mock response');
+      // Mock response for demo
+      const mockResponse = {
+        total_features: 5,
+        features: [
+          { id: 1, name: 'LMS' },
+          { id: 2, name: 'Assessment' },
+          { id: 3, name: 'Live Class' },
+          { id: 4, name: 'Community Forum' },
+          { id: 5, name: 'Mock Interview' }
+        ]
+      };
+      return mockResponse;
+    }
+  }
+
+  async getClientFeatures(clientId: number): Promise<{ features: Feature[] }> {
+    try {
+      const endpoint = `/accounts/clients/${clientId}/features/select/`;
+      const response = await this.get<{ features: Feature[] }>(endpoint);
+      console.log(`✅ Client ${clientId} features fetched:`, response);
+      return response;
+    } catch (error) {
+      console.warn(`⚠️ Failed to fetch client ${clientId} features via API, using mock response`);
+      // Mock response for demo - return empty array if client has no features
+      const mockResponse = {
+        features: []
+      };
+      return mockResponse;
+    }
+  }
+
+  async updateClientFeatures(clientId: number, featureIds: number[]): Promise<{ message: string; client: ClientDetails }> {
+    try {
+      const endpoint = `/accounts/clients/${clientId}/features/select/`;
+      const response = await this.patch<{ message: string; client: ClientDetails }>(endpoint, {
+        feature_ids: featureIds
+      });
+      console.log(`✅ Client ${clientId} features updated successfully:`, response);
+      return response;
+    } catch (error) {
+      console.warn(`⚠️ Failed to update client ${clientId} features via API, simulating success`);
+      // Simulate successful feature update in demo mode
+      const mockResponse = {
+        message: 'Features selected successfully',
+        client: {
+          id: clientId,
+          name: 'Mock Client',
+          slug: 'mock-client',
+          total_students: 0,
+          total_courses: 0,
+          courses: [],
+          features: featureIds.map(id => ({
+            id,
+            name: `Feature ${id}`
+          }))
+        } as ClientDetails
       };
       return mockResponse;
     }

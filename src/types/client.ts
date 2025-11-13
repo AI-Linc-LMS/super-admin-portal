@@ -41,6 +41,11 @@ export interface Client {
   payment_encryption_key?: string;
 }
 
+export interface Feature {
+  id: number;
+  name: string;
+}
+
 export interface ClientDetails extends Client {
   courses: ClientCourse[];
   students?: Student[];
@@ -52,6 +57,7 @@ export interface ClientDetails extends Client {
   phone?: string;
   address?: string;
   statistics?: ClientStatistics;
+  features?: Feature[];
 }
 
 export interface Instructor {
