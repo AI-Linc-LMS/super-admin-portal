@@ -105,7 +105,7 @@ export const useUpdateCourse = () => {
     mutationFn: ({ clientId, courseId, courseData }: { 
       clientId: number; 
       courseId: number; 
-      courseData: { price?: number; is_free?: boolean; published?: boolean } 
+      courseData: { price?: number; is_free?: boolean; published?: boolean; enrollment_enabled?: boolean } 
     }) => apiService.updateCourse(clientId, courseId, courseData),
     onSuccess: (_, { clientId }) => {
       // Invalidate and refetch client details to update the course list

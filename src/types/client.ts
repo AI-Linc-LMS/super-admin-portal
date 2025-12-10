@@ -79,6 +79,7 @@ export interface ClientCourse {
   certificate_available: boolean;
   thumbnail?: string | null;
   published: boolean;
+  enrollment_enabled?: boolean;
   enrolled_students_count: number;
   instructors: Instructor[];
   modules_count?: number;
