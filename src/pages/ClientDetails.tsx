@@ -5,6 +5,7 @@ import {
   ArrowLeft,
   Users,
   BookOpen,
+  ClipboardList,
   Globe,
   Mail,
   Download,
@@ -31,6 +32,7 @@ import StatsCard from '../components/charts/StatsCard';
 import StudentDetailsModal from '../components/ui/StudentDetailsModal';
 import AdminDetailsModal from '../components/ui/AdminDetailsModal';
 import SuperAdminDetailsModal from '../components/ui/SuperAdminDetailsModal';
+import CourseManagerDetailsModal from '../components/ui/CourseManagerDetailsModal';
 import ChangeRoleModal from '../components/ui/ChangeRoleModal';
 import CourseUpdateModal from '../components/ui/CourseUpdateModal';
 import CourseDetailsModal from '../components/ui/CourseDetailsModal';
@@ -53,7 +55,7 @@ import {
 } from '../hooks/useClients';
 import { useBulkCourseOperations } from '../hooks/useBulkCourseOperations';
 import { useBulkDuplicateCoursesProgress } from '../hooks/useBulkDuplicateCourses';
-import { Student, Admin, SuperAdmin, ClientCourse } from '../types/client';
+import { Student, Admin, SuperAdmin, ClientCourse, CourseManager } from '../types/client';
 import toast from 'react-hot-toast';
 import { getSiteByName, createSite } from '../services/netlify';
 import BulkDuplicateCoursesModal from '../components/ui/BulkDuplicateCoursesModal';
@@ -62,27 +64,31 @@ import ClientFeaturesSelector from '../components/ui/ClientFeaturesSelector';
 const ClientDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'courses' | 'students' | 'admins' | 'superadmins'>('courses');
+  const [activeTab, setActiveTab] = useState<'courses' | 'students' | 'course_managers' | 'admins' | 'superadmins'>('courses');
   const [courseSearch, setCourseSearch] = useState('');
   const [studentSearch, setStudentSearch] = useState('');
+  const [courseManagerSearch, setCourseManagerSearch] = useState('');
   const [adminSearch, setAdminSearch] = useState('');
   const [superAdminSearch, setSuperAdminSearch] = useState('');
   const [difficultyFilter, setDifficultyFilter] = useState<'all' | 'Easy' | 'Medium' | 'Hard'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'unpublished'>('all');
   const [studentStatusFilter, setStudentStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [courseManagerStatusFilter, setCourseManagerStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [adminStatusFilter, setAdminStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [superAdminStatusFilter, setSuperAdminStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   
   // Modal state
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [selectedCourseManager, setSelectedCourseManager] = useState<CourseManager | null>(null);
   const [selectedAdmin, setSelectedAdmin] = useState<Admin | null>(null);
   const [selectedSuperAdmin, setSelectedSuperAdmin] = useState<SuperAdmin | null>(null);
   const [isStudentModalOpen, setIsStudentModalOpen] = useState(false);
+  const [isCourseManagerModalOpen, setIsCourseManagerModalOpen] = useState(false);
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
   const [isSuperAdminModalOpen, setIsSuperAdminModalOpen] = useState(false);
 
   // Role change modal state
-  const [selectedUserForRoleChange, setSelectedUserForRoleChange] = useState<Student | Admin | SuperAdmin | null>(null);
+  const [selectedUserForRoleChange, setSelectedUserForRoleChange] = useState<Student | Admin | SuperAdmin | CourseManager | null>(null);
   const [isChangeRoleModalOpen, setIsChangeRoleModalOpen] = useState(false);
 
   // Course update modal state
@@ -272,6 +278,16 @@ const ClientDetails: React.FC = () => {
     return matchesSearch && matchesStatus;
   }) || [];
 
+  const filteredCourseManagers = client?.course_managers?.filter(courseManager => {
+    const matchesSearch = courseManager.name.toLowerCase().includes(courseManagerSearch.toLowerCase()) ||
+                         courseManager.email.toLowerCase().includes(courseManagerSearch.toLowerCase()) ||
+                         courseManager.username.toLowerCase().includes(courseManagerSearch.toLowerCase());
+    const matchesStatus = courseManagerStatusFilter === 'all' || 
+                         (courseManagerStatusFilter === 'active' && courseManager.is_active) ||
+                         (courseManagerStatusFilter === 'inactive' && !courseManager.is_active);
+    return matchesSearch && matchesStatus;
+  }) || [];
+
   const filteredAdmins = client?.admins?.filter(admin => {
     const matchesSearch = admin.name.toLowerCase().includes(adminSearch.toLowerCase()) ||
                          admin.email.toLowerCase().includes(adminSearch.toLowerCase()) ||
@@ -313,6 +329,16 @@ const ClientDetails: React.FC = () => {
         'Joined Date': formatDate(student.created_at),
       }));
       console.log('Exporting students:', csvData);
+    } else if (activeTab === 'course_managers') {
+      const csvData = filteredCourseManagers.map(courseManager => ({
+        Name: courseManager.name,
+        Email: courseManager.email,
+        Status: courseManager.is_active ? 'Active' : 'Inactive',
+        'Phone Number': courseManager.phone_number || 'N/A',
+        'Date of Birth': courseManager.date_of_birth ? formatDate(courseManager.date_of_birth) : 'N/A',
+        'Joined Date': formatDate(courseManager.created_at),
+      }));
+      console.log('Exporting course managers:', csvData);
     } else if (activeTab === 'admins') {
       const csvData = filteredAdmins.map(admin => ({
         Name: admin.name,
@@ -341,6 +367,11 @@ const ClientDetails: React.FC = () => {
     setIsStudentModalOpen(true);
   };
 
+  const handleCourseManagerClick = (courseManager: CourseManager) => {
+    setSelectedCourseManager(courseManager);
+    setIsCourseManagerModalOpen(true);
+  };
+
   const handleAdminClick = (admin: Admin) => {
     setSelectedAdmin(admin);
     setIsAdminModalOpen(true);
@@ -356,6 +387,11 @@ const ClientDetails: React.FC = () => {
     setSelectedStudent(null);
   };
 
+  const closeCourseManagerModal = () => {
+    setIsCourseManagerModalOpen(false);
+    setSelectedCourseManager(null);
+  };
+
   const closeAdminModal = () => {
     setIsAdminModalOpen(false);
     setSelectedAdmin(null);
@@ -367,7 +403,7 @@ const ClientDetails: React.FC = () => {
   };
 
   // Role change handlers
-  const handleChangeRole = (user: Student | Admin | SuperAdmin) => {
+  const handleChangeRole = (user: Student | Admin | SuperAdmin | CourseManager) => {
     setSelectedUserForRoleChange(user);
     setIsChangeRoleModalOpen(true);
   };
@@ -669,7 +705,7 @@ const ClientDetails: React.FC = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.2 }}
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6"
       >
         <StatsCard
           title="Total Students"
@@ -680,6 +716,11 @@ const ClientDetails: React.FC = () => {
           title="Total Courses"
           value={client.courses?.length || 0}
           icon={BookOpen}
+        />
+        <StatsCard
+          title="Course Managers"
+          value={client.total_course_managers || client.course_managers?.length || 0}
+          icon={ClipboardList}
         />
         <StatsCard
           title="Total Admins"
@@ -793,6 +834,19 @@ const ClientDetails: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <Users className="w-4 h-4" />
                   Students ({filteredStudents.length})
+                </div>
+              </button>
+              <button
+                onClick={() => setActiveTab('course_managers')}
+                className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'course_managers'
+                    ? 'border-primary-500 text-primary-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <BookOpen className="w-4 h-4" />
+                  Course Managers ({filteredCourseManagers.length})
                 </div>
               </button>
               <button
@@ -1150,6 +1204,136 @@ const ClientDetails: React.FC = () => {
                 </div>
               )}
             </>
+          ) : activeTab === 'course_managers' ? (
+            <>
+              {/* Course Managers Filters */}
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                <h3 className="text-lg font-semibold">Course Managers</h3>
+                <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Input
+                      type="text"
+                      placeholder="Search course managers..."
+                      value={courseManagerSearch}
+                      onChange={(e) => setCourseManagerSearch(e.target.value)}
+                      className="pl-10 w-full sm:w-64"
+                    />
+                  </div>
+                  <select
+                    value={courseManagerStatusFilter}
+                    onChange={(e) => setCourseManagerStatusFilter(e.target.value as any)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Course Managers Table */}
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Course Manager
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Phone
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Joined Date
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {filteredCourseManagers.map((courseManager) => (
+                      <tr key={courseManager.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center">
+                            <div className="flex-shrink-0 h-10 w-10">
+                              {courseManager.profile_pic_url ? (
+                                <img
+                                  className="h-10 w-10 rounded-full object-cover"
+                                  src={courseManager.profile_pic_url}
+                                  alt={courseManager.name}
+                                  onError={(e) => {
+                                    const target = e.target as HTMLImageElement;
+                                    target.style.display = 'none';
+                                    target.nextElementSibling?.classList.remove('hidden');
+                                  }}
+                                />
+                              ) : null}
+                              <div className={`h-10 w-10 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center ${courseManager.profile_pic_url ? 'hidden' : ''}`}>
+                                <span className="text-white font-medium text-sm">
+                                  {courseManager.first_name.charAt(0)}{courseManager.last_name.charAt(0)}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="ml-4">
+                              <div className="text-sm font-medium text-gray-900">{courseManager.name}</div>
+                              <div className="text-sm text-gray-500">{courseManager.email}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span
+                            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                              courseManager.is_active ? 'active' : 'inactive'
+                            )}`}
+                          >
+                            {courseManager.is_active ? 'Active' : 'Inactive'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-900">
+                          {courseManager.phone_number || 'N/A'}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-900">
+                          {formatDate(courseManager.created_at)}
+                        </td>
+                        <td className="px-6 py-4 text-sm font-medium">
+                          <div className="flex items-center gap-2">
+                            <button
+                              className="text-primary-600 hover:text-primary-900 p-1 rounded-md hover:bg-primary-50 transition-colors"
+                              onClick={() => handleCourseManagerClick(courseManager)}
+                              title="View course manager details"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                            <button
+                              className="text-orange-600 hover:text-orange-900 p-1 rounded-md hover:bg-orange-50 transition-colors"
+                              onClick={() => handleChangeRole(courseManager)}
+                              title="Change user role"
+                              disabled={changeRoleMutation.isPending}
+                            >
+                              <UserCog className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {filteredCourseManagers.length === 0 && (
+                <div className="text-center py-12">
+                  <BookOpen className="mx-auto h-12 w-12 text-gray-400" />
+                  <h3 className="mt-2 text-sm font-medium text-gray-900">No course managers found</h3>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Try adjusting your search or filters to find course managers.
+                  </p>
+                </div>
+              )}
+            </>
           ) : activeTab === 'admins' ? (
             <>
               {/* Admins Filters */}
@@ -1420,6 +1604,15 @@ const ClientDetails: React.FC = () => {
           isOpen={isStudentModalOpen}
           onClose={closeStudentModal}
           student={selectedStudent}
+        />
+      )}
+
+      {/* Course Manager Details Modal */}
+      {selectedCourseManager && (
+        <CourseManagerDetailsModal
+          isOpen={isCourseManagerModalOpen}
+          onClose={closeCourseManagerModal}
+          courseManager={selectedCourseManager}
         />
       )}
 

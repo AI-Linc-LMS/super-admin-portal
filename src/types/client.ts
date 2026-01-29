@@ -11,6 +11,7 @@ export interface Client {
   total_courses: number;
   total_admins?: number;
   total_superadmins?: number;
+  total_course_managers?: number;
 
   // Legacy fields for backward compatibility
   logo?: string;
@@ -49,6 +50,7 @@ export interface Feature {
 export interface ClientDetails extends Client {
   courses: ClientCourse[];
   students?: Student[];
+  course_managers?: CourseManager[];
   admins?: Admin[];
   superadmins?: SuperAdmin[];
   description?: string;
@@ -162,6 +164,17 @@ export interface Admin {
   date_of_birth?: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface ManagedCourse {
+  id: number;
+  title: string;
+  slug: string;
+}
+
+export interface CourseManager extends Admin {
+  managed_courses_count?: number;
+  managed_courses?: ManagedCourse[];
 }
 
 export interface SuperAdmin {

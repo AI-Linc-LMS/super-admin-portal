@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
-import { User, Shield, ShieldCheck, UserCheck, AlertTriangle } from 'lucide-react';
+import { User, Shield, ShieldCheck, UserCheck, AlertTriangle, BookOpen } from 'lucide-react';
 import Modal from './Modal';
 import Button from './Button';
-import { Student, Admin, SuperAdmin } from '../../types/client';
+import { Student, Admin, SuperAdmin, CourseManager } from '../../types/client';
 
 interface ChangeRoleModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: (userId: number, newRole: string) => Promise<void>;
-  user: Student | Admin | SuperAdmin;
+  user: Student | Admin | SuperAdmin | CourseManager;
   clientId: number;
   isLoading?: boolean;
 }
@@ -21,6 +21,14 @@ const ROLE_CONFIGS = {
     bgColor: 'bg-blue-50',
     borderColor: 'border-blue-200',
     description: 'Can access courses and learning materials'
+  },
+  course_manager: {
+    label: 'Course Manager',
+    icon: BookOpen,
+    color: 'text-orange-600',
+    bgColor: 'bg-orange-50',
+    borderColor: 'border-orange-200',
+    description: 'Can manage courses, content, and course-related settings'
   },
   admin: {
     label: 'Admin',

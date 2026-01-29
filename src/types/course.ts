@@ -3,6 +3,8 @@ export interface DashboardStats {
   total_clients: number;
   total_courses: number;
   total_active_clients: number;
+  total_course_managers?: number;
+  total_admins?: number;
 }
 
 export interface Course {
