@@ -14,19 +14,26 @@ import {
 } from 'lucide-react';
 import Modal from './Modal';
 import Button from './Button';
-import { ClientCourse } from '../../types/client';
+import CourseManagerAssignment from './CourseManagerAssignment';
+import { ClientCourse, CourseManager } from '../../types/client';
 import { formatDate, formatCurrency, getDifficultyColor, getStatusColor } from '../../utils/helpers';
 
 interface CourseDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
   course: ClientCourse;
+  clientId?: number;
+  courseManagers?: CourseManager[];
+  onCourseManagerUpdate?: () => void;
 }
 
 const CourseDetailsModal: React.FC<CourseDetailsModalProps> = ({
   isOpen,
   onClose,
-  course
+  course,
+  clientId,
+  courseManagers = [],
+  onCourseManagerUpdate
 }) => {
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Course Details">
@@ -138,6 +145,16 @@ const CourseDetailsModal: React.FC<CourseDetailsModalProps> = ({
               ))}
             </div>
           </div>
+        )}
+
+        {/* Course Manager Assignment */}
+        {clientId && (
+          <CourseManagerAssignment
+            course={course}
+            clientId={clientId}
+            courseManagers={courseManagers}
+            onSuccess={onCourseManagerUpdate}
+          />
         )}
 
         {/* Course Details */}

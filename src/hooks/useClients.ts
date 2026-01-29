@@ -116,6 +116,39 @@ export const useUpdateCourse = () => {
   });
 };
 
+export const useAssignCourseManager = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ clientId, courseId, userProfileId }: { 
+      clientId: number; 
+      courseId: number; 
+      userProfileId: number | null;
+    }) => apiService.assignCourseManager(clientId, courseId, userProfileId),
+    onSuccess: (_, { clientId }) => {
+      // Invalidate and refetch client details to update course manager information
+      queryClient.invalidateQueries({ queryKey: ['client-details', clientId] });
+      queryClient.invalidateQueries({ queryKey: ['clients'] });
+    },
+  });
+};
+
+export const useUnassignCourseManager = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ clientId, courseId }: { 
+      clientId: number; 
+      courseId: number;
+    }) => apiService.unassignCourseManager(clientId, courseId),
+    onSuccess: (_, { clientId }) => {
+      // Invalidate and refetch client details to update course manager information
+      queryClient.invalidateQueries({ queryKey: ['client-details', clientId] });
+      queryClient.invalidateQueries({ queryKey: ['clients'] });
+    },
+  });
+};
+
 // Features hooks
 export const useAvailableFeatures = () => {
   return useQuery({

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import {
   ArrowLeft,
@@ -64,6 +65,7 @@ import ClientFeaturesSelector from '../components/ui/ClientFeaturesSelector';
 const ClientDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'courses' | 'students' | 'course_managers' | 'admins' | 'superadmins'>('courses');
   const [courseSearch, setCourseSearch] = useState('');
   const [studentSearch, setStudentSearch] = useState('');
@@ -1658,11 +1660,17 @@ const ClientDetails: React.FC = () => {
       )}
 
       {/* Course Details Modal */}
-      {selectedCourseForDetails && (
+      {selectedCourseForDetails && id && (
         <CourseDetailsModal
           isOpen={isCourseDetailsModalOpen}
           onClose={closeCourseDetailsModal}
           course={selectedCourseForDetails}
+          clientId={parseInt(id)}
+          courseManagers={client?.course_managers || []}
+          onCourseManagerUpdate={() => {
+            // Refetch client details to get updated course manager info
+            queryClient.invalidateQueries({ queryKey: ['client-details', parseInt(id)] });
+          }}
         />
       )}
 

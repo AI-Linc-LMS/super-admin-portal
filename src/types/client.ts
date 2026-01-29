@@ -84,6 +84,13 @@ export interface ClientCourse {
   enrollment_enabled?: boolean;
   enrolled_students_count: number;
   instructors: Instructor[];
+  course_manager?: {
+    id: number;
+    user_id: number;
+    name: string;
+    email: string;
+    username?: string;
+  } | null;
   modules_count?: number;
   created_at: string;
   updated_at: string;

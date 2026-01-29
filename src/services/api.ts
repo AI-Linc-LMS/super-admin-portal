@@ -584,6 +584,44 @@ class ApiService {
     }
   }
 
+  async assignCourseManager(clientId: number, courseId: number, userProfileId: number | null) {
+    try {
+      const endpoint = `/superadmin/api/clients/${clientId}/courses/${courseId}/course-manager/`;
+      const response = await this.post<{
+        message: string;
+        client: { id: number; name: string; slug: string };
+        course: { id: number; title: string; slug: string };
+        previous_course_manager: { id: number; user_id: number; name: string; email: string; username?: string } | null;
+        current_course_manager: { id: number; user_id: number; name: string; email: string; username?: string } | null;
+        action: 'assigned' | 'changed' | 'unassigned' | 'no_change';
+      }>(endpoint, { user_profile_id: userProfileId });
+      console.log(`✅ Course manager assignment updated for course ${courseId} in client ${clientId}:`, response);
+      return response;
+    } catch (error) {
+      console.error(`❌ Failed to assign course manager to course ${courseId}:`, error);
+      throw error;
+    }
+  }
+
+  async unassignCourseManager(clientId: number, courseId: number) {
+    try {
+      const endpoint = `/superadmin/api/clients/${clientId}/courses/${courseId}/course-manager/`;
+      const response = await this.delete<{
+        message: string;
+        client: { id: number; name: string; slug: string };
+        course: { id: number; title: string; slug: string };
+        previous_course_manager: { id: number; user_id: number; name: string; email: string; username?: string } | null;
+        current_course_manager: null;
+        action: 'unassigned';
+      }>(endpoint);
+      console.log(`✅ Course manager unassigned from course ${courseId} in client ${clientId}:`, response);
+      return response;
+    } catch (error) {
+      console.error(`❌ Failed to unassign course manager from course ${courseId}:`, error);
+      throw error;
+    }
+  }
+
   // Features API methods
   async getAvailableFeatures(): Promise<{ total_features: number; features: Feature[] }> {
     try {
