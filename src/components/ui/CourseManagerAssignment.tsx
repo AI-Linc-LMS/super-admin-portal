@@ -101,11 +101,15 @@ const CourseManagerAssignment: React.FC<CourseManagerAssignmentProps> = ({
             <div className="bg-white rounded-lg p-3 border border-gray-200">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
-                  {currentManager.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                  {currentManager.name 
+                    ? currentManager.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+                    : currentManager.email 
+                    ? currentManager.email.charAt(0).toUpperCase()
+                    : 'CM'}
                 </div>
                 <div className="flex-1">
-                  <div className="font-medium text-gray-900">{currentManager.name}</div>
-                  <div className="text-sm text-gray-600">{currentManager.email}</div>
+                  <div className="font-medium text-gray-900">{currentManager.name || 'Course Manager'}</div>
+                  <div className="text-sm text-gray-600">{currentManager.email || 'No email'}</div>
                   {currentManager.username && (
                     <div className="text-xs text-gray-500">@{currentManager.username}</div>
                   )}
@@ -178,7 +182,7 @@ const CourseManagerAssignment: React.FC<CourseManagerAssignmentProps> = ({
               variant="primary"
               size="sm"
               onClick={handleAssign}
-              disabled={isLoading || (currentManager && selectedManagerId === currentManager.id)}
+              disabled={isLoading || (currentManager?.id && selectedManagerId === currentManager.id)}
               className="flex items-center gap-2"
             >
               {isLoading && assignMutation.isPending ? (
