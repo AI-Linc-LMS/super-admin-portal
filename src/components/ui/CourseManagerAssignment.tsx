@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { UserPlus, UserX, User, Loader2 } from 'lucide-react';
 import Button from './Button';
 import { ClientCourse, CourseManager } from '../../types/client';
@@ -19,14 +19,19 @@ const CourseManagerAssignment: React.FC<CourseManagerAssignmentProps> = ({
   onSuccess
 }) => {
   const [selectedManagerId, setSelectedManagerId] = useState<number | null>(
-    course.course_manager?.id || null
+    course.course_manager || null
   );
   const [isEditing, setIsEditing] = useState(false);
 
   const assignMutation = useAssignCourseManager();
   const unassignMutation = useUnassignCourseManager();
 
-  const currentManager = course.course_manager;
+  // Get current manager from course_manager_info or look it up by ID
+  const currentManager = course.course_manager_info || 
+    (course.course_manager 
+      ? courseManagers.find(cm => cm.id === course.course_manager) 
+      : null);
+  
   const isLoading = assignMutation.isPending || unassignMutation.isPending;
 
   const handleAssign = async () => {
@@ -65,7 +70,7 @@ const CourseManagerAssignment: React.FC<CourseManagerAssignmentProps> = ({
   };
 
   const handleCancel = () => {
-    setSelectedManagerId(course.course_manager?.id || null);
+    setSelectedManagerId(course.course_manager || null);
     setIsEditing(false);
   };
 

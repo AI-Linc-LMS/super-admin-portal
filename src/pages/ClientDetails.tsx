@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
@@ -145,6 +145,16 @@ const ClientDetails: React.FC = () => {
   const { data: availableFeaturesData, isLoading: isLoadingFeatures } = useAvailableFeatures();
   const { data: clientFeaturesData, isLoading: isLoadingClientFeatures } = useClientFeatures(clientId);
   const updateClientFeaturesMutation = useUpdateClientFeatures();
+
+  // Update selectedCourseForDetails when client data changes (e.g., after course manager assignment)
+  useEffect(() => {
+    if (selectedCourseForDetails && client?.courses) {
+      const updatedCourse = client.courses.find(c => c.id === selectedCourseForDetails.id);
+      if (updatedCourse) {
+        setSelectedCourseForDetails(updatedCourse);
+      }
+    }
+  }, [client?.courses]);
 
   const [netlifyStatus, setNetlifyStatus] = useState<'checking' | 'deployed' | 'not-deployed' | 'error'>('checking');
   const [netlifySite, setNetlifySite] = useState<any>(null);
