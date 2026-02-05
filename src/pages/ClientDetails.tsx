@@ -446,7 +446,7 @@ const ClientDetails: React.FC = () => {
     setIsCourseUpdateModalOpen(true);
   };
 
-  const handleCourseUpdateConfirm = async (courseId: number, courseData: { price?: number; is_free?: boolean; published?: boolean; enrollment_enabled?: boolean }) => {
+  const handleCourseUpdateConfirm = async (courseId: number, courseData: { price?: number; is_free?: boolean; published?: boolean; enrollment_enabled?: boolean; content_lock_enabled?: boolean }) => {
     try {
       await updateCourseMutation.mutateAsync({
         clientId,

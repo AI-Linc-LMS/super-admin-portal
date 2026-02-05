@@ -70,7 +70,7 @@ const Courses: React.FC = () => {
     setIsCourseUpdateModalOpen(true);
   };
 
-  const handleCourseUpdateConfirm = async (courseId: number, courseData: { price?: number; is_free?: boolean; published?: boolean; enrollment_enabled?: boolean }) => {
+  const handleCourseUpdateConfirm = async (courseId: number, courseData: { price?: number; is_free?: boolean; published?: boolean; enrollment_enabled?: boolean; content_lock_enabled?: boolean }) => {
     try {
       // Note: For global courses, we'll use a mock client ID since this is a global course management
       // In a real implementation, you might need a different API endpoint for global course updates

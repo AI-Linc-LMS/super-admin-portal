@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { IndianRupee, Eye, EyeOff, AlertCircle, Settings, UserPlus, UserX } from 'lucide-react';
+import { IndianRupee, Eye, EyeOff, AlertCircle, Settings, UserPlus, UserX, Lock, Unlock } from 'lucide-react';
 import Modal from './Modal';
 import Button from './Button';
 import Input from './Input';
@@ -8,7 +8,7 @@ import { ClientCourse } from '../../types/client';
 interface CourseUpdateModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (courseId: number, courseData: { price?: number; is_free?: boolean; published?: boolean; enrollment_enabled?: boolean }) => Promise<void>;
+  onConfirm: (courseId: number, courseData: { price?: number; is_free?: boolean; published?: boolean; enrollment_enabled?: boolean; content_lock_enabled?: boolean }) => Promise<void>;
   course: ClientCourse;
   isLoading?: boolean;
 }
@@ -24,7 +24,8 @@ const CourseUpdateModal: React.FC<CourseUpdateModalProps> = ({
     price: parseFloat(course.price) || 0,
     is_free: course.is_free,
     published: course.published,
-    enrollment_enabled: course.enrollment_enabled ?? true
+    enrollment_enabled: course.enrollment_enabled ?? true,
+    content_lock_enabled: course.content_lock_enabled ?? false
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<{ price?: string }>({});
@@ -35,7 +36,8 @@ const CourseUpdateModal: React.FC<CourseUpdateModalProps> = ({
       price: parseFloat(course.price) || 0,
       is_free: course.is_free,
       published: course.published,
-      enrollment_enabled: course.enrollment_enabled ?? true
+      enrollment_enabled: course.enrollment_enabled ?? true,
+      content_lock_enabled: course.content_lock_enabled ?? false
     });
     setErrors({});
   }, [course]);
@@ -62,7 +64,8 @@ const CourseUpdateModal: React.FC<CourseUpdateModalProps> = ({
       formData.price !== parseFloat(course.price) ||
       formData.is_free !== course.is_free ||
       formData.published !== course.published ||
-      formData.enrollment_enabled !== (course.enrollment_enabled ?? true);
+      formData.enrollment_enabled !== (course.enrollment_enabled ?? true) ||
+      formData.content_lock_enabled !== (course.content_lock_enabled ?? false);
 
     if (!hasChanges) {
       onClose();
@@ -72,7 +75,7 @@ const CourseUpdateModal: React.FC<CourseUpdateModalProps> = ({
     try {
       setIsSubmitting(true);
       
-      const updateData: { price?: number; is_free?: boolean; published?: boolean; enrollment_enabled?: boolean } = {};
+      const updateData: { price?: number; is_free?: boolean; published?: boolean; enrollment_enabled?: boolean; content_lock_enabled?: boolean } = {};
       
       // Only include changed fields
       if (formData.is_free !== course.is_free) {
@@ -85,6 +88,10 @@ const CourseUpdateModal: React.FC<CourseUpdateModalProps> = ({
       
       if (formData.enrollment_enabled !== (course.enrollment_enabled ?? true)) {
         updateData.enrollment_enabled = formData.enrollment_enabled;
+      }
+      
+      if (formData.content_lock_enabled !== (course.content_lock_enabled ?? false)) {
+        updateData.content_lock_enabled = formData.content_lock_enabled;
       }
       
       // Handle price changes
@@ -137,7 +144,8 @@ const CourseUpdateModal: React.FC<CourseUpdateModalProps> = ({
     formData.price !== parseFloat(course.price) ||
     formData.is_free !== course.is_free ||
     formData.published !== course.published ||
-    formData.enrollment_enabled !== (course.enrollment_enabled ?? true);
+    formData.enrollment_enabled !== (course.enrollment_enabled ?? true) ||
+    formData.content_lock_enabled !== (course.content_lock_enabled ?? false);
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Update Course Settings">
@@ -328,6 +336,54 @@ const CourseUpdateModal: React.FC<CourseUpdateModalProps> = ({
           </div>
         </div>
 
+        {/* Content Lock Section */}
+        <div className="space-y-4">
+          <h4 className="text-md font-semibold text-gray-900 flex items-center gap-2">
+            {formData.content_lock_enabled ? (
+              <Lock className="w-5 h-5 text-red-600" />
+            ) : (
+              <Unlock className="w-5 h-5 text-green-600" />
+            )}
+            Content Lock Settings
+          </h4>
+          
+          <div className="space-y-3">
+            <label className="flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all hover:border-gray-300">
+              <input
+                type="radio"
+                name="content_lock"
+                checked={!formData.content_lock_enabled}
+                onChange={() => setFormData(prev => ({ ...prev, content_lock_enabled: false }))}
+                className="text-primary-600 focus:ring-primary-500"
+              />
+              <div className="flex-1">
+                <div className="font-medium text-gray-900 flex items-center gap-2">
+                  <Unlock className="w-4 h-4 text-green-600" />
+                  Content Lock Disabled
+                </div>
+                <div className="text-sm text-gray-600">All course content is accessible to enrolled students</div>
+              </div>
+            </label>
+            
+            <label className="flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all hover:border-gray-300">
+              <input
+                type="radio"
+                name="content_lock"
+                checked={formData.content_lock_enabled}
+                onChange={() => setFormData(prev => ({ ...prev, content_lock_enabled: true }))}
+                className="text-primary-600 focus:ring-primary-500"
+              />
+              <div className="flex-1">
+                <div className="font-medium text-gray-900 flex items-center gap-2">
+                  <Lock className="w-4 h-4 text-red-600" />
+                  Content Lock Enabled
+                </div>
+                <div className="text-sm text-gray-600">Course content is locked and requires unlocking</div>
+              </div>
+            </label>
+          </div>
+        </div>
+
         {/* Summary */}
         {hasChanges && (
           <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
@@ -347,6 +403,9 @@ const CourseUpdateModal: React.FC<CourseUpdateModalProps> = ({
                   )}
                   {formData.enrollment_enabled !== (course.enrollment_enabled ?? true) && (
                     <li>• Enrollment: {(course.enrollment_enabled ?? true) ? 'Enabled' : 'Disabled'} → {formData.enrollment_enabled ? 'Enabled' : 'Disabled'}</li>
+                  )}
+                  {formData.content_lock_enabled !== (course.content_lock_enabled ?? false) && (
+                    <li>• Content Lock: {(course.content_lock_enabled ?? false) ? 'Enabled' : 'Disabled'} → {formData.content_lock_enabled ? 'Enabled' : 'Disabled'}</li>
                   )}
                 </ul>
               </div>

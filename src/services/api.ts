@@ -563,7 +563,7 @@ class ApiService {
     }
   }
 
-  async updateCourse(clientId: number, courseId: number, courseData: { price?: number; is_free?: boolean; published?: boolean; enrollment_enabled?: boolean }) {
+  async updateCourse(clientId: number, courseId: number, courseData: { price?: number; is_free?: boolean; published?: boolean; enrollment_enabled?: boolean; content_lock_enabled?: boolean }) {
     try {
       const endpoint = `/superadmin/api/clients/${clientId}/courses/${courseId}/update/`;
       const response = await this.patch(endpoint, courseData);

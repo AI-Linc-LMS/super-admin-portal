@@ -82,6 +82,7 @@ export interface ClientCourse {
   thumbnail?: string | null;
   published: boolean;
   enrollment_enabled?: boolean;
+  content_lock_enabled?: boolean;
   enrolled_students_count: number;
   instructors: Instructor[];
   course_manager?: number | null; // Course manager ID
