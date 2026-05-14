@@ -46,16 +46,16 @@ export const STORAGE_KEYS = {
 } as const;
 
 export const DIFFICULTY_COLORS = {
-  Easy: 'bg-secondary-100 text-secondary-700',
-  Medium: 'bg-accent-100 text-accent-700',
-  Hard: 'bg-danger-100 text-danger-700',
+  Easy: 'border border-emerald-500/30 bg-emerald-500/10 text-emerald-400',
+  Medium: 'border border-brand-gold/30 bg-brand-gold/10 text-brand-gold',
+  Hard: 'border border-danger-500/30 bg-danger-500/10 text-danger-500',
 } as const;
 
 export const STATUS_COLORS = {
-  active: 'bg-secondary-100 text-secondary-700',
-  inactive: 'bg-gray-100 text-gray-700',
-  published: 'bg-secondary-100 text-secondary-700',
-  unpublished: 'bg-gray-100 text-gray-700',
+  active: 'border border-emerald-500/30 bg-emerald-500/10 text-emerald-400',
+  inactive: 'border border-themed-2 bg-line/[0.04] text-text-mute',
+  published: 'border border-emerald-500/30 bg-emerald-500/10 text-emerald-400',
+  unpublished: 'border border-themed-2 bg-line/[0.04] text-text-mute',
 } as const;
 
 export const PAGINATION = {
