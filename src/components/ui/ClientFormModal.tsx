@@ -174,8 +174,8 @@ const ClientFormModal: React.FC<ClientFormModalProps> = ({
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Client Name */}
         <div>
-          <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-            Client Name <span className="text-red-500">*</span>
+          <label htmlFor="name" className="block text-sm font-medium text-text mb-2">
+            Client Name <span className="text-danger-500">*</span>
           </label>
           <Input
             id="name"
@@ -191,8 +191,8 @@ const ClientFormModal: React.FC<ClientFormModalProps> = ({
 
         {/* Slug */}
         <div>
-          <label htmlFor="slug" className="block text-sm font-medium text-gray-700 mb-2">
-            URL Slug <span className="text-red-500">*</span>
+          <label htmlFor="slug" className="block text-sm font-medium text-text mb-2">
+            URL Slug <span className="text-danger-500">*</span>
           </label>
           <Input
             id="slug"
@@ -210,7 +210,7 @@ const ClientFormModal: React.FC<ClientFormModalProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Email */}
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="email" className="block text-sm font-medium text-text mb-2">
               Email
             </label>
             <Input
@@ -225,7 +225,7 @@ const ClientFormModal: React.FC<ClientFormModalProps> = ({
 
           {/* Phone Number */}
           <div>
-            <label htmlFor="phone_number" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="phone_number" className="block text-sm font-medium text-text mb-2">
               Phone Number
             </label>
             <Input
@@ -244,7 +244,7 @@ const ClientFormModal: React.FC<ClientFormModalProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Point of Contact */}
           <div>
-            <label htmlFor="poc_name" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="poc_name" className="block text-sm font-medium text-text mb-2">
               Point of Contact
             </label>
             <Input
@@ -259,7 +259,7 @@ const ClientFormModal: React.FC<ClientFormModalProps> = ({
 
           {/* Joining Date */}
           <div>
-            <label htmlFor="joining_date" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="joining_date" className="block text-sm font-medium text-text mb-2">
               Joining Date
             </label>
             <Input
@@ -274,7 +274,7 @@ const ClientFormModal: React.FC<ClientFormModalProps> = ({
 
         {/* Logo URL */}
         <div>
-          <label htmlFor="logo_url" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="logo_url" className="block text-sm font-medium text-text mb-2">
             Logo URL
           </label>
           <Input
@@ -289,7 +289,7 @@ const ClientFormModal: React.FC<ClientFormModalProps> = ({
         </div>
 
         {/* Form Actions */}
-        <div className="flex items-center justify-end gap-3 pt-6 border-t border-gray-200">
+        <div className="flex items-center justify-end gap-3 pt-6 border-t border-themed">
           <Button
             type="button"
             variant="outline"

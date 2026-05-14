@@ -15,16 +15,22 @@ import {
   List,
   Building2,
   Edit,
-  AlertCircle,
+  AlertTriangle,
+  ChevronDown,
+  LucideIcon,
 } from 'lucide-react';
-import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import ClientFormModal from '../components/ui/ClientFormModal';
 import StatusToggle from '../components/ui/StatusToggle';
-import { useClients, useCreateClient, useUpdateClient, useToggleClientStatus } from '../hooks/useClients';
+import {
+  useClients,
+  useCreateClient,
+  useUpdateClient,
+  useToggleClientStatus,
+} from '../hooks/useClients';
 import { Client } from '../types/client';
-import { formatDate, formatNumber, getStatusColor } from '../utils/helpers';
+import { formatDate, formatNumber, cn } from '../utils/helpers';
 import toast from 'react-hot-toast';
 
 const Clients: React.FC = () => {
@@ -32,25 +38,16 @@ const Clients: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  
-  // Modal state
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
 
-  // API calls without search parameters - we'll filter client-side
-  const { 
-    data: clients, 
-    isLoading, 
-    error
-  } = useClients();
-
-  // Mutations
+  const { data: clients, isLoading, error } = useClients();
   const createClientMutation = useCreateClient();
   const updateClientMutation = useUpdateClient();
   const toggleStatusMutation = useToggleClientStatus();
 
-  // Mock data as fallback when API fails - updated with is_active field
   const fallbackClients: Client[] = [
     {
       id: 1,
@@ -147,38 +144,31 @@ const Clients: React.FC = () => {
     },
   ];
 
-  // Use API data if available, otherwise fallback to mock data
   const clientsData = clients || fallbackClients;
 
-  const filteredClients = clientsData.filter(client => {
-    const matchesSearch = client.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         client.organization_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         client.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         client.poc_name?.toLowerCase().includes(searchQuery.toLowerCase());
-    
+  const filteredClients = clientsData.filter((client) => {
+    const q = searchQuery.toLowerCase();
+    const matchesSearch =
+      client.name?.toLowerCase().includes(q) ||
+      client.organization_name?.toLowerCase().includes(q) ||
+      client.email?.toLowerCase().includes(q) ||
+      client.poc_name?.toLowerCase().includes(q);
     let matchesStatus = true;
-    if (statusFilter === 'active') {
-      matchesStatus = client.is_active === true;
-    } else if (statusFilter === 'inactive') {
-      matchesStatus = client.is_active === false;
-    }
-    
+    if (statusFilter === 'active') matchesStatus = client.is_active === true;
+    else if (statusFilter === 'inactive') matchesStatus = client.is_active === false;
     return matchesSearch && matchesStatus;
   });
 
-  // Modal handlers
   const handleOpenCreateModal = () => {
     setModalMode('create');
     setSelectedClient(null);
     setIsModalOpen(true);
   };
-
   const handleOpenEditModal = (client: Client) => {
     setModalMode('edit');
     setSelectedClient(client);
     setIsModalOpen(true);
   };
-
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedClient(null);
@@ -189,26 +179,22 @@ const Clients: React.FC = () => {
       if (modalMode === 'create') {
         await createClientMutation.mutateAsync(clientData);
       } else if (modalMode === 'edit' && selectedClient) {
-        // Use PATCH for partial updates
         await updateClientMutation.mutateAsync({
           id: selectedClient.id,
           data: clientData,
-          method: 'PATCH'
+          method: 'PATCH',
         });
       }
     } catch (error) {
       console.error('Client submission error:', error);
-      throw error; // Re-throw to let the modal handle the error display
+      throw error;
     }
   };
 
   const handleToggleStatus = async (clientId: number, newStatus: boolean) => {
     try {
       await toggleStatusMutation.mutateAsync({ id: clientId, isActive: newStatus });
-      const message = newStatus 
-        ? t('messages.itemUpdatedSuccessfully') 
-        : t('messages.itemUpdatedSuccessfully');
-      toast.success(message);
+      toast.success(t('messages.itemUpdatedSuccessfully'));
     } catch (error) {
       console.error('Status toggle error:', error);
       toast.error(t('errors.somethingWentWrong'));
@@ -217,7 +203,7 @@ const Clients: React.FC = () => {
   };
 
   const exportClients = () => {
-    const csvData = filteredClients.map(client => ({
+    const csvData = filteredClients.map((client) => ({
       Name: client.name,
       Organization: client.organization_name || client.name,
       Email: client.email,
@@ -230,422 +216,266 @@ const Clients: React.FC = () => {
       'Monthly Revenue': client.monthly_revenue,
       'Joining Date': formatDate(client.joining_date || client.created_at),
     }));
-    
-    // Create CSV content
     const headers = Object.keys(csvData[0] || {});
     const csvContent = [
       headers.join(','),
-      ...csvData.map(row => headers.map(header => `"${row[header as keyof typeof row] || ''}"`).join(','))
+      ...csvData.map((row) =>
+        headers.map((h) => `"${row[h as keyof typeof row] || ''}"`).join(',')
+      ),
     ].join('\n');
-    
-    // Download CSV
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', `clients-${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute(
+      'download',
+      `clients-${new Date().toISOString().split('T')[0]}.csv`
+    );
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    
     toast.success(t('messages.dataLoadedSuccessfully'));
   };
 
-  // Function to get localized status text
-  const getStatusText = (isActive: boolean) => {
-    return isActive ? t('clients.active') : t('clients.inactive');
-  };
-
-  const ClientCard: React.FC<{ client: Client; index: number }> = ({ client, index }) => (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.3, delay: index * 0.05 }}
-    >
-      <Card 
-        glassmorphism 
-        hover 
-        className={`h-full transition-all duration-300 ${
-          client.is_active === false 
-            ? 'bg-gray-50 border-gray-200 opacity-75' 
-            : 'bg-white border-gray-300'
-        }`}
-      >
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center space-x-3">
-            <div className={`w-12 h-12 rounded-lg flex items-center justify-center transition-all duration-300 ${
-              client.is_active === false
-                ? 'bg-gray-300'
-                : 'bg-gradient-to-br from-primary-500 to-primary-600'
-            }`}>
-              {client.logo_url ? (
-                <img 
-                  src={client.logo_url} 
-                  alt={client.name} 
-                  className={`w-8 h-8 rounded transition-all duration-300 ${
-                    client.is_active === false ? 'grayscale' : ''
-                  }`} 
-                />
-              ) : (
-                <Building2 className={`w-6 h-6 ${
-                  client.is_active === false ? 'text-gray-500' : 'text-white'
-                }`} />
-              )}
-            </div>
-            <div>
-              <h3 className={`font-semibold text-lg transition-colors duration-300 ${
-                client.is_active === false ? 'text-gray-500' : 'text-gray-900'
-              }`}>
-                {client.name}
-              </h3>
-              <p className={`text-sm transition-colors duration-300 ${
-                client.is_active === false ? 'text-gray-400' : 'text-gray-600'
-              }`}>
-                {client.organization_name || client.name}
-              </p>
-            </div>
-          </div>
-          
-          {/* Status Badge */}
-          <div className="flex flex-col items-end gap-2">
-            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-              client.is_active === false
-                ? 'bg-red-100 text-red-800'
-                : 'bg-green-100 text-green-800'
-            }`}>
-              {getStatusText(client.is_active !== false)}
-            </span>
-          </div>
-        </div>
-
-        {/* Warning for inactive clients */}
-        {client.is_active === false && (
-          <div className="flex items-center gap-2 mb-4 p-2 bg-orange-50 border border-orange-200 rounded-lg">
-            <AlertCircle className="w-4 h-4 text-orange-500 flex-shrink-0" />
-            <span className="text-sm text-orange-700">
-              {t('clients.inactiveWarning', { defaultValue: 'This client is currently inactive and cannot access the platform.' })}
-            </span>
-          </div>
-        )}
-
-        <div className="space-y-3 mb-4">
-          <div className={`flex items-center text-sm transition-colors duration-300 ${
-            client.is_active === false ? 'text-gray-400' : 'text-gray-600'
-          }`}>
-            <Users className="w-4 h-4 mr-2" />
-            {formatNumber(client.total_students)} {t('dashboard.students')}
-          </div>
-          <div className={`flex items-center text-sm transition-colors duration-300 ${
-            client.is_active === false ? 'text-gray-400' : 'text-gray-600'
-          }`}>
-            <BookOpen className="w-4 h-4 mr-2" />
-            {client.total_courses} {t('navigation.courses').toLowerCase()}
-          </div>
-          {client.monthly_revenue && (
-            <div className={`flex items-center text-sm transition-colors duration-300 ${
-              client.is_active === false ? 'text-gray-400' : 'text-gray-600'
-            }`}>
-              <TrendingUp className="w-4 h-4 mr-2" />
-              ${formatNumber(client.monthly_revenue)}/month
-            </div>
-          )}
-          <div className={`flex items-center text-sm transition-colors duration-300 ${
-            client.is_active === false ? 'text-gray-400' : 'text-gray-600'
-          }`}>
-            <MapPin className="w-4 h-4 mr-2" />
-            {client.industry || t('common.noDataAvailable')}
-          </div>
-        </div>
-
-        <div className="border-t border-gray-200 pt-3">
-          <div className={`flex items-center justify-between text-sm transition-colors duration-300`}>
-            <span className={client.is_active === false ? 'text-gray-400' : 'text-gray-500'}>
-              {t('clients.contact', { defaultValue: 'Contact' })}
-            </span>
-            <span className={client.is_active === false ? 'text-gray-500' : 'text-gray-900'}>
-              {client.poc_name || client.contact_person || t('common.noDataAvailable')}
-            </span>
-          </div>
-          <div className="flex items-center justify-between text-sm mt-1">
-            <span className={client.is_active === false ? 'text-gray-400' : 'text-gray-500'}>
-              {t('clients.joinedDate')}
-            </span>
-            <span className={client.is_active === false ? 'text-gray-500' : 'text-gray-700'}>
-              {formatDate(client.joining_date || client.created_at)}
-            </span>
-          </div>
-          {client.email && (
-            <div className="flex items-center justify-between text-sm mt-1">
-              <span className={client.is_active === false ? 'text-gray-400' : 'text-gray-500'}>
-                {t('clients.email')}
-              </span>
-              <span className={`truncate transition-colors duration-300 ${
-                client.is_active === false ? 'text-gray-500' : 'text-gray-700'
-              }`}>
-                {client.email}
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* Status Toggle Section */}
-        <div className="border-t border-gray-200 pt-3 mt-4">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-medium text-gray-700">{t('clients.status')}</span>
-            <StatusToggle
-              isActive={client.is_active !== false}
-              onToggle={(newStatus) => handleToggleStatus(client.id, newStatus)}
-              size="sm"
-              showLabels={false}
-            />
-          </div>
-        </div>
-
-        <div className="flex items-center justify-end gap-2 mt-4">
-          <Button
-            variant="outline"
-            size="sm"
-            leftIcon={<Edit className="w-4 h-4" />}
-            onClick={() => handleOpenEditModal(client)}
-            disabled={toggleStatusMutation.isPending}
-          >
-            {t('common.edit')}
-          </Button>
-          <Link to={`/clients/${client.id}`}>
-            <Button variant="outline" size="sm" leftIcon={<Eye className="w-4 h-4" />}>
-              {t('common.view')} {t('clients.clientDetails')}
-            </Button>
-          </Link>
-        </div>
-      </Card>
-    </motion.div>
-  );
-
-  // Loading state
   if (isLoading && !clients) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="loading-spinner h-8 w-8"></div>
-        <span className="ml-3 text-gray-600">{t('clients.loadingClients')}</span>
+      <div className="flex h-64 items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-themed border-t-brand-cyan" />
+        <span className="ml-3 text-text-dim">{t('clients.loadingClients')}</span>
       </div>
     );
   }
 
   return (
     <div className="space-y-8">
-      {/* API Warning */}
       {!!error && (
         <motion.div
-          initial={{ opacity: 0, y: -20 }}
+          initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-yellow-50 border border-yellow-200 rounded-lg p-4"
+          className="flex items-start gap-3 rounded-xl border border-brand-gold/25 bg-brand-gold/[0.05] px-4 py-3"
         >
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <div className="ml-3">
-              <p className="text-sm text-yellow-800">
-                <strong>{t('dashboard.demoMode')}:</strong> {t('dashboard.apiWarning')}
-              </p>
-            </div>
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-brand-gold" />
+          <div className="text-[13px] leading-relaxed text-text-dim">
+            <span className="font-mono text-[10px] font-semibold uppercase tracking-widest2 text-brand-gold">
+              {t('dashboard.demoMode')}
+            </span>
+            <span className="ml-2">{t('dashboard.apiWarning')}</span>
           </div>
         </motion.div>
       )}
 
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
+      {/* Hero header */}
+      <motion.section
+        initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+        transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+        className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between"
       >
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('clients.title')}</h1>
-          <p className="text-gray-600">{t('clients.subtitle', { defaultValue: 'Manage your AI-Linc platform clients' })}</p>
+          <span className="kicker mb-3">
+            <Building2 className="mr-2 h-3 w-3" />
+            Tenants
+          </span>
+          <h1 className="serif-display text-[40px] leading-[1.05] text-text">
+            {t('clients.title').split(' ')[0]}{' '}
+            <span className="gradient-text">
+              {t('clients.title').split(' ').slice(1).join(' ') || 'directory'}
+            </span>
+          </h1>
+          <p className="mt-3 max-w-xl text-[14px] leading-relaxed text-text-dim">
+            {t('clients.subtitle', {
+              defaultValue: 'Manage your AI-Linc platform clients',
+            })}
+          </p>
         </div>
-        
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1 bg-white/50 rounded-lg p-1">
-            <Button
-              variant={viewMode === 'grid' ? 'primary' : 'ghost'}
-              size="sm"
+
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div className="inline-flex items-center rounded-lg border border-themed-2 bg-ink-1/40 p-1">
+            <button
+              type="button"
               onClick={() => setViewMode('grid')}
+              className={cn(
+                'rounded-md px-2.5 py-1.5 transition-colors',
+                viewMode === 'grid'
+                  ? 'bg-brand-cyan/15 text-brand-cyan shadow-[inset_0_0_0_1px_rgba(0,224,255,0.3)]'
+                  : 'text-text-mute hover:text-text'
+              )}
+              aria-label="Grid view"
             >
-              <Grid className="w-4 h-4" />
-            </Button>
-            <Button
-              variant={viewMode === 'list' ? 'primary' : 'ghost'}
-              size="sm"
+              <Grid className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
               onClick={() => setViewMode('list')}
+              className={cn(
+                'rounded-md px-2.5 py-1.5 transition-colors',
+                viewMode === 'list'
+                  ? 'bg-brand-cyan/15 text-brand-cyan shadow-[inset_0_0_0_1px_rgba(0,224,255,0.3)]'
+                  : 'text-text-mute hover:text-text'
+              )}
+              aria-label="List view"
             >
-              <List className="w-4 h-4" />
-            </Button>
+              <List className="h-4 w-4" />
+            </button>
           </div>
           <Button
             variant="outline"
-            leftIcon={<Download className="w-4 h-4" />}
+            leftIcon={<Download className="h-4 w-4" />}
             onClick={exportClients}
           >
             {t('common.export', { defaultValue: 'Export' })}
           </Button>
-          <Button leftIcon={<Plus className="w-4 h-4" />} onClick={handleOpenCreateModal}>
+          <Button leftIcon={<Plus className="h-4 w-4" />} onClick={handleOpenCreateModal}>
             {t('clients.addClient')}
           </Button>
         </div>
-      </motion.div>
+      </motion.section>
 
-      {/* Filters */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
+      {/* Filter bar */}
+      <motion.section
+        initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.1 }}
+        transition={{ duration: 0.4, delay: 0.06 }}
+        className="relative overflow-hidden rounded-xl border border-themed surface-card p-4 shadow-glass"
       >
-        <Card glassmorphism className="p-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
-              <Input
-                placeholder={t('clients.searchClients')}
-                leftIcon={<Search className="w-4 h-4" />}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as any)}
-                className="px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-              >
-                <option value="all">{t('filters.all')} {t('clients.status')}</option>
-                <option value="active">{t('clients.active')}</option>
-                <option value="inactive">{t('clients.inactive')}</option>
-              </select>
-            </div>
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-line/15 to-transparent"
+        />
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="flex-1">
+            <Input
+              placeholder={t('clients.searchClients')}
+              leftIcon={<Search className="h-4 w-4" />}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
-        </Card>
-      </motion.div>
+          <div className="relative">
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as any)}
+              className="h-10 appearance-none rounded-lg border border-themed-2 bg-ink-1/60 pl-3 pr-9
+                text-[14px] text-text transition-colors
+                focus:outline-none focus:border-brand-cyan/40 focus:bg-ink-1/90
+                focus:shadow-[0_0_0_3px_rgba(0,224,255,0.10)]"
+            >
+              <option value="all">
+                {t('filters.all')} {t('clients.status')}
+              </option>
+              <option value="active">{t('clients.active')}</option>
+              <option value="inactive">{t('clients.inactive')}</option>
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-mute" />
+          </div>
+        </div>
+      </motion.section>
 
-      {/* Clients Grid/List */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
+      {/* Body */}
+      <motion.section
+        initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.2 }}
+        transition={{ duration: 0.45, delay: 0.12 }}
       >
         {viewMode === 'grid' ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredClients.map((client, index) => (
-              <ClientCard key={client.id} client={client} index={index} />
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
+            {filteredClients.map((client, i) => (
+              <ClientCard
+                key={client.id}
+                client={client}
+                index={i}
+                onEdit={() => handleOpenEditModal(client)}
+                onToggle={(s) => handleToggleStatus(client.id, s)}
+                togglePending={toggleStatusMutation.isPending}
+                t={t}
+              />
             ))}
           </div>
         ) : (
-          <Card glassmorphism padding="none">
+          <div className="relative overflow-hidden rounded-xl border border-themed surface-card shadow-glass">
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand-cyan/30 to-transparent"
+            />
             <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Students</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Courses</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Toggle</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              <table className="min-w-full">
+                <thead>
+                  <tr className="border-b border-themed bg-ink-1/30">
+                    {['Client', 'Status', 'Students', 'Courses', 'Contact', 'Toggle', 'Actions'].map(
+                      (h) => (
+                        <th
+                          key={h}
+                          className={cn(
+                            'whitespace-nowrap px-6 py-3 text-left font-mono text-[10px] font-semibold uppercase tracking-widest2 text-text-mute',
+                            h === 'Actions' && 'text-right'
+                          )}
+                        >
+                          {h}
+                        </th>
+                      )
+                    )}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody>
                   {filteredClients.map((client) => (
-                    <tr 
-                      key={client.id} 
-                      className={`hover:bg-gray-50 transition-all duration-300 ${
-                        client.is_active === false ? 'bg-gray-50 opacity-75' : 'bg-white'
-                      }`}
+                    <tr
+                      key={client.id}
+                      className={cn(
+                        'group border-b border-themed transition-colors last:border-b-0 hover:bg-line/[0.03]',
+                        client.is_active === false && 'opacity-70'
+                      )}
                     >
-                      <td className="px-6 py-4">
-                        <div className="flex items-center">
-                          <div className="flex-shrink-0 h-10 w-10">
-                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-300 ${
-                              client.is_active === false
-                                ? 'bg-gray-300'
-                                : 'bg-gradient-to-br from-primary-500 to-primary-600'
-                            }`}>
-                              {client.logo_url ? (
-                                <img 
-                                  src={client.logo_url} 
-                                  alt={client.name} 
-                                  className={`w-6 h-6 rounded transition-all duration-300 ${
-                                    client.is_active === false ? 'grayscale' : ''
-                                  }`} 
-                                />
-                              ) : (
-                                <Building2 className={`w-5 h-5 ${
-                                  client.is_active === false ? 'text-gray-500' : 'text-white'
-                                }`} />
-                              )}
-                            </div>
-                          </div>
-                          <div className="ml-4">
-                            <div className={`text-sm font-medium transition-colors duration-300 ${
-                              client.is_active === false ? 'text-gray-500' : 'text-gray-900'
-                            }`}>
+                      <td className="whitespace-nowrap px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <BrandLogo client={client} size="sm" />
+                          <div>
+                            <div className="text-[14px] font-medium text-text">
                               {client.name}
                             </div>
-                            <div className={`text-sm transition-colors duration-300 ${
-                              client.is_active === false ? 'text-gray-400' : 'text-gray-500'
-                            }`}>
-                              {client.email || 'No email provided'}
+                            <div className="text-[12px] text-text-dim">
+                              {client.email || 'No email'}
                             </div>
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                          client.is_active === false
-                            ? 'bg-red-100 text-red-800'
-                            : 'bg-green-100 text-green-800'
-                        }`}>
-                          {getStatusText(client.is_active !== false)}
-                        </span>
+                      <td className="whitespace-nowrap px-6 py-4">
+                        <StatusPill active={client.is_active !== false} />
                       </td>
-                      <td className={`px-6 py-4 text-sm transition-colors duration-300 ${
-                        client.is_active === false ? 'text-gray-400' : 'text-gray-900'
-                      }`}>
+                      <td className="whitespace-nowrap px-6 py-4 text-[13px] text-text">
                         {formatNumber(client.total_students)}
                       </td>
-                      <td className={`px-6 py-4 text-sm transition-colors duration-300 ${
-                        client.is_active === false ? 'text-gray-400' : 'text-gray-900'
-                      }`}>
+                      <td className="whitespace-nowrap px-6 py-4 text-[13px] text-text">
                         {client.total_courses}
                       </td>
-                      <td className={`px-6 py-4 text-sm transition-colors duration-300 ${
-                        client.is_active === false ? 'text-gray-400' : 'text-gray-900'
-                      }`}>
-                        {client.poc_name || client.contact_person || 'Not available'}
+                      <td className="whitespace-nowrap px-6 py-4 text-[13px] text-text">
+                        {client.poc_name || client.contact_person || '—'}
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="whitespace-nowrap px-6 py-4">
                         <StatusToggle
                           isActive={client.is_active !== false}
-                          onToggle={(newStatus) => handleToggleStatus(client.id, newStatus)}
+                          onToggle={(s) => handleToggleStatus(client.id, s)}
                           size="sm"
                           showLabels={false}
                         />
                       </td>
-                      <td className="px-6 py-4 text-right text-sm font-medium">
+                      <td className="whitespace-nowrap px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <Button
                             variant="outline"
                             size="sm"
-                            leftIcon={<Edit className="w-4 h-4" />}
+                            leftIcon={<Edit className="h-3.5 w-3.5" />}
                             onClick={() => handleOpenEditModal(client)}
                             disabled={toggleStatusMutation.isPending}
                           >
                             {t('common.edit')}
                           </Button>
                           <Link to={`/clients/${client.id}`}>
-                            <Button variant="outline" size="sm" leftIcon={<Eye className="w-4 h-4" />}>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              leftIcon={<Eye className="h-3.5 w-3.5" />}
+                            >
                               {t('common.view')}
                             </Button>
                           </Link>
@@ -656,19 +486,26 @@ const Clients: React.FC = () => {
                 </tbody>
               </table>
             </div>
-          </Card>
+          </div>
         )}
 
         {filteredClients.length === 0 && (
-          <div className="text-center py-12">
-            <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">{t('clients.noClientsAvailable')}</h3>
-            <p className="text-gray-500">{t('filters.tryAdjusting', { defaultValue: 'Try adjusting your search or filter criteria' })}</p>
+          <div className="mt-2 flex flex-col items-center justify-center rounded-xl border border-dashed border-themed-2 bg-line/[0.02] py-16 text-center">
+            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-themed bg-line/[0.03]">
+              <Users className="h-6 w-6 text-text-mute" />
+            </div>
+            <h3 className="text-[16px] font-semibold text-text">
+              {t('clients.noClientsAvailable')}
+            </h3>
+            <p className="mt-2 text-[13px] text-text-dim">
+              {t('filters.tryAdjusting', {
+                defaultValue: 'Try adjusting your search or filter criteria',
+              })}
+            </p>
           </div>
         )}
-      </motion.div>
+      </motion.section>
 
-      {/* Client Form Modal */}
       <ClientFormModal
         isOpen={isModalOpen}
         onClose={handleCloseModal}
@@ -679,5 +516,241 @@ const Clients: React.FC = () => {
     </div>
   );
 };
+
+/* ---------- Helpers ---------- */
+
+const BrandLogo: React.FC<{ client: Client; size?: 'sm' | 'md' }> = ({
+  client,
+  size = 'md',
+}) => {
+  const cls = size === 'sm' ? 'h-10 w-10 rounded-lg' : 'h-12 w-12 rounded-xl';
+  const inactive = client.is_active === false;
+  return (
+    <div className={cn('relative shrink-0', cls)}>
+      <div
+        className={cn(
+          'absolute inset-0',
+          cls,
+          inactive ? 'bg-ink-3' : 'bg-brand-grad shadow-[0_8px_24px_-8px_rgba(0,224,255,0.45)]'
+        )}
+        aria-hidden
+      />
+      <div className={cn('relative flex h-full w-full items-center justify-center')}>
+        {client.logo_url ? (
+          <img
+            src={client.logo_url}
+            alt={client.name}
+            className={cn(
+              size === 'sm' ? 'h-6 w-6' : 'h-7 w-7',
+              'rounded',
+              inactive && 'grayscale'
+            )}
+          />
+        ) : (
+          <Building2
+            className={cn(
+              size === 'sm' ? 'h-5 w-5' : 'h-6 w-6',
+              inactive ? 'text-text-mute' : 'text-white'
+            )}
+            strokeWidth={1.75}
+          />
+        )}
+      </div>
+    </div>
+  );
+};
+
+const StatusPill: React.FC<{ active: boolean }> = ({ active }) => (
+  <span
+    className={cn(
+      'inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-widest2',
+      active
+        ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
+        : 'border-danger-500/30 bg-danger-500/10 text-danger-500'
+    )}
+  >
+    <span
+      className={cn(
+        'h-1.5 w-1.5 rounded-full',
+        active ? 'bg-emerald-400 animate-pulse-soft' : 'bg-danger-500'
+      )}
+    />
+    {active ? 'Active' : 'Inactive'}
+  </span>
+);
+
+const InfoRow: React.FC<{
+  icon: LucideIcon;
+  label: string;
+  inactive?: boolean;
+}> = ({ icon: Icon, label, inactive }) => (
+  <div
+    className={cn(
+      'flex items-center gap-2 text-[13px]',
+      inactive ? 'text-text-mute' : 'text-text-dim'
+    )}
+  >
+    <Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={1.75} />
+    <span className="truncate">{label}</span>
+  </div>
+);
+
+interface ClientCardProps {
+  client: Client;
+  index: number;
+  onEdit: () => void;
+  onToggle: (s: boolean) => Promise<void>;
+  togglePending: boolean;
+  t: (key: string, opts?: any) => string;
+}
+
+const ClientCard: React.FC<ClientCardProps> = ({
+  client,
+  index,
+  onEdit,
+  onToggle,
+  togglePending,
+  t,
+}) => {
+  const inactive = client.is_active === false;
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, delay: index * 0.04, ease: [0.16, 1, 0.3, 1] }}
+      className={cn(
+        'group relative flex h-full flex-col overflow-hidden rounded-xl border border-themed surface-card shadow-glass',
+        'transition-all duration-300 ease-out',
+        'hover:-translate-y-0.5 hover:border-brand-cyan/30 hover:shadow-glow',
+        inactive && 'opacity-75'
+      )}
+    >
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-line/20 to-transparent"
+      />
+
+      <div className="flex flex-col gap-5 p-6">
+        {/* Top: brand mark + name + status */}
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex min-w-0 items-start gap-3">
+            <BrandLogo client={client} />
+            <div className="min-w-0">
+              <h3
+                className={cn(
+                  'truncate text-[16px] font-semibold leading-tight',
+                  inactive ? 'text-text-dim' : 'text-text'
+                )}
+              >
+                {client.name}
+              </h3>
+              <p className="mt-1 truncate font-mono text-[10px] uppercase tracking-widest2 text-text-mute">
+                {client.organization_name || client.slug}
+              </p>
+            </div>
+          </div>
+          <StatusPill active={!inactive} />
+        </div>
+
+        {/* Inactive warning */}
+        {inactive && (
+          <div className="flex items-start gap-2 rounded-lg border border-brand-gold/20 bg-brand-gold/[0.05] px-3 py-2 text-[12px] leading-relaxed text-text-dim">
+            <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand-gold" />
+            <span>
+              {t('clients.inactiveWarning', {
+                defaultValue:
+                  'This client is currently inactive and cannot access the platform.',
+              })}
+            </span>
+          </div>
+        )}
+
+        {/* Info rows */}
+        <div className="space-y-2">
+          <InfoRow
+            icon={Users}
+            inactive={inactive}
+            label={`${formatNumber(client.total_students)} ${t('dashboard.students')}`}
+          />
+          <InfoRow
+            icon={BookOpen}
+            inactive={inactive}
+            label={`${client.total_courses} ${t('navigation.courses').toLowerCase()}`}
+          />
+          {client.monthly_revenue ? (
+            <InfoRow
+              icon={TrendingUp}
+              inactive={inactive}
+              label={`$${formatNumber(client.monthly_revenue)}/mo`}
+            />
+          ) : null}
+          <InfoRow
+            icon={MapPin}
+            inactive={inactive}
+            label={client.industry || t('common.noDataAvailable')}
+          />
+        </div>
+
+        {/* Meta strip */}
+        <div className="grid grid-cols-2 gap-x-4 gap-y-2 border-t border-themed pt-4 text-[12px]">
+          <Meta label={t('clients.contact', { defaultValue: 'Contact' })}>
+            {client.poc_name || client.contact_person || '—'}
+          </Meta>
+          <Meta label={t('clients.joinedDate')}>
+            {formatDate(client.joining_date || client.created_at)}
+          </Meta>
+          {client.email && (
+            <Meta label={t('clients.email')} className="col-span-2">
+              <span className="break-all">{client.email}</span>
+            </Meta>
+          )}
+        </div>
+
+        {/* Status toggle + actions */}
+        <div className="mt-auto flex items-center justify-between gap-3 border-t border-themed pt-4">
+          <StatusToggle
+            isActive={!inactive}
+            onToggle={onToggle}
+            size="sm"
+            showLabels
+          />
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              leftIcon={<Edit className="h-3.5 w-3.5" />}
+              onClick={onEdit}
+              disabled={togglePending}
+            >
+              {t('common.edit')}
+            </Button>
+            <Link to={`/clients/${client.id}`}>
+              <Button
+                variant="ghost"
+                size="sm"
+                leftIcon={<Eye className="h-3.5 w-3.5" />}
+              >
+                {t('common.view')}
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
+const Meta: React.FC<{
+  label: string;
+  children: React.ReactNode;
+  className?: string;
+}> = ({ label, children, className }) => (
+  <div className={cn('min-w-0', className)}>
+    <div className="font-mono text-[10px] uppercase tracking-widest2 text-text-mute">
+      {label}
+    </div>
+    <div className="mt-0.5 truncate text-text-dim">{children}</div>
+  </div>
+);
 
 export default Clients;

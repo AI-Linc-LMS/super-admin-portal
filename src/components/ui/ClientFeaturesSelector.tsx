@@ -95,8 +95,8 @@ const ClientFeaturesSelector: React.FC<ClientFeaturesSelectorProps> = ({
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-6 h-6 animate-spin text-primary-600" />
-        <span className="ml-3 text-gray-600">Loading features...</span>
+        <Loader2 className="w-6 h-6 animate-spin text-brand-cyan" />
+        <span className="ml-3 text-text-dim">Loading features...</span>
       </div>
     );
   }
@@ -106,15 +106,15 @@ const ClientFeaturesSelector: React.FC<ClientFeaturesSelectorProps> = ({
       {/* Header with Select All */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">Client Features</h3>
-          <p className="text-sm text-gray-500 mt-1">
+          <h3 className="text-lg font-semibold text-text">Client Features</h3>
+          <p className="text-sm text-text-mute mt-1">
             Select features to enable for this client ({selectedFeatureIds.length} of {availableFeatures.length} selected)
           </p>
         </div>
         {availableFeatures.length > 0 && (
           <button
             onClick={handleSelectAll}
-            className="flex items-center gap-2 text-sm text-primary-600 hover:text-primary-700 font-medium transition-colors"
+            className="flex items-center gap-2 text-sm text-brand-cyan hover:text-brand-cyan font-medium transition-colors"
           >
             {allSelected ? (
               <>
@@ -133,7 +133,7 @@ const ClientFeaturesSelector: React.FC<ClientFeaturesSelectorProps> = ({
 
       {/* Features Grid */}
       {availableFeatures.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">
+        <div className="text-center py-8 text-text-mute">
           <p>No features available</p>
         </div>
       ) : (
@@ -145,14 +145,14 @@ const ClientFeaturesSelector: React.FC<ClientFeaturesSelectorProps> = ({
                 key={feature.id}
                 htmlFor={`feature-${feature.id}`}
                 className={`
-                  flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all
-                  ${isSelected 
-                    ? 'border-primary-500 bg-primary-50 ring-2 ring-primary-200' 
-                    : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                  flex items-center gap-3 p-4 rounded-lg border cursor-pointer transition-all
+                  ${isSelected
+                    ? 'border-brand-cyan/50 bg-brand-cyan/[0.08] shadow-[inset_0_0_0_1px_rgba(0,224,255,0.2)]'
+                    : 'border-themed hover:border-themed-2 hover:bg-line/[0.04]'
                   }
                 `}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
               >
                 <input
                   type="checkbox"
@@ -162,17 +162,17 @@ const ClientFeaturesSelector: React.FC<ClientFeaturesSelectorProps> = ({
                   className="sr-only"
                 />
                 <div className={`
-                  w-5 h-5 rounded border-2 flex items-center justify-center transition-all flex-shrink-0
-                  ${isSelected 
-                    ? 'bg-primary-600 border-primary-600 text-white' 
-                    : 'bg-white border-gray-300'
+                  w-5 h-5 rounded border flex items-center justify-center transition-all flex-shrink-0
+                  ${isSelected
+                    ? 'bg-brand-cyan border-brand-cyan text-ink-0 shadow-[0_0_10px_-2px_rgba(0,224,255,0.6)]'
+                    : 'bg-ink-1/40 border-themed-2'
                   }
                 `}>
-                  {isSelected && <Check className="w-4 h-4" />}
+                  {isSelected && <Check className="w-3.5 h-3.5" strokeWidth={3} />}
                 </div>
                 <span className={`
                   text-sm font-medium flex-1
-                  ${isSelected ? 'text-primary-900' : 'text-gray-900'}
+                  ${isSelected ? 'text-brand-cyan' : 'text-text'}
                 `}>
                   {feature.name}
                 </span>
@@ -187,7 +187,7 @@ const ClientFeaturesSelector: React.FC<ClientFeaturesSelectorProps> = ({
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex justify-end pt-4 border-t border-gray-200"
+          className="flex justify-end pt-4 border-t border-themed"
         >
           <Button
             variant="primary"
