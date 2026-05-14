@@ -11,6 +11,7 @@ import {
   ChevronLeft,
   Menu,
   Bot,
+  Inbox,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../store/authStore';
@@ -34,6 +35,11 @@ const Sidebar: React.FC = () => {
       name: t('navigation.clients'),
       href: ROUTES.CLIENTS,
       icon: Users,
+    },
+    {
+      name: 'Tenant Requests',
+      href: ROUTES.TENANT_REQUESTS,
+      icon: Inbox,
     },
     {
       name: t('navigation.courses'),

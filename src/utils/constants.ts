@@ -32,6 +32,7 @@ export const ROUTES = {
   DASHBOARD: '/',
   CLIENTS: '/clients',
   CLIENT_DETAILS: (id: string | number) => `/clients/${id}`,
+  TENANT_REQUESTS: '/tenant-requests',
   COURSES: '/courses',
   CHATBOTS: '/chatbots',
   ANALYTICS: '/analytics',

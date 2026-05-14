@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Clients from './pages/Clients';
 import ClientDetails from './pages/ClientDetails';
+import TenantRequests from './pages/TenantRequests';
 import Courses from './pages/Courses';
 import Chatbots from './pages/Chatbots';
 import Settings from './pages/Settings';
@@ -94,6 +95,7 @@ function App() {
               <Route index element={<Dashboard />} />
               <Route path="clients" element={<Clients />} />
               <Route path="clients/:id" element={<ClientDetails />} />
+              <Route path="tenant-requests" element={<TenantRequests />} />
               <Route path="courses" element={<Courses />} />
               <Route path="chatbots" element={<Chatbots />} />
               <Route path="settings" element={<Settings />} />
