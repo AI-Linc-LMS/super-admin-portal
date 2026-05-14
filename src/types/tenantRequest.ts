@@ -19,6 +19,14 @@ export interface TenantRequestListItem {
   approved_subdomain: string;
 }
 
+export interface WizardProgress {
+  setup_completed: boolean;
+  setup_step: number;
+  total_steps: number;
+  wizard_state: Record<string, unknown>;
+  launched_at: string | null;
+}
+
 export interface TenantRequestDetail extends TenantRequestListItem {
   logo_url: string;
   description: string;
@@ -27,7 +35,19 @@ export interface TenantRequestDetail extends TenantRequestListItem {
   approved_client_id: number | null;
   google_subject_id: string;
   reviewed_by_email: string | null;
+  wizard_progress: WizardProgress | null;
 }
+
+export const WIZARD_STEP_TITLES = [
+  'Welcome',
+  'Brand identity',
+  'URL',
+  'Theme',
+  'Features',
+  'Admin capabilities',
+  'Course library',
+  'Review & launch',
+] as const;
 
 export interface SubdomainCheckResponse {
   available: boolean;
