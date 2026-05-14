@@ -77,13 +77,13 @@ const CourseManagerAssignment: React.FC<CourseManagerAssignmentProps> = ({
   const availableManagers = courseManagers.filter(cm => cm.is_active);
 
   return (
-    <div className="bg-gray-50 rounded-lg p-4 space-y-4">
+    <div className="bg-line/[0.03] rounded-lg p-4 space-y-4">
       <div className="flex items-center justify-between">
-        <h4 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+        <h4 className="text-lg font-semibold text-text flex items-center gap-2">
           {currentManager ? (
-            <User className="w-5 h-5 text-primary-600" />
+            <User className="w-5 h-5 text-brand-cyan" />
           ) : (
-            <UserX className="w-5 h-5 text-gray-400" />
+            <UserX className="w-5 h-5 text-text-mute" />
           )}
           Course Manager
         </h4>
@@ -103,9 +103,9 @@ const CourseManagerAssignment: React.FC<CourseManagerAssignmentProps> = ({
         // Display Mode
         <div>
           {currentManager ? (
-            <div className="bg-white rounded-lg p-3 border border-gray-200">
+            <div className="bg-white rounded-lg p-3 border border-themed">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
+                <div className="w-10 h-10 bg-brand-cyan/10 rounded-full flex items-center justify-center">
                   {currentManager.name 
                     ? currentManager.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
                     : currentManager.email 
@@ -113,18 +113,18 @@ const CourseManagerAssignment: React.FC<CourseManagerAssignmentProps> = ({
                     : 'CM'}
                 </div>
                 <div className="flex-1">
-                  <div className="font-medium text-gray-900">{currentManager.name || 'Course Manager'}</div>
-                  <div className="text-sm text-gray-600">{currentManager.email || 'No email'}</div>
+                  <div className="font-medium text-text">{currentManager.name || 'Course Manager'}</div>
+                  <div className="text-sm text-text-dim">{currentManager.email || 'No email'}</div>
                   {currentManager.username && (
-                    <div className="text-xs text-gray-500">@{currentManager.username}</div>
+                    <div className="text-xs text-text-mute">@{currentManager.username}</div>
                   )}
                 </div>
               </div>
             </div>
           ) : (
-            <div className="bg-white rounded-lg p-4 border border-dashed border-gray-300 text-center">
-              <UserX className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-              <p className="text-sm text-gray-600">No course manager assigned</p>
+            <div className="bg-white rounded-lg p-4 border border-dashed border-themed-2 text-center">
+              <UserX className="w-8 h-8 text-text-mute mx-auto mb-2" />
+              <p className="text-sm text-text-dim">No course manager assigned</p>
             </div>
           )}
         </div>
@@ -132,19 +132,19 @@ const CourseManagerAssignment: React.FC<CourseManagerAssignmentProps> = ({
         // Edit Mode
         <div className="space-y-4">
           {availableManagers.length === 0 ? (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
+            <div className="bg-brand-gold/[0.05] border border-brand-gold/25 rounded-lg p-4 text-center">
               <UserX className="w-6 h-6 text-yellow-600 mx-auto mb-2" />
-              <p className="text-sm text-yellow-800">No active course managers available for this client</p>
+              <p className="text-sm text-brand-gold">No active course managers available for this client</p>
             </div>
           ) : (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-text mb-2">
                 Select Course Manager
               </label>
               <select
                 value={selectedManagerId || ''}
                 onChange={(e) => setSelectedManagerId(e.target.value ? parseInt(e.target.value) : null)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+                className="w-full px-3 py-2 border border-themed-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-cyan/40 bg-ink-1/60"
                 disabled={isLoading}
               >
                 <option value="">-- No Course Manager --</option>

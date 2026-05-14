@@ -17,24 +17,24 @@ const ROLE_CONFIGS = {
   student: {
     label: 'Student',
     icon: User,
-    color: 'text-blue-600',
-    bgColor: 'bg-blue-50',
+    color: 'text-brand-cyan',
+    bgColor: 'bg-brand-cyan/5',
     borderColor: 'border-blue-200',
     description: 'Can access courses and learning materials'
   },
   course_manager: {
     label: 'Course Manager',
     icon: BookOpen,
-    color: 'text-orange-600',
-    bgColor: 'bg-orange-50',
-    borderColor: 'border-orange-200',
+    color: 'text-brand-gold',
+    bgColor: 'bg-brand-gold/[0.05]',
+    borderColor: 'border-brand-gold/25',
     description: 'Can manage courses, content, and course-related settings'
   },
   admin: {
     label: 'Admin',
     icon: Shield,
-    color: 'text-green-600',
-    bgColor: 'bg-green-50',
+    color: 'text-emerald-400',
+    bgColor: 'bg-emerald-500/[0.05]',
     borderColor: 'border-green-200',
     description: 'Can manage courses, students, and client content'
   },
@@ -83,11 +83,11 @@ const ChangeRoleModal: React.FC<ChangeRoleModalProps> = ({
     <Modal isOpen={isOpen} onClose={onClose} title="Change User Role">
       <div className="space-y-6">
         {/* User Info */}
-        <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
+        <div className="flex items-center space-x-4 p-4 bg-line/[0.03] rounded-lg">
           <div className="flex-shrink-0">
             {user.profile_pic_url ? (
               <img
-                className="h-12 w-12 rounded-full object-cover border-2 border-gray-200"
+                className="h-12 w-12 rounded-full object-cover border-2 border-themed"
                 src={user.profile_pic_url}
                 alt={user.name}
                 onError={(e) => {
@@ -97,15 +97,15 @@ const ChangeRoleModal: React.FC<ChangeRoleModalProps> = ({
                 }}
               />
             ) : null}
-            <div className={`h-12 w-12 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center border-2 border-gray-200 ${user.profile_pic_url ? 'hidden' : ''}`}>
+            <div className={`h-12 w-12 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center border-2 border-themed ${user.profile_pic_url ? 'hidden' : ''}`}>
               <span className="text-white font-bold text-lg">
                 {user.first_name.charAt(0)}{user.last_name.charAt(0)}
               </span>
             </div>
           </div>
           <div className="flex-1">
-            <h3 className="text-lg font-semibold text-gray-900">{user.name}</h3>
-            <p className="text-sm text-gray-600">{user.email}</p>
+            <h3 className="text-lg font-semibold text-text">{user.name}</h3>
+            <p className="text-sm text-text-dim">{user.email}</p>
             <div className="flex items-center gap-2 mt-1">
               {currentRoleConfig && (
                 <>
@@ -130,7 +130,7 @@ const ChangeRoleModal: React.FC<ChangeRoleModalProps> = ({
 
         {/* Role Selection */}
         <div className="space-y-3">
-          <h4 className="text-sm font-medium text-gray-900">Select New Role:</h4>
+          <h4 className="text-sm font-medium text-text">Select New Role:</h4>
           <div className="space-y-2">
             {Object.entries(ROLE_CONFIGS).map(([roleKey, config]) => (
               <label
@@ -138,7 +138,7 @@ const ChangeRoleModal: React.FC<ChangeRoleModalProps> = ({
                 className={`flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
                   selectedRole === roleKey
                     ? `${config.bgColor} ${config.borderColor}`
-                    : 'bg-white border-gray-200 hover:border-gray-300'
+                    : 'bg-white border-themed hover:border-themed-2'
                 }`}
               >
                 <input
@@ -156,12 +156,12 @@ const ChangeRoleModal: React.FC<ChangeRoleModalProps> = ({
                       {config.label}
                     </span>
                     {roleKey === user.role && (
-                      <span className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-full">
+                      <span className="px-2 py-1 text-xs bg-line/[0.05] text-text-dim rounded-full">
                         Current
                       </span>
                     )}
                   </div>
-                  <p className="text-sm text-gray-600">{config.description}</p>
+                  <p className="text-sm text-text-dim">{config.description}</p>
                 </div>
               </label>
             ))}
@@ -170,12 +170,12 @@ const ChangeRoleModal: React.FC<ChangeRoleModalProps> = ({
 
         {/* Role Change Summary */}
         {selectedRole !== user.role && (
-          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="p-4 bg-brand-cyan/5 border border-blue-200 rounded-lg">
             <div className="flex items-center gap-2 mb-2">
-              <UserCheck className="w-5 h-5 text-blue-600" />
-              <span className="font-medium text-blue-900">Role Change Summary</span>
+              <UserCheck className="w-5 h-5 text-brand-cyan" />
+              <span className="font-medium text-brand-cyan">Role Change Summary</span>
             </div>
-            <div className="text-sm text-blue-800">
+            <div className="text-sm text-brand-cyan">
               <p>
                 <strong>{user.name}</strong> will be changed from{' '}
                 <strong>{currentRoleConfig?.label}</strong> to{' '}
@@ -187,7 +187,7 @@ const ChangeRoleModal: React.FC<ChangeRoleModalProps> = ({
         )}
 
         {/* Actions */}
-        <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+        <div className="flex justify-end space-x-3 pt-4 border-t border-themed">
           <Button
             variant="outline"
             onClick={onClose}
