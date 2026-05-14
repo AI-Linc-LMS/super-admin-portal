@@ -10,45 +10,57 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 }
 
 const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ className, label, error, helpText, leftIcon, rightIcon, type, ...props }, ref) => {
+  ({ className, label, error, helpText, leftIcon, rightIcon, type, id, ...props }, ref) => {
+    const inputId = id || props.name;
+
     return (
       <div className="w-full">
         {label && (
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label
+            htmlFor={inputId}
+            className="mb-1.5 block font-mono text-[11px] font-semibold uppercase
+              tracking-widest2 text-text-dim"
+          >
             {label}
           </label>
         )}
-        <div className="relative">
+        <div className="relative group">
           {leftIcon && (
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <div className="text-gray-400">{leftIcon}</div>
+            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+              <span className="text-text-mute group-focus-within:text-brand-cyan transition-colors">
+                {leftIcon}
+              </span>
             </div>
           )}
           <input
+            id={inputId}
             type={type}
+            ref={ref}
             className={cn(
-              'flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm',
-              'placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent',
+              'flex h-10 w-full rounded-lg border border-themed-2 bg-ink-1/60 px-3 py-2',
+              'text-[14px] text-text placeholder:text-text-mute',
+              'transition-colors duration-200',
+              'focus:outline-none focus:border-brand-cyan/50 focus:bg-ink-1/90',
+              'focus:shadow-[0_0_0_3px_rgba(0,224,255,0.12)]',
               'disabled:cursor-not-allowed disabled:opacity-50',
               leftIcon && 'pl-10',
               rightIcon && 'pr-10',
-              error && 'border-danger-500 focus:ring-danger-500',
+              error && 'border-danger-500/60 focus:border-danger-500 focus:shadow-[0_0_0_3px_rgba(255,90,106,0.15)]',
               className
             )}
-            ref={ref}
             {...props}
           />
           {rightIcon && (
-            <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-              <div className="text-gray-400">{rightIcon}</div>
+            <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+              <span className="text-text-mute">{rightIcon}</span>
             </div>
           )}
         </div>
         {error && (
-          <p className="mt-1 text-sm text-danger-600">{error}</p>
+          <p className="mt-1.5 font-mono text-[11px] text-danger-500">{error}</p>
         )}
         {!error && helpText && (
-          <p className="mt-1 text-sm text-gray-500">{helpText}</p>
+          <p className="mt-1.5 text-[12px] text-text-mute">{helpText}</p>
         )}
       </div>
     );
