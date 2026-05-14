@@ -6,6 +6,8 @@ import {
   AlertCircle,
   Info,
   ShieldAlert,
+  Rocket,
+  ExternalLink,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Modal from '../ui/Modal';
@@ -17,6 +19,8 @@ import {
   LEARNER_BAND_LABELS,
   STATUS_LABELS,
   STATUS_TONE,
+  WIZARD_STEP_TITLES,
+  type WizardProgress,
 } from '../../types/tenantRequest';
 import {
   useApproveTenantRequest,
@@ -77,6 +81,83 @@ const Field: React.FC<{ label: string; children: React.ReactNode }> = ({
     <dd className="mt-1 text-[14px] text-text">{children}</dd>
   </div>
 );
+
+const WizardProgressPanel: React.FC<{
+  progress: WizardProgress;
+  subdomain: string;
+}> = ({ progress, subdomain }) => {
+  const total = progress.total_steps || WIZARD_STEP_TITLES.length;
+  const step = Math.max(0, Math.min(progress.setup_step ?? 0, total));
+  const percent = progress.setup_completed
+    ? 100
+    : Math.round((step / total) * 100);
+  const currentLabel = progress.setup_completed
+    ? 'Launched'
+    : step >= 1 && step <= WIZARD_STEP_TITLES.length
+      ? WIZARD_STEP_TITLES[step - 1]
+      : 'Not started';
+  const lmsUrl = subdomain ? `https://${subdomain}.ailinc.com` : null;
+  const stateEntries = Object.entries(progress.wizard_state || {}).filter(
+    ([, v]) => v !== undefined && v !== null && v !== ''
+  );
+
+  return (
+    <div className="rounded-lg border border-themed bg-line/[0.02] p-4">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2 font-mono text-[10px] font-semibold uppercase tracking-widest2 text-brand-cyan">
+          <Rocket className="h-3 w-3" /> Setup progress
+        </div>
+        {progress.setup_completed && lmsUrl ? (
+          <a
+            href={lmsUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-widest2 text-emerald-400 hover:bg-emerald-500/15"
+          >
+            Live <ExternalLink className="h-3 w-3" />
+          </a>
+        ) : (
+          <span className="rounded-md border border-brand-gold/30 bg-brand-gold/10 px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-widest2 text-brand-gold">
+            In wizard
+          </span>
+        )}
+      </div>
+
+      <div className="flex items-baseline justify-between text-[13px]">
+        <span className="text-text">{currentLabel}</span>
+        <span className="font-mono text-text-dim">
+          Step {step} / {total}
+        </span>
+      </div>
+      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-line/[0.06]">
+        <div
+          className={cn(
+            'h-full transition-all',
+            progress.setup_completed ? 'bg-emerald-400' : 'bg-brand-cyan'
+          )}
+          style={{ width: `${percent}%` }}
+        />
+      </div>
+
+      {progress.launched_at ? (
+        <p className="mt-3 font-mono text-[10px] uppercase tracking-widest2 text-text-mute">
+          Launched · {new Date(progress.launched_at).toLocaleString()}
+        </p>
+      ) : null}
+
+      {stateEntries.length > 0 ? (
+        <details className="mt-3 text-[12px] text-text-dim">
+          <summary className="cursor-pointer font-mono text-[10px] uppercase tracking-widest2 text-text-mute hover:text-text">
+            View wizard answers ({stateEntries.length})
+          </summary>
+          <pre className="mt-2 max-h-64 overflow-auto rounded-md border border-themed bg-ink-1/40 p-3 text-[11px] leading-relaxed text-text">
+            {JSON.stringify(progress.wizard_state, null, 2)}
+          </pre>
+        </details>
+      ) : null}
+    </div>
+  );
+};
 
 const TenantRequestDetailsModal: React.FC<Props> = ({
   requestId,
@@ -241,6 +322,13 @@ const TenantRequestDetailsModal: React.FC<Props> = ({
               </Field>
             ) : null}
           </dl>
+
+          {detail.wizard_progress ? (
+            <WizardProgressPanel
+              progress={detail.wizard_progress}
+              subdomain={detail.approved_subdomain}
+            />
+          ) : null}
 
           {detail.rejection_reason ? (
             <div className="rounded-lg border border-danger-500/30 bg-danger-500/[0.06] p-4">
