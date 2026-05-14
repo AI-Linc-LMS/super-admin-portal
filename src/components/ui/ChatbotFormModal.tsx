@@ -186,8 +186,8 @@ const ChatbotFormModal: React.FC<ChatbotFormModalProps> = ({
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Chatbot Name */}
         <div>
-          <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-            Chatbot Name <span className="text-red-500">*</span>
+          <label htmlFor="name" className="block text-sm font-medium text-text mb-2">
+            Chatbot Name <span className="text-danger-500">*</span>
           </label>
           <Input
             id="name"
@@ -204,15 +204,15 @@ const ChatbotFormModal: React.FC<ChatbotFormModalProps> = ({
         {/* Client Selection */}
         {mode === 'create' && (
           <div>
-            <label htmlFor="client_id" className="block text-sm font-medium text-gray-700 mb-2">
-              Client <span className="text-red-500">*</span>
+            <label htmlFor="client_id" className="block text-sm font-medium text-text mb-2">
+              Client <span className="text-danger-500">*</span>
             </label>
             <select
               id="client_id"
               value={formData.client_id}
               onChange={(e) => handleInputChange('client_id', parseInt(e.target.value))}
-              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 ${
-                errors.client_id ? 'border-red-500' : 'border-gray-300'
+              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-cyan/40 ${
+                errors.client_id ? 'border-red-500' : 'border-themed-2'
               }`}
               required
             >
@@ -224,15 +224,15 @@ const ChatbotFormModal: React.FC<ChatbotFormModalProps> = ({
               ))}
             </select>
             {errors.client_id && (
-              <p className="mt-1 text-sm text-red-600">{errors.client_id}</p>
+              <p className="mt-1 text-sm text-danger-500">{errors.client_id}</p>
             )}
           </div>
         )}
 
         {/* Instructions */}
         <div>
-          <label htmlFor="instructions" className="block text-sm font-medium text-gray-700 mb-2">
-            Instructions <span className="text-red-500">*</span>
+          <label htmlFor="instructions" className="block text-sm font-medium text-text mb-2">
+            Instructions <span className="text-danger-500">*</span>
           </label>
           <textarea
             id="instructions"
@@ -240,42 +240,42 @@ const ChatbotFormModal: React.FC<ChatbotFormModalProps> = ({
             placeholder="Enter instructions for the chatbot. For example: 'You are a helpful customer support assistant. Always be polite and professional...'"
             value={formData.instructions}
             onChange={(e) => handleInputChange('instructions', e.target.value)}
-            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 ${
-              errors.instructions ? 'border-red-500' : 'border-gray-300'
+            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-cyan/40 ${
+              errors.instructions ? 'border-red-500' : 'border-themed-2'
             }`}
             required
           />
           {errors.instructions && (
-            <p className="mt-1 text-sm text-red-600">{errors.instructions}</p>
+            <p className="mt-1 text-sm text-danger-500">{errors.instructions}</p>
           )}
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-text-mute">
             Provide clear instructions on how the chatbot should behave and respond to users.
           </p>
         </div>
 
         {/* Knowledge Sources */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-text mb-2">
             Knowledge Sources
           </label>
-          <p className="text-sm text-gray-500 mb-3">
+          <p className="text-sm text-text-mute mb-3">
             Upload documents (PDF, DOCX, TXT, MD) that the chatbot can use as knowledge base. Maximum file size: 10MB per file.
           </p>
 
           {/* Existing Files (Edit Mode) */}
           {mode === 'edit' && existingFiles.length > 0 && (
             <div className="mb-4 space-y-2">
-              <p className="text-sm font-medium text-gray-700">Existing Files:</p>
+              <p className="text-sm font-medium text-text">Existing Files:</p>
               {existingFiles.map((file) => (
                 <div
                   key={file.id}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
+                  className="flex items-center justify-between p-3 bg-line/[0.03] rounded-lg border border-themed"
                 >
                   <div className="flex items-center gap-2">
                     {getFileIcon(file.name)}
                     <div>
-                      <p className="text-sm font-medium text-gray-900">{file.name}</p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-sm font-medium text-text">{file.name}</p>
+                      <p className="text-xs text-text-mute">
                         {formatFileSize(file.size)} • {file.type.toUpperCase()}
                       </p>
                     </div>
@@ -283,7 +283,7 @@ const ChatbotFormModal: React.FC<ChatbotFormModalProps> = ({
                   <button
                     type="button"
                     onClick={() => removeExistingFile(file.id)}
-                    className="p-1 text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors"
+                    className="p-1 text-danger-500 hover:text-red-800 hover:bg-danger-500/[0.05] rounded transition-colors"
                     title="Remove file"
                   >
                     <XCircle className="w-4 h-4" />
@@ -296,23 +296,23 @@ const ChatbotFormModal: React.FC<ChatbotFormModalProps> = ({
           {/* New Files */}
           {formData.knowledge_sources.length > 0 && (
             <div className="mb-4 space-y-2">
-              <p className="text-sm font-medium text-gray-700">New Files to Upload:</p>
+              <p className="text-sm font-medium text-text">New Files to Upload:</p>
               {formData.knowledge_sources.map((file, index) => (
                 <div
                   key={index}
-                  className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200"
+                  className="flex items-center justify-between p-3 bg-brand-cyan/5 rounded-lg border border-blue-200"
                 >
                   <div className="flex items-center gap-2">
                     {getFileIcon(file.name)}
                     <div>
-                      <p className="text-sm font-medium text-gray-900">{file.name}</p>
-                      <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
+                      <p className="text-sm font-medium text-text">{file.name}</p>
+                      <p className="text-xs text-text-mute">{formatFileSize(file.size)}</p>
                     </div>
                   </div>
                   <button
                     type="button"
                     onClick={() => removeFile(index)}
-                    className="p-1 text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors"
+                    className="p-1 text-danger-500 hover:text-red-800 hover:bg-danger-500/[0.05] rounded transition-colors"
                     title="Remove file"
                   >
                     <XCircle className="w-4 h-4" />
@@ -334,10 +334,10 @@ const ChatbotFormModal: React.FC<ChatbotFormModalProps> = ({
             />
             <label
               htmlFor="knowledge_sources"
-              className="flex items-center justify-center gap-2 w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-primary-500 hover:bg-primary-50 transition-colors"
+              className="flex items-center justify-center gap-2 w-full px-4 py-3 border-2 border-dashed border-themed-2 rounded-lg cursor-pointer hover:border-brand-cyan/50 hover:bg-brand-cyan/5 transition-colors"
             >
-              <Upload className="w-5 h-5 text-gray-500" />
-              <span className="text-sm font-medium text-gray-700">
+              <Upload className="w-5 h-5 text-text-mute" />
+              <span className="text-sm font-medium text-text">
                 Click to upload or drag and drop
               </span>
             </label>
@@ -347,7 +347,7 @@ const ChatbotFormModal: React.FC<ChatbotFormModalProps> = ({
               {Object.entries(errors)
                 .filter(([key]) => key.startsWith('file_'))
                 .map(([key, value]) => (
-                  <p key={key} className="text-sm text-red-600">
+                  <p key={key} className="text-sm text-danger-500">
                     {value}
                   </p>
                 ))}
@@ -356,7 +356,7 @@ const ChatbotFormModal: React.FC<ChatbotFormModalProps> = ({
         </div>
 
         {/* Form Actions */}
-        <div className="flex items-center justify-end gap-3 pt-6 border-t border-gray-200">
+        <div className="flex items-center justify-end gap-3 pt-6 border-t border-themed">
           <Button
             type="button"
             variant="outline"
