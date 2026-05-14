@@ -1,10 +1,11 @@
 import React, { useMemo, useState } from 'react';
-import { Search, Filter, Inbox, RefreshCw } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Search, Inbox, RefreshCw, ArrowUpRight } from 'lucide-react';
 import { useTenantRequests } from '../hooks/useTenantRequests';
 import TenantRequestDetailsModal from '../components/modals/TenantRequestDetailsModal';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
-import Card from '../components/ui/Card';
+import { cn } from '../utils/helpers';
 import {
   ORG_TYPE_LABELS,
   LEARNER_BAND_LABELS,
@@ -42,134 +43,170 @@ const TenantRequests: React.FC = () => {
   }, [data]);
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-start justify-between flex-wrap gap-4">
+    <div className="space-y-8">
+      {/* Header */}
+      <motion.section
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+        className="flex flex-wrap items-end justify-between gap-4"
+      >
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Tenant Requests</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Review and approve self-serve LMS provisioning requests from
-            prospects on ailinc.com.
+          <span className="kicker mb-3">
+            <Inbox className="mr-2 h-3 w-3" />
+            Provisioning queue
+          </span>
+          <h1 className="serif-display text-[40px] leading-[1.05] text-text">
+            Tenant <span className="gradient-text">Requests</span>
+          </h1>
+          <p className="mt-3 max-w-xl text-[14px] leading-relaxed text-text-dim">
+            Review and approve self-serve LMS provisioning requests from prospects on{' '}
+            <span className="text-text">ailinc.com</span>.
           </p>
         </div>
         <Button
           variant="outline"
           onClick={() => refetch()}
           isLoading={isFetching}
-          leftIcon={<RefreshCw className="h-4 w-4" />}
+          leftIcon={<RefreshCw className={cn('h-4 w-4', isFetching && 'animate-spin')} />}
         >
           Refresh
         </Button>
-      </div>
+      </motion.section>
 
-      <Card padding="md">
+      {/* Search + filter pill bar */}
+      <motion.section
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.06 }}
+        className="relative overflow-hidden rounded-xl border border-themed surface-card p-4 shadow-glass"
+      >
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-line/15 to-transparent"
+        />
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex-1 min-w-[240px]">
+          <div className="min-w-[260px] flex-1">
             <Input
-              leftIcon={<Search className="h-4 w-4 text-gray-400" />}
+              leftIcon={<Search className="h-4 w-4" />}
               placeholder="Search by org name, contact, or reference…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          <div className="flex items-center gap-1.5 bg-gray-100 rounded-lg p-1">
-            <Filter className="h-4 w-4 text-gray-500 ml-1" />
-            {FILTERS.map((f) => (
-              <button
-                key={f.value}
-                onClick={() => setFilter(f.value)}
-                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                  filter === f.value
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                {f.label}
-              </button>
-            ))}
+          <div className="flex items-center gap-1 rounded-lg border border-themed-2 bg-ink-1/40 p-1">
+            {FILTERS.map((f) => {
+              const isActive = filter === f.value;
+              return (
+                <button
+                  key={f.value}
+                  onClick={() => setFilter(f.value)}
+                  className={cn(
+                    'rounded-md px-3 py-1.5 font-mono text-[11px] font-semibold uppercase',
+                    'tracking-widest2 transition-all duration-200',
+                    isActive
+                      ? 'bg-brand-cyan/15 text-brand-cyan shadow-[inset_0_0_0_1px_rgba(0,224,255,0.3)]'
+                      : 'text-text-mute hover:text-text'
+                  )}
+                >
+                  {f.label}
+                </button>
+              );
+            })}
           </div>
         </div>
-      </Card>
+      </motion.section>
 
-      <Card padding="none">
+      {/* Table */}
+      <motion.section
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.12 }}
+        className="relative overflow-hidden rounded-xl border border-themed surface-card shadow-glass"
+      >
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand-cyan/30 to-transparent"
+        />
         {isLoading ? (
-          <div className="py-16 text-center text-gray-500">Loading…</div>
+          <div className="py-20 text-center">
+            <div className="mx-auto mb-3 h-6 w-6 animate-spin rounded-full border-2 border-themed border-t-brand-cyan" />
+            <p className="font-mono text-[11px] uppercase tracking-widest2 text-text-mute">
+              Loading queue
+            </p>
+          </div>
         ) : !data || data.length === 0 ? (
-          <div className="py-16 text-center">
-            <Inbox className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-base font-medium text-gray-900">
-              No requests yet
-            </h3>
-            <p className="text-sm text-gray-500 mt-1">
-              When prospects submit the "Create my LMS" form, requests will
-              appear here.
+          <div className="px-6 py-20 text-center">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-themed bg-line/[0.03]">
+              <Inbox className="h-6 w-6 text-text-mute" />
+            </div>
+            <h3 className="text-[16px] font-semibold text-text">No requests yet</h3>
+            <p className="mt-2 text-[13px] leading-relaxed text-text-dim">
+              When prospects submit the “Create my LMS” form, requests will appear here.
             </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Reference
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Organisation
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Contact
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Learners
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Submitted
-                  </th>
+            <table className="min-w-full">
+              <thead>
+                <tr className="border-b border-themed bg-ink-1/30">
+                  {['Reference', 'Organisation', 'Contact', 'Learners', 'Status', 'Submitted'].map(
+                    (h) => (
+                      <th
+                        key={h}
+                        className="whitespace-nowrap px-6 py-3 text-left font-mono text-[10px] font-semibold uppercase tracking-widest2 text-text-mute"
+                      >
+                        {h}
+                      </th>
+                    )
+                  )}
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody>
                 {data.map((r) => (
                   <tr
                     key={r.id}
                     onClick={() => setOpenId(r.id)}
-                    className="cursor-pointer hover:bg-gray-50 transition-colors"
+                    className="group cursor-pointer border-b border-themed transition-colors
+                      last:border-b-0 hover:bg-line/[0.03]"
                   >
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-primary-700">
-                      {r.reference_number}
+                    <td className="whitespace-nowrap px-6 py-4">
+                      <span className="rounded-md border border-brand-cyan/25 bg-brand-cyan/[0.05] px-2 py-0.5 font-mono text-[12px] font-medium text-brand-cyan">
+                        {r.reference_number}
+                      </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
+                    <td className="whitespace-nowrap px-6 py-4">
+                      <div className="text-[14px] font-medium text-text">
                         {r.organisation_name}
                       </div>
-                      <div className="text-xs text-gray-500">
-                        {ORG_TYPE_LABELS[r.organisation_type] ||
-                          r.organisation_type}{' '}
-                        · {r.country}
+                      <div className="mt-0.5 font-mono text-[10px] uppercase tracking-widest2 text-text-mute">
+                        {ORG_TYPE_LABELS[r.organisation_type] || r.organisation_type} · {r.country}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {r.contact_name}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {r.contact_email}
-                      </div>
+                    <td className="whitespace-nowrap px-6 py-4">
+                      <div className="text-[13px] text-text">{r.contact_name}</div>
+                      <div className="text-[12px] text-text-dim">{r.contact_email}</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {LEARNER_BAND_LABELS[r.expected_learner_band] ||
-                        r.expected_learner_band}
+                    <td className="whitespace-nowrap px-6 py-4 text-[13px] text-text">
+                      {LEARNER_BAND_LABELS[r.expected_learner_band] || r.expected_learner_band}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="whitespace-nowrap px-6 py-4">
                       <span
-                        className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_TONE[r.status]}`}
+                        className={cn(
+                          'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-widest2',
+                          STATUS_TONE[r.status]
+                        )}
                       >
                         {STATUS_LABELS[r.status]}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(r.created_at).toLocaleDateString()}
+                    <td className="whitespace-nowrap px-6 py-4 text-right">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-[12px] text-text-dim">
+                          {new Date(r.created_at).toLocaleDateString()}
+                        </span>
+                        <ArrowUpRight className="h-3.5 w-3.5 text-text-mute opacity-0 transition-all group-hover:-translate-y-px group-hover:translate-x-px group-hover:text-brand-cyan group-hover:opacity-100" />
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -177,12 +214,14 @@ const TenantRequests: React.FC = () => {
             </table>
           </div>
         )}
-      </Card>
+      </motion.section>
 
       {data && data.length > 0 ? (
-        <p className="text-xs text-gray-500 text-right">
-          Showing {counts.total} request{counts.total === 1 ? '' : 's'}
-          {filter === 'pending_review' ? '' : ` in ${STATUS_LABELS[filter as TenantRequestStatus] || 'all'}`}
+        <p className="text-right font-mono text-[11px] uppercase tracking-widest2 text-text-mute">
+          {counts.total} request{counts.total === 1 ? '' : 's'}
+          {filter === 'pending_review'
+            ? ''
+            : ` · ${STATUS_LABELS[filter as TenantRequestStatus] || 'all'}`}
         </p>
       ) : null}
 
