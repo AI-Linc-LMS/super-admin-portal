@@ -54,7 +54,7 @@ const LanguageSwitcher: React.FC = () => {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center space-x-2 px-3 py-2 text-gray-600 hover:text-gray-900 rounded-lg hover:bg-white/10 transition-colors duration-200"
+        className="flex items-center space-x-2 px-3 py-2 text-text-dim hover:text-text rounded-lg hover:bg-white/10 transition-colors duration-200"
         aria-label={t('language.selectLanguage')}
       >
         <Globe className="w-4 h-4" />
@@ -71,13 +71,13 @@ const LanguageSwitcher: React.FC = () => {
               key={language.code}
               onClick={() => handleLanguageChange(language.code)}
               className={`w-full text-left px-4 py-2 text-sm hover:bg-white/20 transition-colors duration-200 flex items-center space-x-3 ${
-                currentLanguage.code === language.code ? 'bg-white/10 text-primary-600' : 'text-gray-700'
+                currentLanguage.code === language.code ? 'bg-white/10 text-brand-cyan' : 'text-text'
               }`}
             >
               <span className="text-lg">{language.flag}</span>
               <span>{language.name}</span>
               {currentLanguage.code === language.code && (
-                <span className="ml-auto text-primary-600">✓</span>
+                <span className="ml-auto text-brand-cyan">✓</span>
               )}
             </button>
           ))}

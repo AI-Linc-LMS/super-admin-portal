@@ -47,43 +47,53 @@ export function generateInitials(firstName: string, lastName?: string): string {
   return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
 }
 
+// Dark-themed pill classes — single source of truth for status/difficulty badges.
+// Composed for use inside `inline-flex … rounded-full px-N py-N text-N font-medium`.
+const NEUTRAL_PILL = 'border border-themed-2 bg-line/[0.04] text-text-mute';
+
 export function getStatusColor(status: string | undefined | null): string {
-  if (!status) {
-    return 'bg-gray-100 text-gray-700'; // Default color for undefined/null status
-  }
-  
-  const statusLower = status.toLowerCase();
-  switch (statusLower) {
+  if (!status) return NEUTRAL_PILL;
+  switch (status.toLowerCase()) {
     case 'active':
     case 'published':
-      return 'bg-secondary-100 text-secondary-700';
+    case 'approved':
+    case 'completed':
+    case 'success':
+      return 'border border-emerald-500/30 bg-emerald-500/10 text-emerald-400';
     case 'inactive':
     case 'unpublished':
-      return 'bg-gray-100 text-gray-700';
+    case 'archived':
+      return NEUTRAL_PILL;
     case 'pending':
-      return 'bg-accent-100 text-accent-700';
+    case 'pending_review':
+    case 'in_progress':
+    case 'draft':
+      return 'border border-brand-gold/30 bg-brand-gold/10 text-brand-gold';
     case 'suspended':
     case 'cancelled':
-      return 'bg-danger-100 text-danger-700';
+    case 'rejected':
+    case 'failed':
+    case 'error':
+      return 'border border-danger-500/30 bg-danger-500/10 text-danger-500';
     default:
-      return 'bg-gray-100 text-gray-700';
+      return NEUTRAL_PILL;
   }
 }
 
 export function getDifficultyColor(difficulty: string | undefined | null): string {
-  if (!difficulty) {
-    return 'bg-gray-100 text-gray-700'; // Default color for undefined/null difficulty
-  }
-  
+  if (!difficulty) return NEUTRAL_PILL;
   switch (difficulty.toLowerCase()) {
     case 'easy':
-      return 'bg-secondary-100 text-secondary-700';
+    case 'beginner':
+      return 'border border-emerald-500/30 bg-emerald-500/10 text-emerald-400';
     case 'medium':
-      return 'bg-accent-100 text-accent-700';
+    case 'intermediate':
+      return 'border border-brand-gold/30 bg-brand-gold/10 text-brand-gold';
     case 'hard':
-      return 'bg-danger-100 text-danger-700';
+    case 'advanced':
+      return 'border border-danger-500/30 bg-danger-500/10 text-danger-500';
     default:
-      return 'bg-gray-100 text-gray-700';
+      return NEUTRAL_PILL;
   }
 }
 

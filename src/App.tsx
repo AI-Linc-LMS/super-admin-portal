@@ -38,10 +38,10 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   // Show loading spinner while authentication state is being determined
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 via-white to-secondary-50">
+      <div className="min-h-screen flex items-center justify-center bg-ink-0">
         <div className="text-center">
-          <div className="loading-spinner h-8 w-8 mx-auto mb-4"></div>
-          <p className="text-gray-600">Checking authentication...</p>
+          <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-themed border-t-brand-cyan" />
+          <p className="text-text-dim">Checking authentication…</p>
         </div>
       </div>
     );
@@ -59,10 +59,10 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Show loading spinner while authentication state is being determined
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 via-white to-secondary-50">
+      <div className="min-h-screen flex items-center justify-center bg-ink-0">
         <div className="text-center">
-          <div className="loading-spinner h-8 w-8 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+          <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-themed border-t-brand-cyan" />
+          <p className="text-text-dim">Loading…</p>
         </div>
       </div>
     );

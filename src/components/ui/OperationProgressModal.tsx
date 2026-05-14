@@ -34,9 +34,9 @@ const OperationProgressModal: React.FC<OperationProgressModalProps> = ({
     return (
       <Modal isOpen={isOpen} onClose={onClose} title="Operation Status">
         <div className="text-center py-8">
-          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Operation Not Found</h3>
-          <p className="text-gray-500 mb-4">
+          <AlertCircle className="w-12 h-12 text-danger-500 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-text mb-2">Operation Not Found</h3>
+          <p className="text-text-mute mb-4">
             The requested operation could not be found or has expired.
           </p>
           <Button variant="outline" onClick={onClose}>
@@ -74,34 +74,34 @@ const OperationProgressModal: React.FC<OperationProgressModalProps> = ({
   };
 
   const getStatusIcon = () => {
-    if (!operation) return <Clock className="w-8 h-8 text-gray-400" />;
+    if (!operation) return <Clock className="w-8 h-8 text-text-mute" />;
     
     switch (operation.status) {
       case 'completed':
-        return <CheckCircle className="w-8 h-8 text-green-500" />;
+        return <CheckCircle className="w-8 h-8 text-emerald-400" />;
       case 'failed':
-        return <XCircle className="w-8 h-8 text-red-500" />;
+        return <XCircle className="w-8 h-8 text-danger-500" />;
       case 'in_progress':
-        return <Clock className="w-8 h-8 text-blue-500 animate-spin" />;
+        return <Clock className="w-8 h-8 text-brand-cyan animate-spin" />;
       case 'pending':
       default:
-        return <Clock className="w-8 h-8 text-gray-400" />;
+        return <Clock className="w-8 h-8 text-text-mute" />;
     }
   };
 
   const getStatusColor = () => {
-    if (!operation) return 'bg-gray-100';
+    if (!operation) return 'bg-line/[0.05]';
     
     switch (operation.status) {
       case 'completed':
-        return 'bg-green-100 text-green-800';
+        return 'border border-emerald-500/30 bg-emerald-500/10 text-emerald-400';
       case 'failed':
-        return 'bg-red-100 text-red-800';
+        return 'border border-danger-500/30 bg-danger-500/10 text-danger-500';
       case 'in_progress':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-brand-cyan/10 text-brand-cyan';
       case 'pending':
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-line/[0.05] text-text';
     }
   };
 
@@ -114,14 +114,14 @@ const OperationProgressModal: React.FC<OperationProgressModalProps> = ({
       <div className="space-y-6">
         {/* Operation Header */}
         <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg">
-          <div className="flex-shrink-0 w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center text-white">
+          <div className="flex-shrink-0 w-12 h-12 bg-brand-cyan/50 rounded-xl flex items-center justify-center text-white">
             {getOperationIcon()}
           </div>
           <div className="flex-1">
-            <h3 className="text-lg font-semibold text-gray-900">
+            <h3 className="text-lg font-semibold text-text">
               Operation ID: {operationId}
             </h3>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-text-dim">
               {operation?.message || 'Loading operation status...'}
             </p>
           </div>
@@ -133,10 +133,10 @@ const OperationProgressModal: React.FC<OperationProgressModalProps> = ({
             <div className="flex items-center gap-3">
               {getStatusIcon()}
               <div>
-                <div className="text-lg font-medium text-gray-900">
+                <div className="text-lg font-medium text-text">
                   {operation?.status ? operation.status.charAt(0).toUpperCase() + operation.status.slice(1) : 'Loading...'}
                 </div>
-                <div className="text-sm text-gray-500">
+                <div className="text-sm text-text-mute">
                   {operation?.progress !== undefined ? `${operation.progress}% complete` : 'Checking status...'}
                 </div>
               </div>
@@ -148,12 +148,12 @@ const OperationProgressModal: React.FC<OperationProgressModalProps> = ({
 
           {/* Progress Bar */}
           {operation && (
-            <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="w-full bg-ink-2 rounded-full h-2">
               <div
                 className={`h-2 rounded-full transition-all duration-300 ${
-                  operation.status === 'completed' ? 'bg-green-500' :
-                  operation.status === 'failed' ? 'bg-red-500' :
-                  'bg-blue-500'
+                  operation.status === 'completed' ? 'bg-emerald-500/[0.05]0' :
+                  operation.status === 'failed' ? 'bg-danger-500/[0.05]0' :
+                  'bg-brand-cyan/50'
                 }`}
                 style={{ width: `${operation.progress}%` }}
               />
@@ -163,7 +163,7 @@ const OperationProgressModal: React.FC<OperationProgressModalProps> = ({
 
         {/* Success Results */}
         {operation?.status === 'completed' && operation.result_data && (
-          <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+          <div className="p-4 bg-emerald-500/[0.05] border border-green-200 rounded-lg">
             <h4 className="text-md font-semibold text-green-900 mb-3">Operation Completed Successfully</h4>
             <div className="space-y-2 text-sm text-green-800">
               {operation.result_data.new_course_id && (
@@ -187,7 +187,7 @@ const OperationProgressModal: React.FC<OperationProgressModalProps> = ({
 
         {/* Error Details */}
         {operation?.status === 'failed' && operation.error_details && (
-          <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+          <div className="p-4 bg-danger-500/[0.05] border border-red-200 rounded-lg">
             <h4 className="text-md font-semibold text-red-900 mb-3">Operation Failed</h4>
             <div className="space-y-2 text-sm text-red-800">
               <p><strong>Error Type:</strong> {operation.error_details.error_type}</p>
@@ -200,31 +200,31 @@ const OperationProgressModal: React.FC<OperationProgressModalProps> = ({
         <div className="space-y-3">
           <button
             onClick={() => setShowDetails(!showDetails)}
-            className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+            className="text-sm text-brand-cyan hover:text-brand-cyan font-medium"
           >
             {showDetails ? 'Hide Details' : 'Show Details'}
           </button>
           
           {showDetails && operation && (
-            <div className="p-4 bg-gray-50 rounded-lg text-sm">
+            <div className="p-4 bg-line/[0.03] rounded-lg text-sm">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <span className="font-medium text-gray-700">Created:</span>
-                  <p className="text-gray-600">{formatDateTime(operation.created_at)}</p>
+                  <span className="font-medium text-text">Created:</span>
+                  <p className="text-text-dim">{formatDateTime(operation.created_at)}</p>
                 </div>
                 {operation.completed_at && (
                   <div>
-                    <span className="font-medium text-gray-700">Completed:</span>
-                    <p className="text-gray-600">{formatDateTime(operation.completed_at)}</p>
+                    <span className="font-medium text-text">Completed:</span>
+                    <p className="text-text-dim">{formatDateTime(operation.completed_at)}</p>
                   </div>
                 )}
                 <div>
-                  <span className="font-medium text-gray-700">Operation Type:</span>
-                  <p className="text-gray-600">{operation.operation_type}</p>
+                  <span className="font-medium text-text">Operation Type:</span>
+                  <p className="text-text-dim">{operation.operation_type}</p>
                 </div>
                 <div>
-                  <span className="font-medium text-gray-700">Progress:</span>
-                  <p className="text-gray-600">{operation.progress}%</p>
+                  <span className="font-medium text-text">Progress:</span>
+                  <p className="text-text-dim">{operation.progress}%</p>
                 </div>
               </div>
             </div>
@@ -232,7 +232,7 @@ const OperationProgressModal: React.FC<OperationProgressModalProps> = ({
         </div>
 
         {/* Actions */}
-        <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+        <div className="flex justify-end space-x-3 pt-4 border-t border-themed">
           {operation?.status === 'completed' || operation?.status === 'failed' ? (
             <Button variant="primary" onClick={onClose}>
               Close

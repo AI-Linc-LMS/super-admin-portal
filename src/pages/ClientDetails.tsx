@@ -585,8 +585,8 @@ const ClientDetails: React.FC = () => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="loading-spinner h-8 w-8"></div>
-        <span className="ml-3 text-gray-600">Loading client details...</span>
+        <div className="animate-spin rounded-full border-2 border-themed border-t-brand-cyan h-8 w-8"></div>
+        <span className="ml-3 text-text-dim">Loading client details...</span>
       </div>
     );
   }
@@ -594,8 +594,8 @@ const ClientDetails: React.FC = () => {
   if (error || !client) {
     return (
       <div className="text-center py-12">
-        <h3 className="mt-2 text-lg font-medium text-gray-900">Could not load client details</h3>
-        <p className="mt-1 text-sm text-gray-500">
+        <h3 className="mt-2 text-lg font-medium text-text">Could not load client details</h3>
+        <p className="mt-1 text-sm text-text-mute">
           There was an error fetching the data for this client.
         </p>
         <Button
@@ -628,8 +628,8 @@ const ClientDetails: React.FC = () => {
           Back
         </Button>
         <div className="flex-1">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">{client.name}</h1>
-          <p className="text-gray-600">Client Live Dashboard</p>
+          <h1 className="text-3xl font-bold text-text mb-2">{client.name}</h1>
+          <p className="text-text-dim">Client Live Dashboard</p>
         </div>
         <Button
           variant="outline"
@@ -656,8 +656,8 @@ const ClientDetails: React.FC = () => {
                   </span>
                 </div>
                 <div className="flex-1">
-                  <h2 className="text-xl font-bold text-gray-900 mb-1">{client.name}</h2>
-                  <div className="flex items-center gap-4 text-sm text-gray-600 mb-2">
+                  <h2 className="text-xl font-bold text-text mb-1">{client.name}</h2>
+                  <div className="flex items-center gap-4 text-sm text-text-dim mb-2">
                     {client.email && (
                       <div className="flex items-center gap-1">
                         <Mail className="w-4 h-4" />
@@ -667,7 +667,7 @@ const ClientDetails: React.FC = () => {
                     {client.website && (
                       <div className="flex items-center gap-1">
                         <Globe className="w-4 h-4" />
-                        <a href={client.website} target="_blank" rel="noopener noreferrer" className="hover:text-primary-600">
+                        <a href={client.website} target="_blank" rel="noopener noreferrer" className="hover:text-brand-cyan">
                           Website
                         </a>
                       </div>
@@ -686,24 +686,24 @@ const ClientDetails: React.FC = () => {
               </div>
 
               {client.description && (
-                <p className="text-gray-700 mb-4">{client.description}</p>
+                <p className="text-text mb-4">{client.description}</p>
               )}
 
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <span className="text-gray-500">Joined:</span>
+                  <span className="text-text-mute">Joined:</span>
                   <p className="font-medium">{formatDate(client.joining_date || client.created_at)}</p>
                 </div>
                 <div>
-                  <span className="text-gray-500">Subscription:</span>
+                  <span className="text-text-mute">Subscription:</span>
                   <p className="font-medium">{client.subscription_plan || client.subscription_tier || 'N/A'}</p>
                 </div>
                 <div>
-                  <span className="text-gray-500">Contact Person:</span>
+                  <span className="text-text-mute">Contact Person:</span>
                   <p className="font-medium">{client.poc_name || client.contact_person || 'N/A'}</p>
                 </div>
                 <div>
-                  <span className="text-gray-500">Phone:</span>
+                  <span className="text-text-mute">Phone:</span>
                   <p className="font-medium">{client.phone_number || client.phone || 'N/A'}</p>
                 </div>
               </div>
@@ -754,18 +754,18 @@ const ClientDetails: React.FC = () => {
       >
         <Card glassmorphism className="mb-6">
           <div className="flex items-center gap-4">
-            <Globe className="w-6 h-6 text-primary-500" />
+            <Globe className="w-6 h-6 text-brand-cyan" />
             <div className="flex-1">
               <h2 className="text-lg font-bold">Netlify Deployment</h2>
-              {netlifyStatus === 'checking' && <span className="text-gray-500">Checking deployment status...</span>}
+              {netlifyStatus === 'checking' && <span className="text-text-mute">Checking deployment status...</span>}
               {netlifyStatus === 'deployed' && netlifySite && (
-                <span className="text-green-600">Deployed: <a href={netlifySite.ssl_url || netlifySite.url} target="_blank" rel="noopener noreferrer" className="underline">{netlifySite.ssl_url || netlifySite.url}</a></span>
+                <span className="text-emerald-400">Deployed: <a href={netlifySite.ssl_url || netlifySite.url} target="_blank" rel="noopener noreferrer" className="underline">{netlifySite.ssl_url || netlifySite.url}</a></span>
               )}
               {netlifyStatus === 'not-deployed' && (
-                <span className="text-orange-600">Not deployed</span>
+                <span className="text-brand-gold">Not deployed</span>
               )}
               {netlifyStatus === 'error' && (
-                <span className="text-red-600">Error checking deployment status</span>
+                <span className="text-danger-500">Error checking deployment status</span>
               )}
             </div>
             {netlifyStatus === 'not-deployed' && (
@@ -799,7 +799,7 @@ const ClientDetails: React.FC = () => {
       >
         <Card glassmorphism className="mb-6">
           <div className="flex items-center gap-4 mb-4">
-            <Sparkles className="w-6 h-6 text-primary-500" />
+            <Sparkles className="w-6 h-6 text-brand-cyan" />
             <h2 className="text-lg font-bold">Client Features</h2>
           </div>
           <ClientFeaturesSelector
@@ -820,14 +820,14 @@ const ClientDetails: React.FC = () => {
       >
         <Card glassmorphism>
           {/* Tab Navigation */}
-          <div className="border-b border-gray-200 mb-6">
+          <div className="border-b border-themed mb-6">
             <nav className="-mb-px flex space-x-8">
               <button
                 onClick={() => setActiveTab('courses')}
                 className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm ${
                   activeTab === 'courses'
-                    ? 'border-primary-500 text-primary-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? 'border-primary-500 text-brand-cyan'
+                    : 'border-transparent text-text-mute hover:text-text hover:border-themed-2'
                 }`}
               >
                 <div className="flex items-center gap-2">
@@ -839,8 +839,8 @@ const ClientDetails: React.FC = () => {
                 onClick={() => setActiveTab('students')}
                 className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm ${
                   activeTab === 'students'
-                    ? 'border-primary-500 text-primary-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? 'border-primary-500 text-brand-cyan'
+                    : 'border-transparent text-text-mute hover:text-text hover:border-themed-2'
                 }`}
               >
                 <div className="flex items-center gap-2">
@@ -852,8 +852,8 @@ const ClientDetails: React.FC = () => {
                 onClick={() => setActiveTab('course_managers')}
                 className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm ${
                   activeTab === 'course_managers'
-                    ? 'border-primary-500 text-primary-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? 'border-primary-500 text-brand-cyan'
+                    : 'border-transparent text-text-mute hover:text-text hover:border-themed-2'
                 }`}
               >
                 <div className="flex items-center gap-2">
@@ -865,8 +865,8 @@ const ClientDetails: React.FC = () => {
                 onClick={() => setActiveTab('admins')}
                 className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm ${
                   activeTab === 'admins'
-                    ? 'border-primary-500 text-primary-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? 'border-primary-500 text-brand-cyan'
+                    : 'border-transparent text-text-mute hover:text-text hover:border-themed-2'
                 }`}
               >
                 <div className="flex items-center gap-2">
@@ -878,8 +878,8 @@ const ClientDetails: React.FC = () => {
                 onClick={() => setActiveTab('superadmins')}
                 className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm ${
                   activeTab === 'superadmins'
-                    ? 'border-primary-500 text-primary-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? 'border-primary-500 text-brand-cyan'
+                    : 'border-transparent text-text-mute hover:text-text hover:border-themed-2'
                 }`}
               >
                 <div className="flex items-center gap-2">
@@ -898,7 +898,7 @@ const ClientDetails: React.FC = () => {
                 <h3 className="text-lg font-semibold">Courses</h3>
                 <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-text-mute w-4 h-4" />
                     <Input
                       type="text"
                       placeholder="Search courses..."
@@ -910,7 +910,7 @@ const ClientDetails: React.FC = () => {
                   <select
                     value={difficultyFilter}
                     onChange={(e) => setDifficultyFilter(e.target.value as any)}
-                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="px-3 py-2 border border-themed-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-cyan/40"
                   >
                     <option value="all">All Difficulties</option>
                     <option value="Easy">Easy</option>
@@ -920,7 +920,7 @@ const ClientDetails: React.FC = () => {
                   <select
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value as any)}
-                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="px-3 py-2 border border-themed-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-cyan/40"
                   >
                     <option value="all">All Status</option>
                     <option value="published">Published</option>
@@ -931,16 +931,16 @@ const ClientDetails: React.FC = () => {
 
               {/* Bulk Operations Bar */}
               {selectedCourses.length > 0 && (
-                <div className="bg-primary-50 border border-primary-200 rounded-lg p-4 mb-4">
+                <div className="bg-brand-cyan/5 border border-primary-200 rounded-lg p-4 mb-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="flex items-center gap-2">
-                        <CheckSquare className="w-5 h-5 text-primary-600" />
+                        <CheckSquare className="w-5 h-5 text-brand-cyan" />
                         <span className="font-medium text-primary-900">
                           {selectedCourses.length} course{selectedCourses.length !== 1 ? 's' : ''} selected
                         </span>
                       </div>
-                      <button onClick={handleSelectAllCourses} className="text-sm text-primary-600 hover:text-primary-800 underline">
+                      <button onClick={handleSelectAllCourses} className="text-sm text-brand-cyan hover:text-primary-800 underline">
                         {selectedCourses.length === filteredCourses.length ? 'Deselect All' : 'Select All'}
                       </button>
                     </div>
@@ -957,11 +957,11 @@ const ClientDetails: React.FC = () => {
 
               {/* Courses Table */}
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                <table className="min-w-full divide-y divide-themed">
+                  <thead className="bg-line/[0.03]">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        <button onClick={handleSelectAllCourses} className="flex items-center gap-2 hover:text-gray-700">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-text-mute uppercase tracking-wider">
+                        <button onClick={handleSelectAllCourses} className="flex items-center gap-2 hover:text-text">
                           {selectedCourses.length === filteredCourses.length ? (
                             <CheckSquare className="w-4 h-4" />
                           ) : (
@@ -970,36 +970,36 @@ const ClientDetails: React.FC = () => {
                           Select All
                         </button>
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-text-mute uppercase tracking-wider">
                         Course
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-text-mute uppercase tracking-wider">
                         Difficulty
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-text-mute uppercase tracking-wider">
                         Status
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-text-mute uppercase tracking-wider">
                         Enrollments
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-text-mute uppercase tracking-wider">
                         Price
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-text-mute uppercase tracking-wider">
                         Actions
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-ink-1/60 divide-y divide-themed">
                     {filteredCourses.map((course) => {
                       const selected = isCourseSelected(course);
                       return (
-                      <tr key={course.id} className={`hover:bg-gray-50 ${selected ? 'bg-primary-50' : ''}`}>
+                      <tr key={course.id} className={`hover:bg-line/[0.04] ${selected ? 'bg-brand-cyan/5' : ''}`}>
                         <td className="px-6 py-4">
                           <button
                             onClick={() => handleCourseSelection(course, !selected)}
                             className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
-                              selected ? 'bg-primary-600 border-primary-600 text-white' : 'bg-white border-gray-300 hover:border-primary-500'
+                              selected ? 'bg-primary-600 border-primary-600 text-white' : 'bg-ink-1/60 border-themed-2 hover:border-brand-cyan/50'
                             }`}
                           >
                             {selected && <CheckSquare className="w-3 h-3" />}
@@ -1007,9 +1007,9 @@ const ClientDetails: React.FC = () => {
                         </td>
                         <td className="px-6 py-4">
                           <div>
-                            <div className="text-sm font-medium text-gray-900">{course.title}</div>
+                            <div className="text-sm font-medium text-text">{course.title}</div>
                             {course.subtitle && (
-                              <div className="text-sm text-gray-500">{course.subtitle}</div>
+                              <div className="text-sm text-text-mute">{course.subtitle}</div>
                             )}
                           </div>
                         </td>
@@ -1031,21 +1031,21 @@ const ClientDetails: React.FC = () => {
                             {course.published ? 'Published' : 'Unpublished'}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-900">{course.enrolled_students_count}</td>
-                        <td className="px-6 py-4 text-sm text-gray-900">
+                        <td className="px-6 py-4 text-sm text-text">{course.enrolled_students_count}</td>
+                        <td className="px-6 py-4 text-sm text-text">
                           {course.price && course.price !== '0' ? formatCurrency(parseFloat(course.price)) : 'Free'}
                         </td>
                         <td className="px-6 py-4 text-sm font-medium">
                           <div className="flex items-center gap-2">
                             <button 
-                              className="text-primary-600 hover:text-primary-900 p-1 rounded-md hover:bg-primary-50 transition-colors"
+                              className="text-brand-cyan hover:text-primary-900 p-1 rounded-md hover:bg-brand-cyan/5 transition-colors"
                               onClick={() => handleCourseView(course)}
                               title="View course details"
                             >
                               <Eye className="w-4 h-4" />
                             </button>
                             <button 
-                              className="text-green-600 hover:text-green-900 p-1 rounded-md hover:bg-green-50 transition-colors"
+                              className="text-emerald-400 hover:text-green-900 p-1 rounded-md hover:bg-green-50 transition-colors"
                               onClick={() => handleCourseUpdate(course)}
                               title="Update course settings"
                               disabled={updateCourseMutation.isPending}
@@ -1053,7 +1053,7 @@ const ClientDetails: React.FC = () => {
                               <Settings className="w-4 h-4" />
                             </button>
                             <button 
-                              className="text-blue-600 hover:text-blue-900 p-1 rounded-md hover:bg-blue-50 transition-colors"
+                              className="text-brand-cyan hover:text-text p-1 rounded-md hover:bg-brand-cyan/5 transition-colors"
                               onClick={() => handleCourseDuplicate(course)}
                               title="Duplicate course to another client"
                               disabled={duplicateCourseMutation.isPending}
@@ -1061,7 +1061,7 @@ const ClientDetails: React.FC = () => {
                               <Copy className="w-4 h-4" />
                             </button>
                             <button 
-                              className="text-red-600 hover:text-red-900 p-1 rounded-md hover:bg-red-50 transition-colors"
+                              className="text-danger-500 hover:text-red-900 p-1 rounded-md hover:bg-red-50 transition-colors"
                               onClick={() => handleCourseDelete(course)}
                               title="Delete course permanently"
                               disabled={deleteCourseMutation.isPending}
@@ -1078,9 +1078,9 @@ const ClientDetails: React.FC = () => {
 
               {filteredCourses.length === 0 && (
                 <div className="text-center py-12">
-                  <BookOpen className="mx-auto h-12 w-12 text-gray-400" />
-                  <h3 className="mt-2 text-sm font-medium text-gray-900">No courses found</h3>
-                  <p className="mt-1 text-sm text-gray-500">
+                  <BookOpen className="mx-auto h-12 w-12 text-text-mute" />
+                  <h3 className="mt-2 text-sm font-medium text-text">No courses found</h3>
+                  <p className="mt-1 text-sm text-text-mute">
                     Try adjusting your search or filters to find courses.
                   </p>
                 </div>
@@ -1093,7 +1093,7 @@ const ClientDetails: React.FC = () => {
                 <h3 className="text-lg font-semibold">Students</h3>
                 <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-text-mute w-4 h-4" />
                     <Input
                       type="text"
                       placeholder="Search students..."
@@ -1105,7 +1105,7 @@ const ClientDetails: React.FC = () => {
                   <select
                     value={studentStatusFilter}
                     onChange={(e) => setStudentStatusFilter(e.target.value as any)}
-                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="px-3 py-2 border border-themed-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-cyan/40"
                   >
                     <option value="all">All Status</option>
                     <option value="active">Active</option>
@@ -1116,29 +1116,29 @@ const ClientDetails: React.FC = () => {
 
               {/* Students Table */}
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                <table className="min-w-full divide-y divide-themed">
+                  <thead className="bg-line/[0.03]">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-text-mute uppercase tracking-wider">
                         Student
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-text-mute uppercase tracking-wider">
                         Status
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-text-mute uppercase tracking-wider">
                         Phone
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-text-mute uppercase tracking-wider">
                         Joined Date
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-text-mute uppercase tracking-wider">
                         Actions
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-ink-1/60 divide-y divide-themed">
                     {filteredStudents.map((student) => (
-                      <tr key={student.id} className="hover:bg-gray-50">
+                      <tr key={student.id} className="hover:bg-line/[0.04]">
                         <td className="px-6 py-4">
                           <div className="flex items-center">
                             <div className="flex-shrink-0 h-10 w-10">
@@ -1161,8 +1161,8 @@ const ClientDetails: React.FC = () => {
                               </div>
                             </div>
                             <div className="ml-4">
-                              <div className="text-sm font-medium text-gray-900">{student.name}</div>
-                              <div className="text-sm text-gray-500">{student.email}</div>
+                              <div className="text-sm font-medium text-text">{student.name}</div>
+                              <div className="text-sm text-text-mute">{student.email}</div>
                             </div>
                           </div>
                         </td>
@@ -1175,23 +1175,23 @@ const ClientDetails: React.FC = () => {
                             {student.is_active ? 'Active' : 'Inactive'}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-900">
+                        <td className="px-6 py-4 text-sm text-text">
                           {student.phone_number || 'N/A'}
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-900">
+                        <td className="px-6 py-4 text-sm text-text">
                           {formatDate(student.created_at)}
                         </td>
                         <td className="px-6 py-4 text-sm font-medium">
                           <div className="flex items-center gap-2">
                             <button
-                              className="text-primary-600 hover:text-primary-900 p-1 rounded-md hover:bg-primary-50 transition-colors"
+                              className="text-brand-cyan hover:text-primary-900 p-1 rounded-md hover:bg-brand-cyan/5 transition-colors"
                               onClick={() => handleStudentClick(student)}
                               title="View student details"
                             >
                               <Eye className="w-4 h-4" />
                             </button>
                             <button
-                              className="text-orange-600 hover:text-orange-900 p-1 rounded-md hover:bg-orange-50 transition-colors"
+                              className="text-brand-gold hover:text-orange-900 p-1 rounded-md hover:bg-orange-50 transition-colors"
                               onClick={() => handleChangeRole(student)}
                               title="Change user role"
                               disabled={changeRoleMutation.isPending}
@@ -1208,9 +1208,9 @@ const ClientDetails: React.FC = () => {
 
               {filteredStudents.length === 0 && (
                 <div className="text-center py-12">
-                  <Users className="mx-auto h-12 w-12 text-gray-400" />
-                  <h3 className="mt-2 text-sm font-medium text-gray-900">No students found</h3>
-                  <p className="mt-1 text-sm text-gray-500">
+                  <Users className="mx-auto h-12 w-12 text-text-mute" />
+                  <h3 className="mt-2 text-sm font-medium text-text">No students found</h3>
+                  <p className="mt-1 text-sm text-text-mute">
                     Try adjusting your search or filters to find students.
                   </p>
                 </div>
@@ -1223,7 +1223,7 @@ const ClientDetails: React.FC = () => {
                 <h3 className="text-lg font-semibold">Course Managers</h3>
                 <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-text-mute w-4 h-4" />
                     <Input
                       type="text"
                       placeholder="Search course managers..."
@@ -1235,7 +1235,7 @@ const ClientDetails: React.FC = () => {
                   <select
                     value={courseManagerStatusFilter}
                     onChange={(e) => setCourseManagerStatusFilter(e.target.value as any)}
-                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="px-3 py-2 border border-themed-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-cyan/40"
                   >
                     <option value="all">All Status</option>
                     <option value="active">Active</option>
@@ -1246,29 +1246,29 @@ const ClientDetails: React.FC = () => {
 
               {/* Course Managers Table */}
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                <table className="min-w-full divide-y divide-themed">
+                  <thead className="bg-line/[0.03]">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-text-mute uppercase tracking-wider">
                         Course Manager
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-text-mute uppercase tracking-wider">
                         Status
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-text-mute uppercase tracking-wider">
                         Phone
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-text-mute uppercase tracking-wider">
                         Joined Date
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-text-mute uppercase tracking-wider">
                         Actions
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-ink-1/60 divide-y divide-themed">
                     {filteredCourseManagers.map((courseManager) => (
-                      <tr key={courseManager.id} className="hover:bg-gray-50">
+                      <tr key={courseManager.id} className="hover:bg-line/[0.04]">
                         <td className="px-6 py-4">
                           <div className="flex items-center">
                             <div className="flex-shrink-0 h-10 w-10">
@@ -1291,8 +1291,8 @@ const ClientDetails: React.FC = () => {
                               </div>
                             </div>
                             <div className="ml-4">
-                              <div className="text-sm font-medium text-gray-900">{courseManager.name}</div>
-                              <div className="text-sm text-gray-500">{courseManager.email}</div>
+                              <div className="text-sm font-medium text-text">{courseManager.name}</div>
+                              <div className="text-sm text-text-mute">{courseManager.email}</div>
                             </div>
                           </div>
                         </td>
@@ -1305,23 +1305,23 @@ const ClientDetails: React.FC = () => {
                             {courseManager.is_active ? 'Active' : 'Inactive'}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-900">
+                        <td className="px-6 py-4 text-sm text-text">
                           {courseManager.phone_number || 'N/A'}
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-900">
+                        <td className="px-6 py-4 text-sm text-text">
                           {formatDate(courseManager.created_at)}
                         </td>
                         <td className="px-6 py-4 text-sm font-medium">
                           <div className="flex items-center gap-2">
                             <button
-                              className="text-primary-600 hover:text-primary-900 p-1 rounded-md hover:bg-primary-50 transition-colors"
+                              className="text-brand-cyan hover:text-primary-900 p-1 rounded-md hover:bg-brand-cyan/5 transition-colors"
                               onClick={() => handleCourseManagerClick(courseManager)}
                               title="View course manager details"
                             >
                               <Eye className="w-4 h-4" />
                             </button>
                             <button
-                              className="text-orange-600 hover:text-orange-900 p-1 rounded-md hover:bg-orange-50 transition-colors"
+                              className="text-brand-gold hover:text-orange-900 p-1 rounded-md hover:bg-orange-50 transition-colors"
                               onClick={() => handleChangeRole(courseManager)}
                               title="Change user role"
                               disabled={changeRoleMutation.isPending}
@@ -1338,9 +1338,9 @@ const ClientDetails: React.FC = () => {
 
               {filteredCourseManagers.length === 0 && (
                 <div className="text-center py-12">
-                  <BookOpen className="mx-auto h-12 w-12 text-gray-400" />
-                  <h3 className="mt-2 text-sm font-medium text-gray-900">No course managers found</h3>
-                  <p className="mt-1 text-sm text-gray-500">
+                  <BookOpen className="mx-auto h-12 w-12 text-text-mute" />
+                  <h3 className="mt-2 text-sm font-medium text-text">No course managers found</h3>
+                  <p className="mt-1 text-sm text-text-mute">
                     Try adjusting your search or filters to find course managers.
                   </p>
                 </div>
@@ -1353,7 +1353,7 @@ const ClientDetails: React.FC = () => {
                 <h3 className="text-lg font-semibold">Admins</h3>
                 <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-text-mute w-4 h-4" />
                     <Input
                       type="text"
                       placeholder="Search admins..."
@@ -1365,7 +1365,7 @@ const ClientDetails: React.FC = () => {
                   <select
                     value={adminStatusFilter}
                     onChange={(e) => setAdminStatusFilter(e.target.value as any)}
-                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="px-3 py-2 border border-themed-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-cyan/40"
                   >
                     <option value="all">All Status</option>
                     <option value="active">Active</option>
@@ -1376,29 +1376,29 @@ const ClientDetails: React.FC = () => {
 
               {/* Admins Table */}
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                <table className="min-w-full divide-y divide-themed">
+                  <thead className="bg-line/[0.03]">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-text-mute uppercase tracking-wider">
                         Admin
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-text-mute uppercase tracking-wider">
                         Status
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-text-mute uppercase tracking-wider">
                         Phone
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-text-mute uppercase tracking-wider">
                         Joined Date
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-text-mute uppercase tracking-wider">
                         Actions
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-ink-1/60 divide-y divide-themed">
                     {filteredAdmins.map((admin) => (
-                      <tr key={admin.id} className="hover:bg-gray-50">
+                      <tr key={admin.id} className="hover:bg-line/[0.04]">
                         <td className="px-6 py-4">
                           <div className="flex items-center">
                             <div className="flex-shrink-0 h-10 w-10">
@@ -1421,8 +1421,8 @@ const ClientDetails: React.FC = () => {
                               </div>
                             </div>
                             <div className="ml-4">
-                              <div className="text-sm font-medium text-gray-900">{admin.name}</div>
-                              <div className="text-sm text-gray-500">{admin.email}</div>
+                              <div className="text-sm font-medium text-text">{admin.name}</div>
+                              <div className="text-sm text-text-mute">{admin.email}</div>
                             </div>
                           </div>
                         </td>
@@ -1435,23 +1435,23 @@ const ClientDetails: React.FC = () => {
                             {admin.is_active ? 'Active' : 'Inactive'}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-900">
+                        <td className="px-6 py-4 text-sm text-text">
                           {admin.phone_number || 'N/A'}
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-900">
+                        <td className="px-6 py-4 text-sm text-text">
                           {formatDate(admin.created_at)}
                         </td>
                         <td className="px-6 py-4 text-sm font-medium">
                           <div className="flex items-center gap-2">
                             <button
-                              className="text-primary-600 hover:text-primary-900 p-1 rounded-md hover:bg-primary-50 transition-colors"
+                              className="text-brand-cyan hover:text-primary-900 p-1 rounded-md hover:bg-brand-cyan/5 transition-colors"
                               onClick={() => handleAdminClick(admin)}
                               title="View admin details"
                             >
                               <Eye className="w-4 h-4" />
                             </button>
                             <button
-                              className="text-orange-600 hover:text-orange-900 p-1 rounded-md hover:bg-orange-50 transition-colors"
+                              className="text-brand-gold hover:text-orange-900 p-1 rounded-md hover:bg-orange-50 transition-colors"
                               onClick={() => handleChangeRole(admin)}
                               title="Change user role"
                               disabled={changeRoleMutation.isPending}
@@ -1468,9 +1468,9 @@ const ClientDetails: React.FC = () => {
 
               {filteredAdmins.length === 0 && (
                 <div className="text-center py-12">
-                  <Shield className="mx-auto h-12 w-12 text-gray-400" />
-                  <h3 className="mt-2 text-sm font-medium text-gray-900">No admins found</h3>
-                  <p className="mt-1 text-sm text-gray-500">
+                  <Shield className="mx-auto h-12 w-12 text-text-mute" />
+                  <h3 className="mt-2 text-sm font-medium text-text">No admins found</h3>
+                  <p className="mt-1 text-sm text-text-mute">
                     Try adjusting your search or filters to find admins.
                   </p>
                 </div>
@@ -1483,7 +1483,7 @@ const ClientDetails: React.FC = () => {
                 <h3 className="text-lg font-semibold">SuperAdmins</h3>
                 <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-text-mute w-4 h-4" />
                     <Input
                       type="text"
                       placeholder="Search superadmins..."
@@ -1495,7 +1495,7 @@ const ClientDetails: React.FC = () => {
                   <select
                     value={superAdminStatusFilter}
                     onChange={(e) => setSuperAdminStatusFilter(e.target.value as any)}
-                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="px-3 py-2 border border-themed-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-cyan/40"
                   >
                     <option value="all">All Status</option>
                     <option value="active">Active</option>
@@ -1506,29 +1506,29 @@ const ClientDetails: React.FC = () => {
 
               {/* SuperAdmins Table */}
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                <table className="min-w-full divide-y divide-themed">
+                  <thead className="bg-line/[0.03]">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-text-mute uppercase tracking-wider">
                         SuperAdmin
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-text-mute uppercase tracking-wider">
                         Status
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-text-mute uppercase tracking-wider">
                         Phone
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-text-mute uppercase tracking-wider">
                         Joined Date
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-text-mute uppercase tracking-wider">
                         Actions
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-ink-1/60 divide-y divide-themed">
                     {filteredSuperAdmins.map((superadmin) => (
-                      <tr key={superadmin.id} className="hover:bg-gray-50">
+                      <tr key={superadmin.id} className="hover:bg-line/[0.04]">
                         <td className="px-6 py-4">
                           <div className="flex items-center">
                             <div className="flex-shrink-0 h-10 w-10">
@@ -1551,8 +1551,8 @@ const ClientDetails: React.FC = () => {
                               </div>
                             </div>
                             <div className="ml-4">
-                              <div className="text-sm font-medium text-gray-900">{superadmin.name}</div>
-                              <div className="text-sm text-gray-500">{superadmin.email}</div>
+                              <div className="text-sm font-medium text-text">{superadmin.name}</div>
+                              <div className="text-sm text-text-mute">{superadmin.email}</div>
                             </div>
                           </div>
                         </td>
@@ -1565,23 +1565,23 @@ const ClientDetails: React.FC = () => {
                             {superadmin.is_active ? 'Active' : 'Inactive'}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-900">
+                        <td className="px-6 py-4 text-sm text-text">
                           {superadmin.phone_number || 'N/A'}
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-900">
+                        <td className="px-6 py-4 text-sm text-text">
                           {formatDate(superadmin.created_at)}
                         </td>
                         <td className="px-6 py-4 text-sm font-medium">
                           <div className="flex items-center gap-2">
                             <button
-                              className="text-primary-600 hover:text-primary-900 p-1 rounded-md hover:bg-primary-50 transition-colors"
+                              className="text-brand-cyan hover:text-primary-900 p-1 rounded-md hover:bg-brand-cyan/5 transition-colors"
                               onClick={() => handleSuperAdminClick(superadmin)}
                               title="View superadmin details"
                             >
                               <Eye className="w-4 h-4" />
                             </button>
                             <button
-                              className="text-orange-600 hover:text-orange-900 p-1 rounded-md hover:bg-orange-50 transition-colors"
+                              className="text-brand-gold hover:text-orange-900 p-1 rounded-md hover:bg-orange-50 transition-colors"
                               onClick={() => handleChangeRole(superadmin)}
                               title="Change user role"
                               disabled={changeRoleMutation.isPending}
@@ -1598,9 +1598,9 @@ const ClientDetails: React.FC = () => {
 
               {filteredSuperAdmins.length === 0 && (
                 <div className="text-center py-12">
-                  <ShieldCheck className="mx-auto h-12 w-12 text-gray-400" />
-                  <h3 className="mt-2 text-sm font-medium text-gray-900">No superadmins found</h3>
-                  <p className="mt-1 text-sm text-gray-500">
+                  <ShieldCheck className="mx-auto h-12 w-12 text-text-mute" />
+                  <h3 className="mt-2 text-sm font-medium text-text">No superadmins found</h3>
+                  <p className="mt-1 text-sm text-text-mute">
                     Try adjusting your search or filters to find superadmins.
                   </p>
                 </div>
@@ -1787,24 +1787,24 @@ const ClientDetails: React.FC = () => {
           <div className="space-y-4">
             <h2 className="text-lg font-bold">Deploy Netlify Project</h2>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Project Name (slug)</label>
-              <input type="text" value={client.slug} disabled className="w-full px-3 py-2 border rounded bg-gray-100 text-gray-600" />
+              <label className="block text-sm font-medium text-text mb-1">Project Name (slug)</label>
+              <input type="text" value={client.slug} disabled className="w-full px-3 py-2 border rounded bg-line/[0.05] text-text-dim" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">VITE_API_URL</label>
-              <input name="VITE_API_URL" value={deployEnv.VITE_API_URL} disabled className="w-full px-3 py-2 border rounded bg-gray-100 text-gray-600" />
+              <label className="block text-sm font-medium text-text mb-1">VITE_API_URL</label>
+              <input name="VITE_API_URL" value={deployEnv.VITE_API_URL} disabled className="w-full px-3 py-2 border rounded bg-line/[0.05] text-text-dim" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">VITE_CLIENT_ID</label>
-              <input name="VITE_CLIENT_ID" value={client.id} disabled className="w-full px-3 py-2 border rounded bg-gray-100 text-gray-600" />
+              <label className="block text-sm font-medium text-text mb-1">VITE_CLIENT_ID</label>
+              <input name="VITE_CLIENT_ID" value={client.id} disabled className="w-full px-3 py-2 border rounded bg-line/[0.05] text-text-dim" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">VITE_GOOGLE_CLIENT_ID</label>
-              <input name="VITE_GOOGLE_CLIENT_ID" value={deployEnv.VITE_GOOGLE_CLIENT_ID} disabled className="w-full px-3 py-2 border rounded bg-gray-100 text-gray-600" />
+              <label className="block text-sm font-medium text-text mb-1">VITE_GOOGLE_CLIENT_ID</label>
+              <input name="VITE_GOOGLE_CLIENT_ID" value={deployEnv.VITE_GOOGLE_CLIENT_ID} disabled className="w-full px-3 py-2 border rounded bg-line/[0.05] text-text-dim" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">VITE_PAYMENT_ENCRYPTION_KEY</label>
-              <input name="VITE_PAYMENT_ENCRYPTION_KEY" value={deployEnv.VITE_PAYMENT_ENCRYPTION_KEY} disabled className="w-full px-3 py-2 border rounded bg-gray-100 text-gray-600" />
+              <label className="block text-sm font-medium text-text mb-1">VITE_PAYMENT_ENCRYPTION_KEY</label>
+              <input name="VITE_PAYMENT_ENCRYPTION_KEY" value={deployEnv.VITE_PAYMENT_ENCRYPTION_KEY} disabled className="w-full px-3 py-2 border rounded bg-line/[0.05] text-text-dim" />
             </div>
             <div className="flex justify-end gap-2 mt-4">
               <Button variant="outline" onClick={handleCloseDeployModal} disabled={isDeploying}>Cancel</Button>

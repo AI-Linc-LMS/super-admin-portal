@@ -59,15 +59,15 @@ const CourseDuplicationModal: React.FC<CourseDuplicationModalProps> = ({
       <div className="space-y-6">
         {/* Course Information */}
         <div className="flex items-start gap-4 p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg">
-          <div className="flex-shrink-0 w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center">
+          <div className="flex-shrink-0 w-12 h-12 bg-brand-cyan/50 rounded-xl flex items-center justify-center">
             <BookOpen className="w-6 h-6 text-white" />
           </div>
           <div className="flex-1">
-            <h3 className="text-lg font-semibold text-gray-900 mb-1">{course.title}</h3>
+            <h3 className="text-lg font-semibold text-text mb-1">{course.title}</h3>
             {course.subtitle && (
-              <p className="text-sm text-gray-600 mb-2">{course.subtitle}</p>
+              <p className="text-sm text-text-dim mb-2">{course.subtitle}</p>
             )}
-            <div className="flex items-center gap-4 text-sm text-gray-500">
+            <div className="flex items-center gap-4 text-sm text-text-mute">
               <span>{course.difficulty_level}</span>
               <span>•</span>
               <span>{course.duration_in_hours}h</span>
@@ -75,7 +75,7 @@ const CourseDuplicationModal: React.FC<CourseDuplicationModalProps> = ({
               <span>{course.enrolled_students_count} enrolled</span>
               <span>•</span>
               <span className={`px-2 py-1 rounded text-xs ${
-                course.is_free ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
+                course.is_free ? 'border border-emerald-500/30 bg-emerald-500/10 text-emerald-400' : 'bg-brand-cyan/10 text-brand-cyan'
               }`}>
                 {course.is_free ? 'Free' : 'Paid'}
               </span>
@@ -85,16 +85,16 @@ const CourseDuplicationModal: React.FC<CourseDuplicationModalProps> = ({
 
         {/* Client Selection */}
         <div className="space-y-4">
-          <h4 className="text-md font-semibold text-gray-900 flex items-center gap-2">
-            <Copy className="w-5 h-5 text-blue-600" />
+          <h4 className="text-md font-semibold text-text flex items-center gap-2">
+            <Copy className="w-5 h-5 text-brand-cyan" />
             Select Destination Client
           </h4>
           
           {availableClients.length === 0 ? (
             <div className="text-center py-8">
-              <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No Available Clients</h3>
-              <p className="text-gray-500">
+              <Users className="w-12 h-12 text-text-mute mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-text mb-2">No Available Clients</h3>
+              <p className="text-text-mute">
                 There are no other active clients available for course duplication.
               </p>
             </div>
@@ -105,8 +105,8 @@ const CourseDuplicationModal: React.FC<CourseDuplicationModalProps> = ({
                   key={client.id}
                   className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors ${
                     selectedClientId === client.id
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                      ? 'border-blue-500 bg-brand-cyan/5'
+                      : 'border-themed hover:border-themed-2 hover:bg-line/[0.03]'
                   }`}
                 >
                   <input
@@ -124,14 +124,14 @@ const CourseDuplicationModal: React.FC<CourseDuplicationModalProps> = ({
                       </span>
                     </div>
                     <div className="flex-1">
-                      <div className="text-sm font-medium text-gray-900">{client.name}</div>
-                      <div className="text-xs text-gray-500">
+                      <div className="text-sm font-medium text-text">{client.name}</div>
+                      <div className="text-xs text-text-mute">
                         {client.total_students} students • {client.total_courses} courses
                       </div>
                     </div>
                     {selectedClientId === client.id && (
-                      <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
-                        <div className="w-2 h-2 bg-white rounded-full"></div>
+                      <div className="w-5 h-5 bg-brand-cyan/50 rounded-full flex items-center justify-center">
+                        <div className="w-2 h-2 bg-ink-1/60 rounded-full"></div>
                       </div>
                     )}
                   </div>
@@ -143,22 +143,22 @@ const CourseDuplicationModal: React.FC<CourseDuplicationModalProps> = ({
 
         {/* Duplication Flow Visualization */}
         {selectedClient && (
-          <div className="p-4 bg-gray-50 rounded-lg">
-            <h5 className="text-sm font-medium text-gray-900 mb-3">Duplication Summary</h5>
+          <div className="p-4 bg-line/[0.03] rounded-lg">
+            <h5 className="text-sm font-medium text-text mb-3">Duplication Summary</h5>
             <div className="flex items-center justify-between">
               <div className="text-center">
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-2">
-                  <BookOpen className="w-6 h-6 text-blue-600" />
+                <div className="w-12 h-12 bg-brand-cyan/10 rounded-lg flex items-center justify-center mb-2">
+                  <BookOpen className="w-6 h-6 text-brand-cyan" />
                 </div>
-                <div className="text-xs text-gray-600">Source</div>
+                <div className="text-xs text-text-dim">Source</div>
                 <div className="text-sm font-medium">Current Client</div>
               </div>
-              <ArrowRight className="w-6 h-6 text-gray-400" />
+              <ArrowRight className="w-6 h-6 text-text-mute" />
               <div className="text-center">
-                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-2">
-                  <Copy className="w-6 h-6 text-green-600" />
+                <div className="w-12 h-12 bg-emerald-500/10 rounded-lg flex items-center justify-center mb-2">
+                  <Copy className="w-6 h-6 text-emerald-400" />
                 </div>
-                <div className="text-xs text-gray-600">Destination</div>
+                <div className="text-xs text-text-dim">Destination</div>
                 <div className="text-sm font-medium">{selectedClient.name}</div>
               </div>
             </div>
@@ -180,7 +180,7 @@ const CourseDuplicationModal: React.FC<CourseDuplicationModalProps> = ({
         </div>
 
         {/* Actions */}
-        <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+        <div className="flex justify-end space-x-3 pt-4 border-t border-themed">
           <Button
             variant="outline"
             onClick={onClose}

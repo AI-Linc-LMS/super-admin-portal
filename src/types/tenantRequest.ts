@@ -68,8 +68,8 @@ export const STATUS_LABELS: Record<TenantRequestStatus, string> = {
 };
 
 export const STATUS_TONE: Record<TenantRequestStatus, string> = {
-  pending_review: 'bg-accent-100 text-accent-700',
-  approved_setup: 'bg-secondary-100 text-secondary-700',
-  rejected: 'bg-danger-100 text-danger-700',
-  archived: 'bg-gray-100 text-gray-700',
+  pending_review: 'border-brand-gold/30 bg-brand-gold/10 text-brand-gold',
+  approved_setup: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400',
+  rejected: 'border-danger-500/30 bg-danger-500/10 text-danger-500',
+  archived: 'border-themed-2 bg-line/[0.04] text-text-mute',
 };

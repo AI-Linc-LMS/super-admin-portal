@@ -68,27 +68,27 @@ const CourseDeletionModal: React.FC<CourseDeletionModalProps> = ({
     <Modal isOpen={isOpen} onClose={onClose} title="Delete Course">
       <div className="space-y-6">
         {/* Warning Header */}
-        <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">
-          <AlertTriangle className="w-8 h-8 text-red-600 flex-shrink-0" />
+        <div className="flex items-center gap-3 p-4 bg-danger-500/[0.05] border border-red-200 rounded-lg">
+          <AlertTriangle className="w-8 h-8 text-danger-500 flex-shrink-0" />
           <div>
             <h3 className="text-lg font-semibold text-red-900">Permanent Deletion Warning</h3>
-            <p className="text-sm text-red-700 mt-1">
+            <p className="text-sm text-danger-500 mt-1">
               This action cannot be undone. All course data will be permanently deleted.
             </p>
           </div>
         </div>
 
         {/* Course Information */}
-        <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg border">
-          <div className="flex-shrink-0 w-12 h-12 bg-red-500 rounded-xl flex items-center justify-center">
+        <div className="flex items-start gap-4 p-4 bg-line/[0.03] rounded-lg border">
+          <div className="flex-shrink-0 w-12 h-12 bg-danger-500/[0.05]0 rounded-xl flex items-center justify-center">
             <BookOpen className="w-6 h-6 text-white" />
           </div>
           <div className="flex-1">
-            <h3 className="text-lg font-semibold text-gray-900 mb-1">{course.title}</h3>
+            <h3 className="text-lg font-semibold text-text mb-1">{course.title}</h3>
             {course.subtitle && (
-              <p className="text-sm text-gray-600 mb-2">{course.subtitle}</p>
+              <p className="text-sm text-text-dim mb-2">{course.subtitle}</p>
             )}
-            <div className="flex items-center gap-4 text-sm text-gray-500">
+            <div className="flex items-center gap-4 text-sm text-text-mute">
               <span>{course.difficulty_level}</span>
               <span>•</span>
               <span>{course.duration_in_hours}h</span>
@@ -96,7 +96,7 @@ const CourseDeletionModal: React.FC<CourseDeletionModalProps> = ({
               <span>{course.enrolled_students_count} enrolled</span>
               <span>•</span>
               <span className={`px-2 py-1 rounded text-xs ${
-                course.published ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+                course.published ? 'border border-emerald-500/30 bg-emerald-500/10 text-emerald-400' : 'bg-line/[0.05] text-text'
               }`}>
                 {course.published ? 'Published' : 'Unpublished'}
               </span>
@@ -106,35 +106,35 @@ const CourseDeletionModal: React.FC<CourseDeletionModalProps> = ({
 
         {/* Deletion Summary */}
         <div className="space-y-4">
-          <h4 className="text-md font-semibold text-gray-900 flex items-center gap-2">
-            <FileText className="w-5 h-5 text-gray-600" />
+          <h4 className="text-md font-semibold text-text flex items-center gap-2">
+            <FileText className="w-5 h-5 text-text-dim" />
             Content to be Deleted
           </h4>
           
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 p-4 bg-line/[0.03] rounded-lg">
             <div className="text-center">
-              <div className="text-2xl font-bold text-gray-900">{deletionSummary.modules}</div>
-              <div className="text-xs text-gray-600">Modules</div>
+              <div className="text-2xl font-bold text-text">{deletionSummary.modules}</div>
+              <div className="text-xs text-text-dim">Modules</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-gray-900">{deletionSummary.submodules}</div>
-              <div className="text-xs text-gray-600">Submodules</div>
+              <div className="text-2xl font-bold text-text">{deletionSummary.submodules}</div>
+              <div className="text-xs text-text-dim">Submodules</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-gray-900">{deletionSummary.content_items}</div>
-              <div className="text-xs text-gray-600">Content Items</div>
+              <div className="text-2xl font-bold text-text">{deletionSummary.content_items}</div>
+              <div className="text-xs text-text-dim">Content Items</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-gray-900">{deletionSummary.video_tutorials}</div>
-              <div className="text-xs text-gray-600">Videos</div>
+              <div className="text-2xl font-bold text-text">{deletionSummary.video_tutorials}</div>
+              <div className="text-xs text-text-dim">Videos</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-gray-900">{deletionSummary.quizzes}</div>
-              <div className="text-xs text-gray-600">Quizzes</div>
+              <div className="text-2xl font-bold text-text">{deletionSummary.quizzes}</div>
+              <div className="text-xs text-text-dim">Quizzes</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-gray-900">{deletionSummary.mcq_questions}</div>
-              <div className="text-xs text-gray-600">Questions</div>
+              <div className="text-2xl font-bold text-text">{deletionSummary.mcq_questions}</div>
+              <div className="text-xs text-text-dim">Questions</div>
             </div>
           </div>
 
@@ -152,8 +152,8 @@ const CourseDeletionModal: React.FC<CourseDeletionModalProps> = ({
         {/* Confirmation Input */}
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-900 mb-2">
-              Type <span className="font-mono font-bold text-red-600">{requiredText}</span> to confirm deletion:
+            <label className="block text-sm font-medium text-text mb-2">
+              Type <span className="font-mono font-bold text-danger-500">{requiredText}</span> to confirm deletion:
             </label>
             <input
               type="text"
@@ -161,16 +161,16 @@ const CourseDeletionModal: React.FC<CourseDeletionModalProps> = ({
               onChange={(e) => setConfirmationText(e.target.value)}
               className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
                 confirmationText && !isConfirmed
-                  ? 'border-red-300 focus:ring-red-500 bg-red-50'
+                  ? 'border-red-300 focus:ring-red-500 bg-danger-500/[0.05]'
                   : isConfirmed
-                  ? 'border-green-300 focus:ring-green-500 bg-green-50'
-                  : 'border-gray-300 focus:ring-blue-500'
+                  ? 'border-green-300 focus:ring-green-500 bg-emerald-500/[0.05]'
+                  : 'border-themed-2 focus:ring-blue-500'
               }`}
               placeholder={`Type "${requiredText}" to confirm`}
               disabled={isSubmitting}
             />
             {confirmationText && !isConfirmed && (
-              <p className="text-xs text-red-600 mt-1">
+              <p className="text-xs text-danger-500 mt-1">
                 Please type "{requiredText}" exactly as shown.
               </p>
             )}
@@ -178,8 +178,8 @@ const CourseDeletionModal: React.FC<CourseDeletionModalProps> = ({
         </div>
 
         {/* Final Warning */}
-        <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">
-          <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+        <div className="flex items-start gap-3 p-4 bg-danger-500/[0.05] border border-red-200 rounded-lg">
+          <AlertTriangle className="w-5 h-5 text-danger-500 flex-shrink-0 mt-0.5" />
           <div className="text-sm text-red-800">
             <p className="font-medium mb-1">Final Warning:</p>
             <ul className="text-xs space-y-1 list-disc list-inside">
@@ -193,7 +193,7 @@ const CourseDeletionModal: React.FC<CourseDeletionModalProps> = ({
         </div>
 
         {/* Actions */}
-        <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+        <div className="flex justify-end space-x-3 pt-4 border-t border-themed">
           <Button
             variant="outline"
             onClick={onClose}

@@ -25,7 +25,7 @@ const Modal: React.FC<ModalProps> = ({
     md: 'max-w-lg',
     lg: 'max-w-2xl',
     xl: 'max-w-4xl',
-  };
+  } as const;
 
   return (
     <Transition appear show={isOpen} as={Fragment}>
@@ -39,7 +39,7 @@ const Modal: React.FC<ModalProps> = ({
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <div className="fixed inset-0 bg-black bg-opacity-25 backdrop-blur-sm" />
+          <div className="fixed inset-0 bg-ink-0/70 backdrop-blur-md" />
         </Transition.Child>
 
         <div className="fixed inset-0 overflow-y-auto">
@@ -47,24 +47,32 @@ const Modal: React.FC<ModalProps> = ({
             <Transition.Child
               as={Fragment}
               enter="ease-out duration-300"
-              enterFrom="opacity-0 scale-95"
-              enterTo="opacity-100 scale-100"
+              enterFrom="opacity-0 scale-95 translate-y-2"
+              enterTo="opacity-100 scale-100 translate-y-0"
               leave="ease-in duration-200"
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
               <Dialog.Panel
                 className={cn(
-                  'w-full transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all',
+                  'w-full transform overflow-hidden rounded-2xl text-left align-middle',
+                  'surface-card border border-themed-2 shadow-glass',
+                  'p-6',
                   sizeClasses[size]
                 )}
               >
+                {/* gradient hairline at top */}
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute inset-x-0 top-0 h-px
+                    bg-gradient-to-r from-transparent via-brand-cyan/40 to-transparent"
+                />
                 {(title || showCloseButton) && (
-                  <div className="flex items-center justify-between mb-4">
+                  <div className="mb-5 flex items-start justify-between gap-4">
                     {title && (
                       <Dialog.Title
                         as="h3"
-                        className="text-lg font-medium leading-6 text-gray-900"
+                        className="text-[18px] font-semibold leading-snug text-text"
                       >
                         {title}
                       </Dialog.Title>
@@ -72,7 +80,9 @@ const Modal: React.FC<ModalProps> = ({
                     {showCloseButton && (
                       <button
                         type="button"
-                        className="rounded-md text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        aria-label="Close"
+                        className="rounded-md p-1 text-text-mute hover:bg-line/[0.06] hover:text-text
+                          transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-cyan/50"
                         onClick={onClose}
                       >
                         <span className="sr-only">Close</span>
@@ -81,7 +91,7 @@ const Modal: React.FC<ModalProps> = ({
                     )}
                   </div>
                 )}
-                {children}
+                <div className="text-text">{children}</div>
               </Dialog.Panel>
             </Transition.Child>
           </div>

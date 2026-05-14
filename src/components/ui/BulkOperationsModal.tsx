@@ -50,8 +50,8 @@ const BulkOperationsModal: React.FC<BulkOperationsModalProps> = ({
       title: 'Publish Courses',
       description: 'Make selected courses visible to students',
       icon: Eye,
-      color: 'text-green-600',
-      bgColor: 'bg-green-50',
+      color: 'text-emerald-400',
+      bgColor: 'bg-emerald-500/[0.05]',
       borderColor: 'border-green-200'
     },
     {
@@ -59,17 +59,17 @@ const BulkOperationsModal: React.FC<BulkOperationsModalProps> = ({
       title: 'Unpublish Courses',
       description: 'Hide selected courses from students',
       icon: EyeOff,
-      color: 'text-gray-600',
-      bgColor: 'bg-gray-50',
-      borderColor: 'border-gray-200'
+      color: 'text-text-dim',
+      bgColor: 'bg-line/[0.03]',
+      borderColor: 'border-themed'
     },
     {
       id: 'make_free' as const,
       title: 'Make Courses Free',
       description: 'Set selected courses as free',
       icon: CheckCircle,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50',
+      color: 'text-brand-cyan',
+      bgColor: 'bg-brand-cyan/5',
       borderColor: 'border-blue-200'
     },
     {
@@ -77,9 +77,9 @@ const BulkOperationsModal: React.FC<BulkOperationsModalProps> = ({
       title: 'Make Courses Paid',
       description: 'Set selected courses as paid with a price',
       icon: IndianRupee,
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-50',
-      borderColor: 'border-orange-200'
+      color: 'text-brand-gold',
+      bgColor: 'bg-brand-gold/[0.05]',
+      borderColor: 'border-brand-gold/25'
     }
   ];
 
@@ -129,20 +129,20 @@ const BulkOperationsModal: React.FC<BulkOperationsModalProps> = ({
     <Modal isOpen={isOpen} onClose={onClose} title="Bulk Course Operations">
       <div className="space-y-6">
         {/* Selected Courses Summary */}
-        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <div className="p-4 bg-brand-cyan/5 border border-blue-200 rounded-lg">
           <div className="flex items-center gap-2 mb-2">
-            <Settings className="w-5 h-5 text-blue-600" />
-            <h3 className="font-semibold text-blue-900">Selected Courses</h3>
+            <Settings className="w-5 h-5 text-brand-cyan" />
+            <h3 className="font-semibold text-brand-cyan">Selected Courses</h3>
           </div>
-          <p className="text-sm text-blue-800 mb-3">
+          <p className="text-sm text-brand-cyan mb-3">
             {selectedCourses.length} course{selectedCourses.length !== 1 ? 's' : ''} selected for bulk operation
           </p>
           <div className="max-h-32 overflow-y-auto space-y-1">
             {selectedCourses.map((course) => (
-              <div key={course.id} className="text-sm text-blue-700 flex items-center gap-2">
+              <div key={course.id} className="text-sm text-brand-cyan flex items-center gap-2">
                 <div className="w-2 h-2 bg-blue-400 rounded-full flex-shrink-0" />
                 <span className="truncate">{course.title}</span>
-                <span className="text-blue-500 text-xs">
+                <span className="text-brand-cyan text-xs">
                   ({course.published ? 'Published' : 'Unpublished'}, {course.is_free ? 'Free' : 'Paid'})
                 </span>
               </div>
@@ -152,7 +152,7 @@ const BulkOperationsModal: React.FC<BulkOperationsModalProps> = ({
 
         {/* Operation Selection */}
         <div className="space-y-4">
-          <h4 className="text-lg font-semibold text-gray-900">Choose Operation</h4>
+          <h4 className="text-lg font-semibold text-text">Choose Operation</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {operations.map((operation) => {
               const Icon = operation.icon;
@@ -165,7 +165,7 @@ const BulkOperationsModal: React.FC<BulkOperationsModalProps> = ({
                   className={`p-4 rounded-lg border-2 text-left transition-all ${
                     isSelected 
                       ? `${operation.borderColor} ${operation.bgColor} ring-2 ring-primary-500` 
-                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                      : 'border-themed hover:border-themed-2 hover:bg-line/[0.03]'
                   }`}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
@@ -175,11 +175,11 @@ const BulkOperationsModal: React.FC<BulkOperationsModalProps> = ({
                       <Icon className={`w-5 h-5 ${operation.color}`} />
                     </div>
                     <div className="flex-1">
-                      <h5 className="font-medium text-gray-900 mb-1">{operation.title}</h5>
-                      <p className="text-sm text-gray-600">{operation.description}</p>
+                      <h5 className="font-medium text-text mb-1">{operation.title}</h5>
+                      <p className="text-sm text-text-dim">{operation.description}</p>
                     </div>
                     {isSelected && (
-                      <CheckCircle className="w-5 h-5 text-primary-600 flex-shrink-0" />
+                      <CheckCircle className="w-5 h-5 text-brand-cyan flex-shrink-0" />
                     )}
                   </div>
                 </motion.button>
@@ -197,10 +197,10 @@ const BulkOperationsModal: React.FC<BulkOperationsModalProps> = ({
               exit={{ opacity: 0, height: 0 }}
               className="space-y-3"
             >
-              <h4 className="text-md font-semibold text-gray-900">Set Price for Paid Courses</h4>
+              <h4 className="text-md font-semibold text-text">Set Price for Paid Courses</h4>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <IndianRupee className="h-4 w-4 text-gray-400" />
+                  <IndianRupee className="h-4 w-4 text-text-mute" />
                 </div>
                 <input
                   type="number"
@@ -209,11 +209,11 @@ const BulkOperationsModal: React.FC<BulkOperationsModalProps> = ({
                   max="9999.99"
                   value={price}
                   onChange={(e) => setPrice(parseFloat(e.target.value) || 0)}
-                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  className="w-full pl-10 pr-3 py-2 border border-themed-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-cyan/40 focus:border-brand-cyan/50"
                   placeholder="0.00"
                 />
               </div>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-text-dim">
                 All selected courses will be set to this price
               </p>
             </motion.div>
@@ -225,13 +225,13 @@ const BulkOperationsModal: React.FC<BulkOperationsModalProps> = ({
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="p-4 bg-gray-50 border border-gray-200 rounded-lg"
+            className="p-4 bg-line/[0.03] border border-themed rounded-lg"
           >
             <div className="flex items-center gap-2 mb-2">
-              <AlertCircle className="w-5 h-5 text-gray-600" />
-              <h4 className="font-medium text-gray-900">Operation Summary</h4>
+              <AlertCircle className="w-5 h-5 text-text-dim" />
+              <h4 className="font-medium text-text">Operation Summary</h4>
             </div>
-            <p className="text-sm text-gray-700">
+            <p className="text-sm text-text">
               You are about to <strong>{getOperationSummary().toLowerCase()}</strong>
               {selectedOperation === 'make_paid' && price > 0 && (
                 <span> with a price of <strong>₹{price.toFixed(2)}</strong></span>
@@ -242,7 +242,7 @@ const BulkOperationsModal: React.FC<BulkOperationsModalProps> = ({
         )}
 
         {/* Actions */}
-        <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+        <div className="flex justify-end space-x-3 pt-4 border-t border-themed">
           <Button
             variant="outline"
             onClick={onClose}
