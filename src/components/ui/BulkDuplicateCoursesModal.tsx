@@ -46,9 +46,9 @@ const BulkDuplicateCoursesModal: React.FC<BulkDuplicateCoursesModalProps> = ({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Bulk Duplicate Courses">
       <div className="space-y-6">
-        <div className="p-4 bg-blue-50 rounded-lg mb-2">
-          <div className="text-blue-700 font-medium mb-1">{selectedCourses.length} courses will be duplicated</div>
-          <ul className="list-disc list-inside text-xs text-blue-600">
+        <div className="p-4 bg-brand-cyan/5 rounded-lg mb-2">
+          <div className="text-brand-cyan font-medium mb-1">{selectedCourses.length} courses will be duplicated</div>
+          <ul className="list-disc list-inside text-xs text-brand-cyan">
             {selectedCourses.slice(0, 5).map(c => (
               <li key={c.id}>{c.title}</li>
             ))}
@@ -56,22 +56,22 @@ const BulkDuplicateCoursesModal: React.FC<BulkDuplicateCoursesModalProps> = ({
           </ul>
         </div>
         <div className="space-y-4">
-          <h4 className="text-md font-semibold flex items-center gap-2 text-gray-900">
-            <Copy className="w-5 h-5 text-blue-600" />
+          <h4 className="text-md font-semibold flex items-center gap-2 text-text">
+            <Copy className="w-5 h-5 text-brand-cyan" />
             Select Destination Client
           </h4>
           {availableClients.length === 0 ? (
             <div className="text-center py-8">
-              <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No Available Clients</h3>
-              <p className="text-gray-500">There are no other active clients available.</p>
+              <Users className="w-12 h-12 text-text-mute mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-text mb-2">No Available Clients</h3>
+              <p className="text-text-mute">There are no other active clients available.</p>
             </div>
           ) : (
             <div className="space-y-2 max-h-64 overflow-y-auto">
               {availableClients.map(client => (
                 <label
                   key={client.id}
-                  className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors ${selectedClientId === client.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'}`}
+                  className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors ${selectedClientId === client.id ? 'border-blue-500 bg-brand-cyan/5' : 'border-themed hover:border-themed-2 hover:bg-line/[0.03]'}`}
                 >
                   <input
                     type="radio"
@@ -86,12 +86,12 @@ const BulkDuplicateCoursesModal: React.FC<BulkDuplicateCoursesModalProps> = ({
                       <span className="text-white font-bold text-sm">{client.name.charAt(0).toUpperCase()}</span>
                     </div>
                     <div className="flex-1">
-                      <div className="text-sm font-medium text-gray-900">{client.name}</div>
-                      <div className="text-xs text-gray-500">{client.total_students} students • {client.total_courses} courses</div>
+                      <div className="text-sm font-medium text-text">{client.name}</div>
+                      <div className="text-xs text-text-mute">{client.total_students} students • {client.total_courses} courses</div>
                     </div>
                     {selectedClientId === client.id && (
-                      <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
-                        <div className="w-2 h-2 bg-white rounded-full"></div>
+                      <div className="w-5 h-5 bg-brand-cyan/50 rounded-full flex items-center justify-center">
+                        <div className="w-2 h-2 bg-ink-1/60 rounded-full"></div>
                       </div>
                     )}
                   </div>
@@ -100,7 +100,7 @@ const BulkDuplicateCoursesModal: React.FC<BulkDuplicateCoursesModalProps> = ({
             </div>
           )}
         </div>
-        <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+        <div className="flex justify-end space-x-3 pt-4 border-t border-themed">
           <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
             Cancel
           </Button>

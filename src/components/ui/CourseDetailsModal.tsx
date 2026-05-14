@@ -1,22 +1,27 @@
 import React from 'react';
-import { 
-  BookOpen, 
-  Users, 
-  Clock, 
-  Star, 
-  IndianRupee, 
-  Eye, 
-  EyeOff, 
+import {
+  BookOpen,
+  Users,
+  Clock,
+  Eye,
+  EyeOff,
   Award,
-  Calendar,
   User,
-  X
+  Layers,
+  IndianRupee,
+  Calendar,
+  LucideIcon,
 } from 'lucide-react';
 import Modal from './Modal';
 import Button from './Button';
 import CourseManagerAssignment from './CourseManagerAssignment';
 import { ClientCourse, CourseManager } from '../../types/client';
-import { formatDate, formatCurrency, getDifficultyColor, getStatusColor } from '../../utils/helpers';
+import {
+  formatDate,
+  formatCurrency,
+  getDifficultyColor,
+  cn,
+} from '../../utils/helpers';
 
 interface CourseDetailsModalProps {
   isOpen: boolean;
@@ -33,118 +38,156 @@ const CourseDetailsModal: React.FC<CourseDetailsModalProps> = ({
   course,
   clientId,
   courseManagers = [],
-  onCourseManagerUpdate
+  onCourseManagerUpdate,
 }) => {
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Course Details">
-      <div className="space-y-6">
-        {/* Header Section */}
-        <div className="flex items-start gap-4 p-4 bg-gradient-to-r from-primary-50 to-primary-100 rounded-lg">
-          <div className="flex-shrink-0 w-16 h-16 bg-primary-500 rounded-xl flex items-center justify-center">
-            <BookOpen className="w-8 h-8 text-white" />
-          </div>
-          <div className="flex-1">
-            <h3 className="text-xl font-bold text-gray-900 mb-2">{course.title}</h3>
-            {course.subtitle && (
-              <p className="text-gray-700 mb-3">{course.subtitle}</p>
-            )}
-            <div className="flex items-center gap-3 flex-wrap">
-              <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getDifficultyColor(course.difficulty_level)}`}>
-                {course.difficulty_level}
+    <Modal isOpen={isOpen} onClose={onClose} title="Course Details" size="xl">
+      <div className="space-y-7">
+        {/* Hero banner */}
+        <div className="relative overflow-hidden rounded-xl border border-themed-2">
+          <div
+            aria-hidden
+            className="absolute inset-0 bg-brand-grad-soft"
+          />
+          <div
+            aria-hidden
+            className="absolute -right-16 -top-16 h-44 w-44 rounded-full bg-brand-cyan/15 blur-3xl"
+          />
+          <div
+            aria-hidden
+            className="absolute -left-20 bottom-0 h-32 w-44 rounded-full bg-brand-blue/20 blur-3xl"
+          />
+
+          <div className="relative flex flex-col gap-5 p-6 sm:flex-row sm:items-start">
+            <div className="relative h-16 w-16 shrink-0">
+              <div
+                aria-hidden
+                className="absolute inset-0 rounded-2xl bg-brand-grad shadow-[0_18px_50px_-15px_rgba(0,224,255,0.55)]"
+              />
+              <div className="relative flex h-full w-full items-center justify-center">
+                <BookOpen className="h-7 w-7 text-white" strokeWidth={1.75} />
+              </div>
+            </div>
+
+            <div className="min-w-0 flex-1">
+              <span className="font-mono text-[10px] font-semibold uppercase tracking-widest2 text-brand-cyan">
+                Course · #{course.id}
               </span>
-              <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(course.published ? 'published' : 'unpublished')}`}>
-                {course.published ? (
-                  <>
-                    <Eye className="w-4 h-4 mr-1" />
-                    Published
-                  </>
-                ) : (
-                  <>
-                    <EyeOff className="w-4 h-4 mr-1" />
-                    Unpublished
-                  </>
-                )}
-              </span>
-              <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                course.is_free 
-                  ? 'bg-green-100 text-green-800' 
-                  : 'bg-blue-100 text-blue-800'
-              }`}>
-                <IndianRupee className="w-4 h-4 mr-1" />
-                {course.is_free ? 'Free' : formatCurrency(parseFloat(course.price))}
-              </span>
+              <h3 className="serif-display mt-1.5 text-[26px] leading-tight text-text">
+                {course.title}
+              </h3>
+              {course.subtitle && (
+                <p className="mt-2 text-[14px] leading-relaxed text-text-dim">
+                  {course.subtitle}
+                </p>
+              )}
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                <Pill className={getDifficultyColor(course.difficulty_level)}>
+                  {course.difficulty_level}
+                </Pill>
+                <Pill
+                  className={
+                    course.published
+                      ? 'border border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
+                      : 'border border-danger-500/30 bg-danger-500/10 text-danger-500'
+                  }
+                >
+                  {course.published ? (
+                    <>
+                      <Eye className="mr-1 h-2.5 w-2.5" /> Published
+                    </>
+                  ) : (
+                    <>
+                      <EyeOff className="mr-1 h-2.5 w-2.5" /> Unpublished
+                    </>
+                  )}
+                </Pill>
+                <Pill
+                  className={
+                    course.is_free
+                      ? 'border border-brand-cyan/30 bg-brand-cyan/10 text-brand-cyan'
+                      : 'border border-brand-gold/30 bg-brand-gold/10 text-brand-gold'
+                  }
+                >
+                  {course.is_free ? 'Free' : `₹${course.price}`}
+                </Pill>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Course Description */}
+        {/* Stats — Dashboard-style icon wells */}
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+          <StatTile
+            label="Enrolled"
+            value={course.enrolled_students_count.toLocaleString()}
+            icon={Users}
+            tone="primary"
+          />
+          <StatTile
+            label="Duration"
+            value={`${course.duration_in_hours}h`}
+            icon={Clock}
+            tone="secondary"
+          />
+          <StatTile
+            label="Modules"
+            value={course.modules_count || 'N/A'}
+            icon={Layers}
+            tone="accent"
+          />
+          <StatTile
+            label="Certificate"
+            value={course.certificate_available ? 'Yes' : 'No'}
+            icon={Award}
+            tone={course.certificate_available ? 'primary' : 'mute'}
+          />
+        </div>
+
+        {/* Description */}
         {course.description && (
-          <div className="bg-gray-50 rounded-lg p-4">
-            <h4 className="text-lg font-semibold text-gray-900 mb-2">Description</h4>
-            <p className="text-gray-700 leading-relaxed">{course.description}</p>
-          </div>
+          <Section kicker="Overview" title="About this course">
+            <p className="text-[14px] leading-relaxed text-text-dim">
+              {course.description}
+            </p>
+          </Section>
         )}
-
-        {/* Course Statistics */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-white border border-gray-200 rounded-lg p-4 text-center">
-            <div className="flex justify-center mb-2">
-              <Users className="w-6 h-6 text-blue-600" />
-            </div>
-            <div className="text-2xl font-bold text-gray-900">{course.enrolled_students_count}</div>
-            <div className="text-sm text-gray-600">Enrolled Students</div>
-          </div>
-          
-          <div className="bg-white border border-gray-200 rounded-lg p-4 text-center">
-            <div className="flex justify-center mb-2">
-              <Clock className="w-6 h-6 text-green-600" />
-            </div>
-            <div className="text-2xl font-bold text-gray-900">{course.duration_in_hours}h</div>
-            <div className="text-sm text-gray-600">Duration</div>
-          </div>
-          
-          <div className="bg-white border border-gray-200 rounded-lg p-4 text-center">
-            <div className="flex justify-center mb-2">
-              <Star className="w-6 h-6 text-yellow-600" />
-            </div>
-            <div className="text-2xl font-bold text-gray-900">{course.modules_count || 'N/A'}</div>
-            <div className="text-sm text-gray-600">Modules</div>
-          </div>
-          
-          <div className="bg-white border border-gray-200 rounded-lg p-4 text-center">
-            <div className="flex justify-center mb-2">
-              <Award className="w-6 h-6 text-purple-600" />
-            </div>
-            <div className="text-2xl font-bold text-gray-900">
-              {course.certificate_available ? 'Yes' : 'No'}
-            </div>
-            <div className="text-sm text-gray-600">Certificate</div>
-          </div>
-        </div>
 
         {/* Instructors */}
         {course.instructors && course.instructors.length > 0 && (
-          <div className="bg-gray-50 rounded-lg p-4">
-            <h4 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
-              <User className="w-5 h-5" />
-              Instructor{course.instructors.length > 1 ? 's' : ''}
-            </h4>
-            <div className="space-y-2">
+          <Section
+            kicker="Faculty"
+            title={`Instructor${course.instructors.length > 1 ? 's' : ''}`}
+          >
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               {course.instructors.map((instructor, index) => (
-                <div key={instructor.id || index} className="flex items-center gap-3 p-3 bg-white rounded-lg">
-                  <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
-                    <User className="w-5 h-5 text-primary-600" />
+                <div
+                  key={instructor.id || index}
+                  className="flex items-start gap-3 rounded-lg border border-themed bg-line/[0.03] p-3"
+                >
+                  <div className="relative h-10 w-10 shrink-0">
+                    <div
+                      aria-hidden
+                      className="absolute inset-0 rounded-full bg-brand-grad opacity-90"
+                    />
+                    <div className="relative flex h-full w-full items-center justify-center">
+                      <User className="h-4 w-4 text-white" strokeWidth={1.75} />
+                    </div>
                   </div>
-                  <div>
-                    <div className="font-medium text-gray-900">{instructor.name}</div>
+                  <div className="min-w-0">
+                    <div className="truncate text-[14px] font-medium text-text">
+                      {instructor.name}
+                    </div>
                     {instructor.bio && (
-                      <div className="text-sm text-gray-600">{instructor.bio}</div>
+                      <div className="mt-0.5 line-clamp-2 text-[12px] leading-relaxed text-text-dim">
+                        {instructor.bio}
+                      </div>
                     )}
                   </div>
                 </div>
               ))}
             </div>
-          </div>
+          </Section>
         )}
 
         {/* Course Manager Assignment */}
@@ -157,71 +200,75 @@ const CourseDetailsModal: React.FC<CourseDetailsModalProps> = ({
           />
         )}
 
-        {/* Course Details */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-4">
-            <h4 className="text-lg font-semibold text-gray-900">Course Information</h4>
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Course ID:</span>
-                <span className="font-medium text-gray-900">#{course.id}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Slug:</span>
-                <span className="font-medium text-gray-900 font-mono text-sm">{course.slug}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Difficulty:</span>
-                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getDifficultyColor(course.difficulty_level)}`}>
+        {/* Course information + pricing in two columns */}
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+          <Section kicker="Identity" title="Course information">
+            <dl className="space-y-2.5">
+              <Row label="Course ID">
+                <span className="font-mono text-brand-cyan">#{course.id}</span>
+              </Row>
+              <Row label="Slug">
+                <span className="font-mono text-text">{course.slug}</span>
+              </Row>
+              <Row label="Difficulty">
+                <Pill className={getDifficultyColor(course.difficulty_level)}>
                   {course.difficulty_level}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Status:</span>
-                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(course.published ? 'published' : 'unpublished')}`}>
+                </Pill>
+              </Row>
+              <Row label="Status">
+                <Pill
+                  className={
+                    course.published
+                      ? 'border border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
+                      : 'border border-danger-500/30 bg-danger-500/10 text-danger-500'
+                  }
+                >
                   {course.published ? 'Published' : 'Unpublished'}
-                </span>
-              </div>
-            </div>
-          </div>
+                </Pill>
+              </Row>
+            </dl>
+          </Section>
 
-          <div className="space-y-4">
-            <h4 className="text-lg font-semibold text-gray-900">Dates & Pricing</h4>
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Created:</span>
-                <span className="font-medium text-gray-900">{formatDate(course.created_at)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Last Updated:</span>
-                <span className="font-medium text-gray-900">{formatDate(course.updated_at)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Price Type:</span>
-                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                  course.is_free 
-                    ? 'bg-green-100 text-green-800' 
-                    : 'bg-blue-100 text-blue-800'
-                }`}>
-                  {course.is_free ? 'Free' : 'Paid'}
+          <Section kicker="Timeline · Pricing" title="Dates & pricing">
+            <dl className="space-y-2.5">
+              <Row label="Created">
+                <span className="inline-flex items-center gap-1.5 text-text">
+                  <Calendar className="h-3.5 w-3.5 text-text-mute" />
+                  {formatDate(course.created_at)}
                 </span>
-              </div>
+              </Row>
+              <Row label="Updated">
+                <span className="inline-flex items-center gap-1.5 text-text">
+                  <Calendar className="h-3.5 w-3.5 text-text-mute" />
+                  {formatDate(course.updated_at)}
+                </span>
+              </Row>
+              <Row label="Pricing">
+                <Pill
+                  className={
+                    course.is_free
+                      ? 'border border-brand-cyan/30 bg-brand-cyan/10 text-brand-cyan'
+                      : 'border border-brand-gold/30 bg-brand-gold/10 text-brand-gold'
+                  }
+                >
+                  {course.is_free ? 'Free' : 'Paid'}
+                </Pill>
+              </Row>
               {!course.is_free && (
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Price:</span>
-                  <span className="font-medium text-gray-900">{formatCurrency(parseFloat(course.price))}</span>
-                </div>
+                <Row label="Price">
+                  <span className="inline-flex items-center gap-1 font-mono text-[14px] font-medium text-brand-gold">
+                    <IndianRupee className="h-3.5 w-3.5" />
+                    {formatCurrency(parseFloat(course.price))}
+                  </span>
+                </Row>
               )}
-            </div>
-          </div>
+            </dl>
+          </Section>
         </div>
 
         {/* Actions */}
-        <div className="flex justify-end pt-4 border-t border-gray-200">
-          <Button
-            variant="outline"
-            onClick={onClose}
-          >
+        <div className="flex justify-end gap-3 border-t border-themed pt-5">
+          <Button variant="outline" onClick={onClose}>
             Close
           </Button>
         </div>
@@ -229,5 +276,104 @@ const CourseDetailsModal: React.FC<CourseDetailsModalProps> = ({
     </Modal>
   );
 };
+
+/* ---------- Sub-components ---------- */
+
+const Pill: React.FC<{ className?: string; children: React.ReactNode }> = ({
+  className,
+  children,
+}) => (
+  <span
+    className={cn(
+      'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-widest2',
+      className
+    )}
+  >
+    {children}
+  </span>
+);
+
+const StatTile: React.FC<{
+  label: string;
+  value: string | number;
+  icon: LucideIcon;
+  tone: 'primary' | 'secondary' | 'accent' | 'mute';
+}> = ({ label, value, icon: Icon, tone }) => {
+  const toneMap = {
+    primary: {
+      grad: 'bg-brand-grad',
+      glow: 'shadow-[0_0_30px_-10px_rgba(35,86,214,0.5)]',
+    },
+    secondary: {
+      grad: 'bg-gradient-to-br from-brand-cyan to-brand-blue',
+      glow: 'shadow-[0_0_30px_-10px_rgba(0,224,255,0.5)]',
+    },
+    accent: {
+      grad: 'bg-gradient-to-br from-brand-gold to-[#ffb845]',
+      glow: 'shadow-[0_0_30px_-10px_rgba(255,198,109,0.5)]',
+    },
+    mute: { grad: 'bg-ink-3', glow: '' },
+  } as const;
+  const t = toneMap[tone];
+  return (
+    <div className="relative overflow-hidden rounded-xl border border-themed surface-card p-4 shadow-glass">
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-line/15 to-transparent"
+      />
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="font-mono text-[10px] font-semibold uppercase tracking-widest2 text-text-mute">
+            {label}
+          </p>
+          <p className="serif-num mt-1.5 text-[24px] font-medium leading-none text-text">
+            {value}
+          </p>
+        </div>
+        <div
+          className={cn(
+            'relative flex h-9 w-9 shrink-0 items-center justify-center rounded-lg',
+            t.grad,
+            t.glow
+          )}
+        >
+          <Icon className="h-4 w-4 text-white" strokeWidth={1.75} />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const Section: React.FC<{
+  kicker?: string;
+  title: string;
+  children: React.ReactNode;
+}> = ({ kicker, title, children }) => (
+  <div className="relative overflow-hidden rounded-xl border border-themed surface-card p-5 shadow-glass">
+    <span
+      aria-hidden
+      className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-line/15 to-transparent"
+    />
+    {kicker && (
+      <span className="font-mono text-[10px] font-semibold uppercase tracking-widest2 text-brand-cyan">
+        {kicker}
+      </span>
+    )}
+    <h4 className="mt-1.5 mb-4 text-[15px] font-semibold text-text">{title}</h4>
+    {children}
+  </div>
+);
+
+const Row: React.FC<{ label: string; children: React.ReactNode }> = ({
+  label,
+  children,
+}) => (
+  <div className="flex items-center justify-between gap-3 text-[13px]">
+    <dt className="font-mono text-[10px] uppercase tracking-widest2 text-text-mute">
+      {label}
+    </dt>
+    <dd className="text-text">{children}</dd>
+  </div>
+);
 
 export default CourseDetailsModal;

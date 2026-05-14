@@ -151,16 +151,16 @@ const CourseUpdateModal: React.FC<CourseUpdateModalProps> = ({
     <Modal isOpen={isOpen} onClose={onClose} title="Update Course Settings">
       <div className="space-y-6">
         {/* Course Info */}
-        <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg">
-          <div className="flex-shrink-0 w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center">
-            <Settings className="w-6 h-6 text-primary-600" />
+        <div className="flex items-start gap-4 p-4 bg-line/[0.03] rounded-lg">
+          <div className="flex-shrink-0 w-12 h-12 bg-brand-cyan/10 rounded-lg flex items-center justify-center">
+            <Settings className="w-6 h-6 text-brand-cyan" />
           </div>
           <div className="flex-1">
-            <h3 className="text-lg font-semibold text-gray-900 mb-1">{course.title}</h3>
+            <h3 className="text-lg font-semibold text-text mb-1">{course.title}</h3>
             {course.subtitle && (
-              <p className="text-sm text-gray-600 mb-2">{course.subtitle}</p>
+              <p className="text-sm text-text-dim mb-2">{course.subtitle}</p>
             )}
-            <div className="flex items-center gap-4 text-sm text-gray-500">
+            <div className="flex items-center gap-4 text-sm text-text-mute">
               <span>{course.difficulty_level}</span>
               <span>•</span>
               <span>{course.duration_in_hours}h</span>
@@ -172,49 +172,49 @@ const CourseUpdateModal: React.FC<CourseUpdateModalProps> = ({
 
         {/* Pricing Section */}
         <div className="space-y-4">
-          <h4 className="text-md font-semibold text-gray-900 flex items-center gap-2">
-            <IndianRupee className="w-5 h-5 text-green-600" />
+          <h4 className="text-md font-semibold text-text flex items-center gap-2">
+            <IndianRupee className="w-5 h-5 text-emerald-400" />
             Pricing Settings
           </h4>
           
           {/* Free/Paid Toggle */}
           <div className="space-y-3">
-            <label className="flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all hover:border-gray-300">
+            <label className="flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all hover:border-themed-2">
               <input
                 type="radio"
                 name="pricing"
                 checked={formData.is_free}
                 onChange={() => handleFreeToggle(true)}
-                className="text-primary-600 focus:ring-primary-500"
+                className="text-brand-cyan focus:ring-brand-cyan/40"
               />
               <div className="flex-1">
-                <div className="font-medium text-gray-900">Free Course</div>
-                <div className="text-sm text-gray-600">Make this course available at no cost</div>
+                <div className="font-medium text-text">Free Course</div>
+                <div className="text-sm text-text-dim">Make this course available at no cost</div>
               </div>
             </label>
             
-            <label className="flex items-start gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all hover:border-gray-300">
+            <label className="flex items-start gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all hover:border-themed-2">
               <input
                 type="radio"
                 name="pricing"
                 checked={!formData.is_free}
                 onChange={() => handleFreeToggle(false)}
-                className="text-primary-600 focus:ring-primary-500 mt-1"
+                className="text-brand-cyan focus:ring-brand-cyan/40 mt-1"
               />
               <div className="flex-1 space-y-3">
                 <div>
-                  <div className="font-medium text-gray-900">Paid Course</div>
-                  <div className="text-sm text-gray-600">Set a price for this course</div>
+                  <div className="font-medium text-text">Paid Course</div>
+                  <div className="text-sm text-text-dim">Set a price for this course</div>
                 </div>
                 
                 {!formData.is_free && (
                   <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">
+                    <label className="block text-sm font-medium text-text">
                       Price (INR)
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <IndianRupee className="h-4 w-4 text-gray-400" />
+                        <IndianRupee className="h-4 w-4 text-text-mute" />
                       </div>
                       <Input
                         type="number"
@@ -228,7 +228,7 @@ const CourseUpdateModal: React.FC<CourseUpdateModalProps> = ({
                       />
                     </div>
                     {errors.price && (
-                      <p className="text-sm text-red-600 flex items-center gap-1">
+                      <p className="text-sm text-danger-500 flex items-center gap-1">
                         <AlertCircle className="w-4 h-4" />
                         {errors.price}
                       </p>
@@ -242,47 +242,47 @@ const CourseUpdateModal: React.FC<CourseUpdateModalProps> = ({
 
         {/* Publishing Section */}
         <div className="space-y-4">
-          <h4 className="text-md font-semibold text-gray-900 flex items-center gap-2">
+          <h4 className="text-md font-semibold text-text flex items-center gap-2">
             {formData.published ? (
-              <Eye className="w-5 h-5 text-green-600" />
+              <Eye className="w-5 h-5 text-emerald-400" />
             ) : (
-              <EyeOff className="w-5 h-5 text-gray-400" />
+              <EyeOff className="w-5 h-5 text-text-mute" />
             )}
             Publishing Status
           </h4>
           
           <div className="space-y-3">
-            <label className="flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all hover:border-gray-300">
+            <label className="flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all hover:border-themed-2">
               <input
                 type="radio"
                 name="published"
                 checked={formData.published}
                 onChange={() => setFormData(prev => ({ ...prev, published: true }))}
-                className="text-primary-600 focus:ring-primary-500"
+                className="text-brand-cyan focus:ring-brand-cyan/40"
               />
               <div className="flex-1">
-                <div className="font-medium text-gray-900 flex items-center gap-2">
-                  <Eye className="w-4 h-4 text-green-600" />
+                <div className="font-medium text-text flex items-center gap-2">
+                  <Eye className="w-4 h-4 text-emerald-400" />
                   Published
                 </div>
-                <div className="text-sm text-gray-600">Course is visible and available to students</div>
+                <div className="text-sm text-text-dim">Course is visible and available to students</div>
               </div>
             </label>
             
-            <label className="flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all hover:border-gray-300">
+            <label className="flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all hover:border-themed-2">
               <input
                 type="radio"
                 name="published"
                 checked={!formData.published}
                 onChange={() => setFormData(prev => ({ ...prev, published: false }))}
-                className="text-primary-600 focus:ring-primary-500"
+                className="text-brand-cyan focus:ring-brand-cyan/40"
               />
               <div className="flex-1">
-                <div className="font-medium text-gray-900 flex items-center gap-2">
-                  <EyeOff className="w-4 h-4 text-gray-400" />
+                <div className="font-medium text-text flex items-center gap-2">
+                  <EyeOff className="w-4 h-4 text-text-mute" />
                   Unpublished
                 </div>
-                <div className="text-sm text-gray-600">Course is hidden from students</div>
+                <div className="text-sm text-text-dim">Course is hidden from students</div>
               </div>
             </label>
           </div>
@@ -290,47 +290,47 @@ const CourseUpdateModal: React.FC<CourseUpdateModalProps> = ({
 
         {/* Enrollment Section */}
         <div className="space-y-4">
-          <h4 className="text-md font-semibold text-gray-900 flex items-center gap-2">
+          <h4 className="text-md font-semibold text-text flex items-center gap-2">
             {formData.enrollment_enabled ? (
-              <UserPlus className="w-5 h-5 text-green-600" />
+              <UserPlus className="w-5 h-5 text-emerald-400" />
             ) : (
-              <UserX className="w-5 h-5 text-gray-400" />
+              <UserX className="w-5 h-5 text-text-mute" />
             )}
             Enrollment Settings
           </h4>
           
           <div className="space-y-3">
-            <label className="flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all hover:border-gray-300">
+            <label className="flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all hover:border-themed-2">
               <input
                 type="radio"
                 name="enrollment"
                 checked={formData.enrollment_enabled}
                 onChange={() => setFormData(prev => ({ ...prev, enrollment_enabled: true }))}
-                className="text-primary-600 focus:ring-primary-500"
+                className="text-brand-cyan focus:ring-brand-cyan/40"
               />
               <div className="flex-1">
-                <div className="font-medium text-gray-900 flex items-center gap-2">
-                  <UserPlus className="w-4 h-4 text-green-600" />
+                <div className="font-medium text-text flex items-center gap-2">
+                  <UserPlus className="w-4 h-4 text-emerald-400" />
                   Enrollment Enabled
                 </div>
-                <div className="text-sm text-gray-600">Students can enroll in this course</div>
+                <div className="text-sm text-text-dim">Students can enroll in this course</div>
               </div>
             </label>
             
-            <label className="flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all hover:border-gray-300">
+            <label className="flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all hover:border-themed-2">
               <input
                 type="radio"
                 name="enrollment"
                 checked={!formData.enrollment_enabled}
                 onChange={() => setFormData(prev => ({ ...prev, enrollment_enabled: false }))}
-                className="text-primary-600 focus:ring-primary-500"
+                className="text-brand-cyan focus:ring-brand-cyan/40"
               />
               <div className="flex-1">
-                <div className="font-medium text-gray-900 flex items-center gap-2">
-                  <UserX className="w-4 h-4 text-gray-400" />
+                <div className="font-medium text-text flex items-center gap-2">
+                  <UserX className="w-4 h-4 text-text-mute" />
                   Enrollment Disabled
                 </div>
-                <div className="text-sm text-gray-600">Students cannot enroll in this course</div>
+                <div className="text-sm text-text-dim">Students cannot enroll in this course</div>
               </div>
             </label>
           </div>
@@ -338,47 +338,47 @@ const CourseUpdateModal: React.FC<CourseUpdateModalProps> = ({
 
         {/* Content Lock Section */}
         <div className="space-y-4">
-          <h4 className="text-md font-semibold text-gray-900 flex items-center gap-2">
+          <h4 className="text-md font-semibold text-text flex items-center gap-2">
             {formData.content_lock_enabled ? (
-              <Lock className="w-5 h-5 text-red-600" />
+              <Lock className="w-5 h-5 text-danger-500" />
             ) : (
-              <Unlock className="w-5 h-5 text-green-600" />
+              <Unlock className="w-5 h-5 text-emerald-400" />
             )}
             Content Lock Settings
           </h4>
           
           <div className="space-y-3">
-            <label className="flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all hover:border-gray-300">
+            <label className="flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all hover:border-themed-2">
               <input
                 type="radio"
                 name="content_lock"
                 checked={!formData.content_lock_enabled}
                 onChange={() => setFormData(prev => ({ ...prev, content_lock_enabled: false }))}
-                className="text-primary-600 focus:ring-primary-500"
+                className="text-brand-cyan focus:ring-brand-cyan/40"
               />
               <div className="flex-1">
-                <div className="font-medium text-gray-900 flex items-center gap-2">
-                  <Unlock className="w-4 h-4 text-green-600" />
+                <div className="font-medium text-text flex items-center gap-2">
+                  <Unlock className="w-4 h-4 text-emerald-400" />
                   Content Lock Disabled
                 </div>
-                <div className="text-sm text-gray-600">All course content is accessible to enrolled students</div>
+                <div className="text-sm text-text-dim">All course content is accessible to enrolled students</div>
               </div>
             </label>
             
-            <label className="flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all hover:border-gray-300">
+            <label className="flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all hover:border-themed-2">
               <input
                 type="radio"
                 name="content_lock"
                 checked={formData.content_lock_enabled}
                 onChange={() => setFormData(prev => ({ ...prev, content_lock_enabled: true }))}
-                className="text-primary-600 focus:ring-primary-500"
+                className="text-brand-cyan focus:ring-brand-cyan/40"
               />
               <div className="flex-1">
-                <div className="font-medium text-gray-900 flex items-center gap-2">
-                  <Lock className="w-4 h-4 text-red-600" />
+                <div className="font-medium text-text flex items-center gap-2">
+                  <Lock className="w-4 h-4 text-danger-500" />
                   Content Lock Enabled
                 </div>
-                <div className="text-sm text-gray-600">Course content is locked and requires unlocking</div>
+                <div className="text-sm text-text-dim">Course content is locked and requires unlocking</div>
               </div>
             </label>
           </div>
@@ -386,10 +386,10 @@ const CourseUpdateModal: React.FC<CourseUpdateModalProps> = ({
 
         {/* Summary */}
         {hasChanges && (
-          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="p-4 bg-brand-cyan/5 border border-blue-200 rounded-lg">
             <div className="flex items-start gap-2">
-              <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-              <div className="text-sm text-blue-800">
+              <AlertCircle className="w-5 h-5 text-brand-cyan flex-shrink-0 mt-0.5" />
+              <div className="text-sm text-brand-cyan">
                 <p className="font-medium mb-1">Summary of Changes:</p>
                 <ul className="space-y-1">
                   {formData.is_free !== course.is_free && (
@@ -414,7 +414,7 @@ const CourseUpdateModal: React.FC<CourseUpdateModalProps> = ({
         )}
 
         {/* Actions */}
-        <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+        <div className="flex justify-end space-x-3 pt-4 border-t border-themed">
           <Button
             variant="outline"
             onClick={onClose}
