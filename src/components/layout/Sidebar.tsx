@@ -256,14 +256,15 @@ const Sidebar: React.FC = () => {
 };
 
 const BrandMark: React.FC = () => (
-  <div className="relative h-9 w-9 shrink-0">
-    <div
-      className="absolute inset-0 rounded-xl bg-brand-grad shadow-[0_8px_24px_-8px_rgba(0,224,255,0.55)]"
-      aria-hidden
+  <div className="relative grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-xl bg-brand-grad shadow-[0_8px_24px_-8px_rgba(0,224,255,0.55)]">
+    <img
+      src="/ai-linc-mark-white.svg"
+      alt="AI Linc"
+      width={22}
+      height={22}
+      className="relative h-[22px] w-[22px]"
+      style={{ filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.25))' }}
     />
-    <div className="relative flex h-full w-full items-center justify-center">
-      <span className="font-mono text-[13px] font-bold tracking-tight text-white">AL</span>
-    </div>
   </div>
 );
 

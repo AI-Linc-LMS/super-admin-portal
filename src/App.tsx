@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 import Layout from './components/layout/Layout';
+import Preloader from './components/Preloader';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Clients from './pages/Clients';
@@ -35,16 +36,8 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   
   console.log('🔐 ProtectedRoute check:', { isAuthenticated, isLoading });
 
-  // Show loading spinner while authentication state is being determined
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-ink-0">
-        <div className="text-center">
-          <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-themed border-t-brand-cyan" />
-          <p className="text-text-dim">Checking authentication…</p>
-        </div>
-      </div>
-    );
+    return <Preloader label="AI Linc · Authenticating" />;
   }
 
   return isAuthenticated ? <>{children}</> : <Navigate to={ROUTES.LOGIN} replace />;
@@ -53,19 +46,11 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 // Public Route component to prevent authenticated users from seeing login
 const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuthStore();
-  
+
   console.log('🌐 PublicRoute check:', { isAuthenticated, isLoading });
 
-  // Show loading spinner while authentication state is being determined
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-ink-0">
-        <div className="text-center">
-          <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-themed border-t-brand-cyan" />
-          <p className="text-text-dim">Loading…</p>
-        </div>
-      </div>
-    );
+    return <Preloader label="AI Linc · Loading" />;
   }
 
   return !isAuthenticated ? <>{children}</> : <Navigate to={ROUTES.DASHBOARD} replace />;
