@@ -25,6 +25,7 @@ import {
   CheckSquare,
   Square,
   Sparkles,
+  FolderOpen,
 } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -61,12 +62,13 @@ import toast from 'react-hot-toast';
 import { getSiteByName, createSite } from '../services/netlify';
 import BulkDuplicateCoursesModal from '../components/ui/BulkDuplicateCoursesModal';
 import ClientFeaturesSelector from '../components/ui/ClientFeaturesSelector';
+import ClientFilesBrowser from '../components/files/ClientFilesBrowser';
 
 const ClientDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<'courses' | 'students' | 'course_managers' | 'admins' | 'superadmins'>('courses');
+  const [activeTab, setActiveTab] = useState<'courses' | 'students' | 'course_managers' | 'admins' | 'superadmins' | 'files'>('courses');
   const [courseSearch, setCourseSearch] = useState('');
   const [studentSearch, setStudentSearch] = useState('');
   const [courseManagerSearch, setCourseManagerSearch] = useState('');
@@ -887,6 +889,19 @@ const ClientDetails: React.FC = () => {
                   SuperAdmins ({filteredSuperAdmins.length})
                 </div>
               </button>
+              <button
+                onClick={() => setActiveTab('files')}
+                className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'files'
+                    ? 'border-primary-500 text-brand-cyan'
+                    : 'border-transparent text-text-mute hover:text-text hover:border-themed-2'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <FolderOpen className="w-4 h-4" />
+                  Files
+                </div>
+              </button>
             </nav>
           </div>
 
@@ -1476,7 +1491,7 @@ const ClientDetails: React.FC = () => {
                 </div>
               )}
             </>
-          ) : (
+          ) : activeTab === 'superadmins' ? (
             <>
               {/* SuperAdmins Filters */}
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
@@ -1606,6 +1621,9 @@ const ClientDetails: React.FC = () => {
                 </div>
               )}
             </>
+          ) : (
+            // Files tab — S3 file browser for this client
+            <ClientFilesBrowser clientId={Number(id)} />
           )}
         </Card>
       </motion.div>
