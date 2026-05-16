@@ -27,6 +27,27 @@ export interface WizardProgress {
   launched_at: string | null;
 }
 
+export type ProvisioningStatus =
+  | 'pending'
+  | 'in_progress'
+  | 'success'
+  | 'failed';
+
+export interface ProvisioningLogEntry {
+  step: string;
+  status: string;
+  message: string;
+  timestamp: string;
+}
+
+export interface ProvisioningSnapshot {
+  status: ProvisioningStatus;
+  log: ProvisioningLogEntry[];
+  netlify_site_url: string;
+  netlify_site_id: string;
+  live_url: string;
+}
+
 export interface TenantRequestDetail extends TenantRequestListItem {
   logo_url: string;
   description: string;
@@ -36,7 +57,20 @@ export interface TenantRequestDetail extends TenantRequestListItem {
   google_subject_id: string;
   reviewed_by_email: string | null;
   wizard_progress: WizardProgress | null;
+  provisioning: ProvisioningSnapshot | null;
 }
+
+export const PROVISIONING_STEP_LABELS: Record<string, string> = {
+  start: 'Provisioning started',
+  netlify_create: 'Create Netlify site',
+  netlify_env: 'Set environment variables',
+  netlify_alias: 'Attach subdomain',
+  netlify_build: 'Trigger build',
+  dns: 'DNS routing',
+  google_oauth: 'Google OAuth',
+  done: 'Live',
+  error: 'Failed',
+};
 
 export const WIZARD_STEP_TITLES = [
   'Welcome',

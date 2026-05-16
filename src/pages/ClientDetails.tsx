@@ -43,7 +43,6 @@ import CourseDeletionModal from '../components/ui/CourseDeletionModal';
 import OperationProgressModal from '../components/ui/OperationProgressModal';
 import BulkOperationsModal from '../components/ui/BulkOperationsModal';
 import BulkOperationProgressModal from '../components/ui/BulkOperationProgressModal';
-import Modal from '../components/ui/Modal';
 import { formatDate, formatCurrency, getDifficultyColor, getStatusColor } from '../utils/helpers';
 import { 
   useClientDetails, 
@@ -59,7 +58,6 @@ import { useBulkCourseOperations } from '../hooks/useBulkCourseOperations';
 import { useBulkDuplicateCoursesProgress } from '../hooks/useBulkDuplicateCourses';
 import { Student, Admin, SuperAdmin, ClientCourse, CourseManager } from '../types/client';
 import toast from 'react-hot-toast';
-import { getSiteByName, createSite } from '../services/netlify';
 import BulkDuplicateCoursesModal from '../components/ui/BulkDuplicateCoursesModal';
 import ClientFeaturesSelector from '../components/ui/ClientFeaturesSelector';
 import ClientFilesBrowser from '../components/files/ClientFilesBrowser';
@@ -125,17 +123,9 @@ const ClientDetails: React.FC = () => {
   const [bulkDuplicateTargetClientId, setBulkDuplicateTargetClientId] = useState<number | null>(null);
   const bulkDuplicate = useBulkDuplicateCoursesProgress();
 
-  // Netlify deploy modal state
-  const [isDeployModalOpen, setIsDeployModalOpen] = useState(false);
-  const [deployEnv, setDeployEnv] = useState({
-    VITE_API_URL: import.meta.env.VITE_API_URL || '',
-    VITE_CLIENT_ID: '',
-    VITE_GOOGLE_CLIENT_ID: import.meta.env.VITE_GOOGLE_CLIENT_ID || '',
-    VITE_PAYMENT_ENCRYPTION_KEY: import.meta.env.VITE_PAYMENT_ENCRYPTION_KEY || '',
-  });
-  const [isDeploying, setIsDeploying] = useState(false);
-
-  const githubPat = import.meta.env.VITE_GITHUB_PAT;
+  // Netlify deployments are now driven by the backend on tenant approval
+  // (provisioning/tasks.py:provision_tenant). The legacy in-browser deploy
+  // modal and its env-var entry form are removed.
 
   const clientId = parseInt(id || '0');
   const { data: client, isLoading, error } = useClientDetails(clientId);
@@ -158,48 +148,6 @@ const ClientDetails: React.FC = () => {
     }
   }, [client?.courses]);
 
-  const [netlifyStatus, setNetlifyStatus] = useState<'checking' | 'deployed' | 'not-deployed' | 'error'>('checking');
-  const [netlifySite, setNetlifySite] = useState<any>(null);
-
-  React.useEffect(() => {
-    async function checkNetlify() {
-      setNetlifyStatus('checking');
-      try {
-        // Use client.slug as site name
-        const site = await getSiteByName(client?.slug);
-        if (site) {
-          setNetlifyStatus('deployed');
-          setNetlifySite(site);
-        } else {
-          setNetlifyStatus('not-deployed');
-          setNetlifySite(null);
-        }
-      } catch (e) {
-        setNetlifyStatus('error');
-        setNetlifySite(null);
-      }
-    }
-    if (client?.slug) checkNetlify();
-  }, [client?.slug]);
-
-  const handleOpenDeployModal = () => {
-    setIsDeployModalOpen(true);
-  };
-
-  const handleCloseDeployModal = () => {
-    setIsDeployModalOpen(false);
-    setDeployEnv({
-      VITE_API_URL: '',
-      VITE_CLIENT_ID: '',
-      VITE_GOOGLE_CLIENT_ID: '',
-      VITE_PAYMENT_ENCRYPTION_KEY: '',
-    });
-  };
-
-  const handleDeployInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // All fields are non-editable, so do nothing
-  };
-
   const handleUpdateFeatures = async (clientId: number, featureIds: number[]) => {
     try {
       await updateClientFeaturesMutation.mutateAsync({ clientId, featureIds });
@@ -207,28 +155,6 @@ const ClientDetails: React.FC = () => {
     } catch (error) {
       // Error is handled by API service error handler
       console.error('Failed to update client features:', error);
-    }
-  };
-
-  const handleConfirmDeploy = async () => {
-    if (!client) return;
-    setIsDeploying(true);
-    try {
-      await createSite({
-        name: client.slug,
-        env: {
-          VITE_API_URL: deployEnv.VITE_API_URL,
-          VITE_CLIENT_ID: String(client.id),
-          VITE_GOOGLE_CLIENT_ID: deployEnv.VITE_GOOGLE_CLIENT_ID,
-          VITE_PAYMENT_ENCRYPTION_KEY: deployEnv.VITE_PAYMENT_ENCRYPTION_KEY,
-        },
-      });
-      toast.success('Netlify project created and deployed!');
-      handleCloseDeployModal();
-    } catch (e) {
-      toast.error('Failed to deploy to Netlify.');
-    } finally {
-      setIsDeploying(false);
     }
   };
 
@@ -759,36 +685,11 @@ const ClientDetails: React.FC = () => {
             <Globe className="w-6 h-6 text-brand-cyan" />
             <div className="flex-1">
               <h2 className="text-lg font-bold">Netlify Deployment</h2>
-              {netlifyStatus === 'checking' && <span className="text-text-mute">Checking deployment status...</span>}
-              {netlifyStatus === 'deployed' && netlifySite && (
-                <span className="text-emerald-400">Deployed: <a href={netlifySite.ssl_url || netlifySite.url} target="_blank" rel="noopener noreferrer" className="underline">{netlifySite.ssl_url || netlifySite.url}</a></span>
-              )}
-              {netlifyStatus === 'not-deployed' && (
-                <span className="text-brand-gold">Not deployed</span>
-              )}
-              {netlifyStatus === 'error' && (
-                <span className="text-danger-500">Error checking deployment status</span>
-              )}
+              <span className="text-text-mute">
+                Deployments run automatically when a tenant request is approved.
+                Check the Tenant Requests page for live provisioning status.
+              </span>
             </div>
-            {netlifyStatus === 'not-deployed' && (
-              <Button
-                variant="primary"
-                onClick={handleOpenDeployModal}
-                isLoading={isDeploying}
-              >
-                Deploy
-              </Button>
-            )}
-            {netlifyStatus === 'deployed' && netlifySite && (
-              <a
-                href={netlifySite.ssl_url || netlifySite.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn btn-outline"
-              >
-                View Site
-              </a>
-            )}
           </div>
         </Card>
       </motion.div>
@@ -1799,40 +1700,6 @@ const ClientDetails: React.FC = () => {
         />
       )}
 
-      {/* Netlify Deploy Modal */}
-      {isDeployModalOpen && client && (
-        <Modal isOpen={isDeployModalOpen} onClose={handleCloseDeployModal}>
-          <div className="space-y-4">
-            <h2 className="text-lg font-bold">Deploy Netlify Project</h2>
-            <div>
-              <label className="block text-sm font-medium text-text mb-1">Project Name (slug)</label>
-              <input type="text" value={client.slug} disabled className="w-full px-3 py-2 border rounded bg-line/[0.05] text-text-dim" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-text mb-1">VITE_API_URL</label>
-              <input name="VITE_API_URL" value={deployEnv.VITE_API_URL} disabled className="w-full px-3 py-2 border rounded bg-line/[0.05] text-text-dim" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-text mb-1">VITE_CLIENT_ID</label>
-              <input name="VITE_CLIENT_ID" value={client.id} disabled className="w-full px-3 py-2 border rounded bg-line/[0.05] text-text-dim" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-text mb-1">VITE_GOOGLE_CLIENT_ID</label>
-              <input name="VITE_GOOGLE_CLIENT_ID" value={deployEnv.VITE_GOOGLE_CLIENT_ID} disabled className="w-full px-3 py-2 border rounded bg-line/[0.05] text-text-dim" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-text mb-1">VITE_PAYMENT_ENCRYPTION_KEY</label>
-              <input name="VITE_PAYMENT_ENCRYPTION_KEY" value={deployEnv.VITE_PAYMENT_ENCRYPTION_KEY} disabled className="w-full px-3 py-2 border rounded bg-line/[0.05] text-text-dim" />
-            </div>
-            <div className="flex justify-end gap-2 mt-4">
-              <Button variant="outline" onClick={handleCloseDeployModal} disabled={isDeploying}>Cancel</Button>
-              <Button variant="primary" onClick={handleConfirmDeploy} isLoading={isDeploying} disabled={isDeploying}>
-                Deploy
-              </Button>
-            </div>
-          </div>
-        </Modal>
-      )}
     </div>
   );
 };

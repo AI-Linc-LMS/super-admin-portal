@@ -30,7 +30,10 @@ export const useTenantRequests = (
   });
 };
 
-export const useTenantRequest = (id: number | null) => {
+export const useTenantRequest = (
+  id: number | null,
+  options: { pollWhileProvisioning?: boolean } = {}
+) => {
   return useQuery({
     queryKey: ['tenant-request', id],
     queryFn: async (): Promise<TenantRequestDetail> =>
@@ -39,6 +42,12 @@ export const useTenantRequest = (id: number | null) => {
     retry: false,
     staleTime: 60 * 1000,
     refetchOnWindowFocus: false,
+    refetchInterval: options.pollWhileProvisioning
+      ? (data) => {
+          const status = (data as TenantRequestDetail | undefined)?.provisioning?.status;
+          return status === 'in_progress' || status === 'pending' ? 3000 : false;
+        }
+      : false,
   });
 };
 
@@ -66,6 +75,20 @@ export const useApproveTenantRequest = () => {
       queryClient.invalidateQueries({ queryKey: ['tenant-requests'] });
       queryClient.invalidateQueries({ queryKey: ['tenant-request', id] });
       queryClient.invalidateQueries({ queryKey: ['clients'] });
+    },
+  });
+};
+
+export const useRetryProvisioning = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number): Promise<TenantRequestDetail> =>
+      apiService.post<TenantRequestDetail>(
+        `${BASE}${id}/retry-provisioning/`,
+        {}
+      ),
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: ['tenant-request', id] });
     },
   });
 };

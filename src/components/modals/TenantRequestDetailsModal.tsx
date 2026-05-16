@@ -8,6 +8,8 @@ import {
   ShieldAlert,
   Rocket,
   ExternalLink,
+  RefreshCw,
+  Circle,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Modal from '../ui/Modal';
@@ -20,12 +22,15 @@ import {
   STATUS_LABELS,
   STATUS_TONE,
   WIZARD_STEP_TITLES,
+  PROVISIONING_STEP_LABELS,
   type WizardProgress,
+  type ProvisioningSnapshot,
 } from '../../types/tenantRequest';
 import {
   useApproveTenantRequest,
   useCheckSubdomain,
   useRejectTenantRequest,
+  useRetryProvisioning,
   useTenantRequest,
 } from '../../hooks/useTenantRequests';
 
@@ -159,14 +164,119 @@ const WizardProgressPanel: React.FC<{
   );
 };
 
+const ProvisioningPanel: React.FC<{
+  snapshot: ProvisioningSnapshot;
+  onRetry: () => void;
+  retrying: boolean;
+}> = ({ snapshot, onRetry, retrying }) => {
+  const status = snapshot.status;
+  const seen = new Set<string>();
+  const ordered = [...snapshot.log].reverse().filter((entry) => {
+    if (seen.has(entry.step)) return false;
+    seen.add(entry.step);
+    return true;
+  });
+  ordered.reverse();
+
+  return (
+    <div className="rounded-lg border border-themed bg-line/[0.02] p-4">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2 font-mono text-[10px] font-semibold uppercase tracking-widest2 text-brand-cyan">
+          <Rocket className="h-3 w-3" /> Whitelabel provisioning
+        </div>
+        {status === 'success' && snapshot.live_url ? (
+          <a
+            href={snapshot.live_url}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-widest2 text-emerald-400 hover:bg-emerald-500/15"
+          >
+            Open LMS <ExternalLink className="h-3 w-3" />
+          </a>
+        ) : status === 'in_progress' || status === 'pending' ? (
+          <span className="inline-flex items-center gap-1 rounded-md border border-brand-cyan/30 bg-brand-cyan/10 px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-widest2 text-brand-cyan">
+            <Loader2 className="h-3 w-3 animate-spin" /> Running
+          </span>
+        ) : status === 'failed' ? (
+          <span className="inline-flex items-center gap-1 rounded-md border border-danger-500/30 bg-danger-500/10 px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-widest2 text-danger-500">
+            <AlertCircle className="h-3 w-3" /> Failed
+          </span>
+        ) : null}
+      </div>
+
+      {ordered.length === 0 ? (
+        <p className="font-mono text-[11px] text-text-mute">
+          Queued — waiting for worker pickup…
+        </p>
+      ) : (
+        <ol className="space-y-1.5">
+          {ordered.map((entry) => {
+            const label =
+              PROVISIONING_STEP_LABELS[entry.step] || entry.step;
+            const icon =
+              entry.status === 'ok' || entry.status === 'queued' || entry.status === 'reused' ? (
+                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+              ) : entry.status === 'failed' ? (
+                <XCircle className="h-3.5 w-3.5 text-danger-500" />
+              ) : entry.status === 'skipped' ? (
+                <Circle className="h-3.5 w-3.5 text-text-mute" />
+              ) : entry.status === 'warn' ? (
+                <AlertCircle className="h-3.5 w-3.5 text-brand-gold" />
+              ) : (
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-brand-cyan" />
+              );
+            return (
+              <li
+                key={`${entry.step}-${entry.timestamp}`}
+                className="flex items-start gap-2 text-[12px] text-text"
+              >
+                <span className="mt-0.5 shrink-0">{icon}</span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-baseline gap-2">
+                    <span className="text-text">{label}</span>
+                    <span className="font-mono text-[10px] uppercase tracking-widest2 text-text-mute">
+                      {entry.status}
+                    </span>
+                  </div>
+                  {entry.message ? (
+                    <p className="break-all font-mono text-[11px] text-text-dim">
+                      {entry.message}
+                    </p>
+                  ) : null}
+                </div>
+              </li>
+            );
+          })}
+        </ol>
+      )}
+
+      {status === 'failed' ? (
+        <div className="mt-4 flex justify-end">
+          <Button
+            variant="outline"
+            onClick={onRetry}
+            isLoading={retrying}
+            disabled={retrying}
+          >
+            <RefreshCw className="mr-1.5 h-3.5 w-3.5" /> Retry provisioning
+          </Button>
+        </div>
+      ) : null}
+    </div>
+  );
+};
+
 const TenantRequestDetailsModal: React.FC<Props> = ({
   requestId,
   isOpen,
   onClose,
 }) => {
-  const { data: detail, isLoading } = useTenantRequest(requestId);
+  const { data: detail, isLoading } = useTenantRequest(requestId, {
+    pollWhileProvisioning: true,
+  });
   const approveMutation = useApproveTenantRequest();
   const rejectMutation = useRejectTenantRequest();
+  const retryMutation = useRetryProvisioning();
   const subdomainCheck = useCheckSubdomain();
 
   const [mode, setMode] = useState<'view' | 'approve' | 'reject'>('view');
@@ -214,10 +324,20 @@ const TenantRequestDetailsModal: React.FC<Props> = ({
         id: detail.id,
         payload: { subdomain, send_credentials_email: sendEmail },
       });
-      toast.success('Request approved · tenant provisioned');
-      onClose();
+      toast.success('Approved · provisioning started');
+      setMode('view');
     } catch (err: any) {
       toast.error(err?.response?.data?.detail || 'Approval failed');
+    }
+  };
+
+  const onRetry = async () => {
+    if (!detail) return;
+    try {
+      await retryMutation.mutateAsync(detail.id);
+      toast.success('Provisioning re-queued');
+    } catch (err: any) {
+      toast.error(err?.response?.data?.detail || 'Retry failed');
     }
   };
 
@@ -323,6 +443,14 @@ const TenantRequestDetailsModal: React.FC<Props> = ({
             ) : null}
           </dl>
 
+          {detail.provisioning ? (
+            <ProvisioningPanel
+              snapshot={detail.provisioning}
+              onRetry={onRetry}
+              retrying={retryMutation.isLoading}
+            />
+          ) : null}
+
           {detail.wizard_progress ? (
             <WizardProgressPanel
               progress={detail.wizard_progress}
@@ -402,12 +530,13 @@ const TenantRequestDetailsModal: React.FC<Props> = ({
               <div className="flex items-start gap-2.5 rounded-lg border border-brand-cyan/20 bg-brand-cyan/[0.04] p-3">
                 <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand-cyan" />
                 <p className="text-[12px] leading-relaxed text-text-dim">
-                  This atomically creates a Client + first Admin user. After approval,
-                  configure DNS for{' '}
+                  Approving creates the tenant atomically and kicks off automated
+                  whitelabel provisioning for{' '}
                   <code className="rounded bg-line/[0.05] px-1 py-0.5 font-mono text-text">
                     {subdomain || 'subdomain'}.ailinc.com
                   </code>{' '}
-                  manually.
+                  — Netlify site, subdomain alias, and build trigger. Live status
+                  appears below once it starts.
                 </p>
               </div>
 
