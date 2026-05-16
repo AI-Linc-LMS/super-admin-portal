@@ -121,6 +121,10 @@ const WizardProgressPanel: React.FC<{
           >
             Live <ExternalLink className="h-3 w-3" />
           </a>
+        ) : step === 0 ? (
+          <span className="rounded-md border border-themed-2 bg-line/[0.04] px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-widest2 text-text-mute">
+            Not started
+          </span>
         ) : (
           <span className="rounded-md border border-brand-gold/30 bg-brand-gold/10 px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-widest2 text-brand-gold">
             In wizard
