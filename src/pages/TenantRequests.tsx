@@ -17,15 +17,18 @@ import {
 type Filter = TenantRequestStatus | 'all';
 
 const FILTERS: { value: Filter; label: string }[] = [
+  { value: 'all', label: 'All' },
   { value: 'pending_review', label: 'Pending' },
   { value: 'approved_setup', label: 'Approved' },
+  // Backend status name remains `archived` (= setup wizard launched & tenant
+  // serving real traffic). Showing it as "Live" here is intentional UX —
+  // see STATUS_LABELS in types/tenantRequest.ts.
+  { value: 'archived', label: 'Live' },
   { value: 'rejected', label: 'Rejected' },
-  { value: 'archived', label: 'Archived' },
-  { value: 'all', label: 'All' },
 ];
 
 const TenantRequests: React.FC = () => {
-  const [filter, setFilter] = useState<Filter>('pending_review');
+  const [filter, setFilter] = useState<Filter>('all');
   const [search, setSearch] = useState('');
   const [openId, setOpenId] = useState<number | null>(null);
 
@@ -219,7 +222,7 @@ const TenantRequests: React.FC = () => {
       {data && data.length > 0 ? (
         <p className="text-right font-mono text-[11px] uppercase tracking-widest2 text-text-mute">
           {counts.total} request{counts.total === 1 ? '' : 's'}
-          {filter === 'pending_review'
+          {filter === 'all'
             ? ''
             : ` · ${STATUS_LABELS[filter as TenantRequestStatus] || 'all'}`}
         </p>

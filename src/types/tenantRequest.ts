@@ -117,12 +117,14 @@ export const STATUS_LABELS: Record<TenantRequestStatus, string> = {
   pending_review: 'Pending review',
   approved_setup: 'Approved · setup',
   rejected: 'Rejected',
-  archived: 'Archived',
+  // Backend status stays "archived" (= wizard launched, tenant fully live).
+  // We expose it as "Live" in the UI so super admins read it as success, not retirement.
+  archived: 'Live',
 };
 
 export const STATUS_TONE: Record<TenantRequestStatus, string> = {
   pending_review: 'border-brand-gold/30 bg-brand-gold/10 text-brand-gold',
   approved_setup: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400',
   rejected: 'border-danger-500/30 bg-danger-500/10 text-danger-500',
-  archived: 'border-themed-2 bg-line/[0.04] text-text-mute',
+  archived: 'border-brand-cyan/40 bg-brand-cyan/[0.08] text-brand-cyan',
 };
