@@ -281,7 +281,6 @@ const TenantRequestDetailsModal: React.FC<Props> = ({
 
   const [mode, setMode] = useState<'view' | 'approve' | 'reject'>('view');
   const [subdomain, setSubdomain] = useState('');
-  const [sendEmail, setSendEmail] = useState(true);
   const [rejectReason, setRejectReason] = useState('');
   const [rejectVisible, setRejectVisible] = useState(true);
   const [availability, setAvailability] = useState<Availability>(null);
@@ -322,7 +321,7 @@ const TenantRequestDetailsModal: React.FC<Props> = ({
     try {
       await approveMutation.mutateAsync({
         id: detail.id,
-        payload: { subdomain, send_credentials_email: sendEmail },
+        payload: { subdomain },
       });
       toast.success('Approved · provisioning started');
       setMode('view');
@@ -517,16 +516,6 @@ const TenantRequestDetailsModal: React.FC<Props> = ({
                 />
               </div>
 
-              <label className="flex cursor-pointer items-start gap-2.5 text-[13px] text-text-dim">
-                <input
-                  type="checkbox"
-                  checked={sendEmail}
-                  onChange={(e) => setSendEmail(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 cursor-pointer accent-brand-cyan"
-                />
-                <span>Email the requester their LMS URL and sign-in instructions</span>
-              </label>
-
               <div className="flex items-start gap-2.5 rounded-lg border border-brand-cyan/20 bg-brand-cyan/[0.04] p-3">
                 <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand-cyan" />
                 <p className="text-[12px] leading-relaxed text-text-dim">
@@ -536,7 +525,8 @@ const TenantRequestDetailsModal: React.FC<Props> = ({
                     {subdomain || 'subdomain'}.ailinc.com
                   </code>{' '}
                   — Netlify site, subdomain alias, and build trigger. Live status
-                  appears below once it starts.
+                  appears below once it starts. The requester is emailed once they
+                  finish the 8-step setup wizard, not at approval time.
                 </p>
               </div>
 

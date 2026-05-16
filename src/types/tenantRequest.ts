@@ -90,7 +90,6 @@ export interface SubdomainCheckResponse {
 
 export interface ApproveRequestPayload {
   subdomain: string;
-  send_credentials_email: boolean;
 }
 
 export interface RejectRequestPayload {
