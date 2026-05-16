@@ -181,6 +181,10 @@ const ProvisioningPanel: React.FC<{
     return true;
   });
   ordered.reverse();
+  // Hide always-skipped steps (wildcard DNS + central Google OAuth proxy) —
+  // they're informational no-ops that exist for audit completeness, not
+  // signals the admin needs to scan.
+  const visible = ordered.filter((entry) => entry.status !== 'skipped');
 
   return (
     <div className="rounded-lg border border-themed bg-line/[0.02] p-4">
@@ -208,13 +212,13 @@ const ProvisioningPanel: React.FC<{
         ) : null}
       </div>
 
-      {ordered.length === 0 ? (
+      {visible.length === 0 ? (
         <p className="font-mono text-[11px] text-text-mute">
           Queued — waiting for worker pickup…
         </p>
       ) : (
         <ol className="space-y-1.5">
-          {ordered.map((entry) => {
+          {visible.map((entry) => {
             const label =
               PROVISIONING_STEP_LABELS[entry.step] || entry.step;
             const icon =
