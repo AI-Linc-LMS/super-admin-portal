@@ -42,6 +42,11 @@ export const useTenantRequest = (
     retry: false,
     staleTime: 60 * 1000,
     refetchOnWindowFocus: false,
+    // Always refetch when the modal mounts. Prevents a 60s-stale `pending_review`
+    // status from showing the Approve button after the request was approved
+    // elsewhere (other tab, direct API call, or a previous mutation that
+    // didn't invalidate this entry). The list-query staleTime is unaffected.
+    refetchOnMount: 'always',
     refetchInterval: options.pollWhileProvisioning
       ? (data) => {
           const status = (data as TenantRequestDetail | undefined)?.provisioning?.status;
