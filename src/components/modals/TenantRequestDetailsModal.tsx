@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
+import { useQueryClient } from '@tanstack/react-query';
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
@@ -616,6 +617,7 @@ const TenantRequestDetailsModal: React.FC<Props> = ({
   const retryMutation = useRetryProvisioning();
   const subdomainCheck = useCheckSubdomain();
 
+  const queryClient = useQueryClient();
   const [mode, setMode] = useState<'view' | 'approve' | 'reject'>('view');
   const [subdomain, setSubdomain] = useState('');
   const [rejectReason, setRejectReason] = useState('');
@@ -653,6 +655,19 @@ const TenantRequestDetailsModal: React.FC<Props> = ({
     }
   };
 
+  /**
+   * Backend returns 409 when the request has already moved past `pending_review`
+   * (e.g. another tab approved it, or a stale modal still shows the form).
+   * Treat it as informational, not an error — refresh the local cache so the
+   * UI snaps back to the current truth and the Approve/Reject buttons hide.
+   */
+  const handleStaleConflict = (id: number, detailMsg?: string) => {
+    toast(detailMsg || 'Already actioned — refreshing');
+    queryClient.invalidateQueries({ queryKey: ['tenant-request', id] });
+    queryClient.invalidateQueries({ queryKey: ['tenant-requests'] });
+    setMode('view');
+  };
+
   const onApprove = async () => {
     if (!detail) return;
     try {
@@ -663,7 +678,11 @@ const TenantRequestDetailsModal: React.FC<Props> = ({
       toast.success('Approved · provisioning started');
       setMode('view');
     } catch (err: any) {
-      toast.error(err?.response?.data?.detail || 'Approval failed');
+      if (err?.response?.status === 409) {
+        handleStaleConflict(detail.id, err?.response?.data?.detail);
+      } else {
+        toast.error(err?.response?.data?.detail || 'Approval failed');
+      }
     }
   };
 
@@ -673,7 +692,11 @@ const TenantRequestDetailsModal: React.FC<Props> = ({
       await retryMutation.mutateAsync(detail.id);
       toast.success('Provisioning re-queued');
     } catch (err: any) {
-      toast.error(err?.response?.data?.detail || 'Retry failed');
+      if (err?.response?.status === 409) {
+        handleStaleConflict(detail.id, err?.response?.data?.detail);
+      } else {
+        toast.error(err?.response?.data?.detail || 'Retry failed');
+      }
     }
   };
 
@@ -691,7 +714,11 @@ const TenantRequestDetailsModal: React.FC<Props> = ({
       toast.success('Request rejected');
       onClose();
     } catch (err: any) {
-      toast.error(err?.response?.data?.detail || 'Rejection failed');
+      if (err?.response?.status === 409) {
+        handleStaleConflict(detail.id, err?.response?.data?.detail);
+      } else {
+        toast.error(err?.response?.data?.detail || 'Rejection failed');
+      }
     }
   };
 
