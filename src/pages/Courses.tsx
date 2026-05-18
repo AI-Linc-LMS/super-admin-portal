@@ -101,6 +101,7 @@ const Courses: React.FC = () => {
       published?: boolean;
       enrollment_enabled?: boolean;
       content_lock_enabled?: boolean;
+      certificate_available?: boolean;
     }
   ) => {
     try {

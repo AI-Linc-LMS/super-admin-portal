@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { IndianRupee, Eye, EyeOff, AlertCircle, Settings, UserPlus, UserX, Lock, Unlock } from 'lucide-react';
+import { IndianRupee, Eye, EyeOff, AlertCircle, Settings, UserPlus, UserX, Lock, Unlock, Award, BadgeMinus } from 'lucide-react';
 import Modal from './Modal';
 import Button from './Button';
 import Input from './Input';
@@ -8,7 +8,7 @@ import { ClientCourse } from '../../types/client';
 interface CourseUpdateModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (courseId: number, courseData: { price?: number; is_free?: boolean; published?: boolean; enrollment_enabled?: boolean; content_lock_enabled?: boolean }) => Promise<void>;
+  onConfirm: (courseId: number, courseData: { price?: number; is_free?: boolean; published?: boolean; enrollment_enabled?: boolean; content_lock_enabled?: boolean; certificate_available?: boolean }) => Promise<void>;
   course: ClientCourse;
   isLoading?: boolean;
 }
@@ -25,7 +25,8 @@ const CourseUpdateModal: React.FC<CourseUpdateModalProps> = ({
     is_free: course.is_free,
     published: course.published,
     enrollment_enabled: course.enrollment_enabled ?? true,
-    content_lock_enabled: course.content_lock_enabled ?? false
+    content_lock_enabled: course.content_lock_enabled ?? false,
+    certificate_available: course.certificate_available ?? false
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<{ price?: string }>({});
@@ -37,7 +38,8 @@ const CourseUpdateModal: React.FC<CourseUpdateModalProps> = ({
       is_free: course.is_free,
       published: course.published,
       enrollment_enabled: course.enrollment_enabled ?? true,
-      content_lock_enabled: course.content_lock_enabled ?? false
+      content_lock_enabled: course.content_lock_enabled ?? false,
+      certificate_available: course.certificate_available ?? false
     });
     setErrors({});
   }, [course]);
@@ -60,12 +62,13 @@ const CourseUpdateModal: React.FC<CourseUpdateModalProps> = ({
   const handleSubmit = async () => {
     if (!validateForm()) return;
 
-    const hasChanges = 
+    const hasChanges =
       formData.price !== parseFloat(course.price) ||
       formData.is_free !== course.is_free ||
       formData.published !== course.published ||
       formData.enrollment_enabled !== (course.enrollment_enabled ?? true) ||
-      formData.content_lock_enabled !== (course.content_lock_enabled ?? false);
+      formData.content_lock_enabled !== (course.content_lock_enabled ?? false) ||
+      formData.certificate_available !== (course.certificate_available ?? false);
 
     if (!hasChanges) {
       onClose();
@@ -74,8 +77,8 @@ const CourseUpdateModal: React.FC<CourseUpdateModalProps> = ({
 
     try {
       setIsSubmitting(true);
-      
-      const updateData: { price?: number; is_free?: boolean; published?: boolean; enrollment_enabled?: boolean; content_lock_enabled?: boolean } = {};
+
+      const updateData: { price?: number; is_free?: boolean; published?: boolean; enrollment_enabled?: boolean; content_lock_enabled?: boolean; certificate_available?: boolean } = {};
       
       // Only include changed fields
       if (formData.is_free !== course.is_free) {
@@ -93,7 +96,11 @@ const CourseUpdateModal: React.FC<CourseUpdateModalProps> = ({
       if (formData.content_lock_enabled !== (course.content_lock_enabled ?? false)) {
         updateData.content_lock_enabled = formData.content_lock_enabled;
       }
-      
+
+      if (formData.certificate_available !== (course.certificate_available ?? false)) {
+        updateData.certificate_available = formData.certificate_available;
+      }
+
       // Handle price changes
       if (formData.is_free) {
         // If switching to free, set price to 0
@@ -140,12 +147,13 @@ const CourseUpdateModal: React.FC<CourseUpdateModalProps> = ({
     return formData.price > 0 ? `₹${formData.price.toFixed(2)}` : 'Free';
   };
 
-  const hasChanges = 
+  const hasChanges =
     formData.price !== parseFloat(course.price) ||
     formData.is_free !== course.is_free ||
     formData.published !== course.published ||
     formData.enrollment_enabled !== (course.enrollment_enabled ?? true) ||
-    formData.content_lock_enabled !== (course.content_lock_enabled ?? false);
+    formData.content_lock_enabled !== (course.content_lock_enabled ?? false) ||
+    formData.certificate_available !== (course.certificate_available ?? false);
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Update Course Settings">
@@ -384,6 +392,54 @@ const CourseUpdateModal: React.FC<CourseUpdateModalProps> = ({
           </div>
         </div>
 
+        {/* Certificate Section */}
+        <div className="space-y-4">
+          <h4 className="text-md font-semibold text-text flex items-center gap-2">
+            {formData.certificate_available ? (
+              <Award className="w-5 h-5 text-amber-400" />
+            ) : (
+              <BadgeMinus className="w-5 h-5 text-text-mute" />
+            )}
+            Certificate Settings
+          </h4>
+
+          <div className="space-y-3">
+            <label className="flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all hover:border-themed-2">
+              <input
+                type="radio"
+                name="certificate"
+                checked={formData.certificate_available}
+                onChange={() => setFormData(prev => ({ ...prev, certificate_available: true }))}
+                className="text-brand-cyan focus:ring-brand-cyan/40"
+              />
+              <div className="flex-1">
+                <div className="font-medium text-text flex items-center gap-2">
+                  <Award className="w-4 h-4 text-amber-400" />
+                  Certificate Enabled
+                </div>
+                <div className="text-sm text-text-dim">Students receive a completion certificate</div>
+              </div>
+            </label>
+
+            <label className="flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all hover:border-themed-2">
+              <input
+                type="radio"
+                name="certificate"
+                checked={!formData.certificate_available}
+                onChange={() => setFormData(prev => ({ ...prev, certificate_available: false }))}
+                className="text-brand-cyan focus:ring-brand-cyan/40"
+              />
+              <div className="flex-1">
+                <div className="font-medium text-text flex items-center gap-2">
+                  <BadgeMinus className="w-4 h-4 text-text-mute" />
+                  Certificate Disabled
+                </div>
+                <div className="text-sm text-text-dim">No certificate is issued on completion</div>
+              </div>
+            </label>
+          </div>
+        </div>
+
         {/* Summary */}
         {hasChanges && (
           <div className="p-4 bg-brand-cyan/5 border border-blue-200 rounded-lg">
@@ -406,6 +462,9 @@ const CourseUpdateModal: React.FC<CourseUpdateModalProps> = ({
                   )}
                   {formData.content_lock_enabled !== (course.content_lock_enabled ?? false) && (
                     <li>• Content Lock: {(course.content_lock_enabled ?? false) ? 'Enabled' : 'Disabled'} → {formData.content_lock_enabled ? 'Enabled' : 'Disabled'}</li>
+                  )}
+                  {formData.certificate_available !== (course.certificate_available ?? false) && (
+                    <li>• Certificate: {(course.certificate_available ?? false) ? 'Enabled' : 'Disabled'} → {formData.certificate_available ? 'Enabled' : 'Disabled'}</li>
                   )}
                 </ul>
               </div>
