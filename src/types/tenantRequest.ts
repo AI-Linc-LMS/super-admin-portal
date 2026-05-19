@@ -17,6 +17,8 @@ export interface TenantRequestListItem {
   created_at: string;
   reviewed_at: string | null;
   approved_subdomain: string;
+  /** Optional — slug the prospect picked on the public intake form. */
+  requested_subdomain?: string;
 }
 
 export interface WizardProgress {

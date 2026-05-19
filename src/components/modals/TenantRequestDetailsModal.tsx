@@ -635,10 +635,17 @@ const TenantRequestDetailsModal: React.FC<Props> = ({
 
   useEffect(() => {
     if (detail && !subdomain) {
-      setSubdomain(slugify(detail.organisation_name));
+      // Honour the prospect's requested slug from intake when present, so the
+      // super-admin sees their preference pre-filled in the Approve form.
+      // Fall back to slugifying the organisation name only if no preference
+      // was captured. Admin can still override either way before approval.
+      setSubdomain(
+        detail.requested_subdomain ||
+          slugify(detail.organisation_name)
+      );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [detail?.organisation_name]);
+  }, [detail?.organisation_name, detail?.requested_subdomain]);
 
   const runCheck = async (value: string) => {
     if (!value) {
@@ -801,6 +808,18 @@ const TenantRequestDetailsModal: React.FC<Props> = ({
               <Field label="Subdomain">
                 <span className="font-mono text-brand-cyan">
                   {detail.approved_subdomain}.ailinc.com
+                </span>
+              </Field>
+            ) : null}
+            {/* The slug the prospect chose at intake. Shown ONLY when they
+                actually picked one (the field is optional) AND only when the
+                request isn't yet approved — once `approved_subdomain` is set,
+                that's the source of truth and surfacing both would just clutter
+                the panel. */}
+            {detail.requested_subdomain && !detail.approved_subdomain ? (
+              <Field label="Requested slug">
+                <span className="font-mono text-text-dim">
+                  {detail.requested_subdomain}.ailinc.com
                 </span>
               </Field>
             ) : null}
