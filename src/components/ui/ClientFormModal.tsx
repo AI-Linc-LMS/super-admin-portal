@@ -32,6 +32,7 @@ const ClientFormModal: React.FC<ClientFormModalProps> = ({
     phone_number: '',
     joining_date: '',
     poc_name: '',
+    hide_available_courses_from_students: false,
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -60,6 +61,7 @@ const ClientFormModal: React.FC<ClientFormModalProps> = ({
           phone_number: client.phone_number || '',
           joining_date: formattedDate,
           poc_name: client.poc_name || '',
+          hide_available_courses_from_students: client.hide_available_courses_from_students ?? false,
         });
       } else {
         setFormData({
@@ -70,6 +72,7 @@ const ClientFormModal: React.FC<ClientFormModalProps> = ({
           phone_number: '',
           joining_date: new Date().toISOString().split('T')[0],
           poc_name: '',
+          hide_available_courses_from_students: false,
         });
       }
       setErrors({});
@@ -137,8 +140,9 @@ const ClientFormModal: React.FC<ClientFormModalProps> = ({
         email: formData.email?.trim() || null,
         phone_number: formData.phone_number?.trim() || null,
         poc_name: formData.poc_name?.trim() || null,
+        hide_available_courses_from_students: !!formData.hide_available_courses_from_students,
         // Format joining_date properly
-        joining_date: formData.joining_date 
+        joining_date: formData.joining_date
           ? `${formData.joining_date}T${new Date().toISOString().split('T')[1]}`
           : new Date().toISOString(),
       };
@@ -286,6 +290,33 @@ const ClientFormModal: React.FC<ClientFormModalProps> = ({
             error={errors.logo_url}
             helpText="Optional URL to the client's logo image"
           />
+        </div>
+
+        {/* Course Visibility */}
+        <div className="rounded-lg border border-themed p-4">
+          <label htmlFor="hide_available_courses_from_students" className="flex items-start gap-3 cursor-pointer">
+            <input
+              id="hide_available_courses_from_students"
+              type="checkbox"
+              className="mt-1 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+              checked={!!formData.hide_available_courses_from_students}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  hide_available_courses_from_students: e.target.checked,
+                }))
+              }
+            />
+            <span>
+              <span className="block text-sm font-medium text-text">
+                Hide available (non-enrolled) courses from students
+              </span>
+              <span className="block text-xs text-text-secondary mt-1">
+                When enabled, students of this client only see courses they're enrolled in.
+                The "Available Courses" list is hidden from the student course module.
+              </span>
+            </span>
+          </label>
         </div>
 
         {/* Form Actions */}
