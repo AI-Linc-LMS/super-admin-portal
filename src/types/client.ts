@@ -40,6 +40,9 @@ export interface Client {
   api_url?: string;
   google_client_id?: string;
   payment_encryption_key?: string;
+
+  // Tenant-wide course visibility. When true, students only see courses they're enrolled in.
+  hide_available_courses_from_students?: boolean;
 }
 
 export interface Feature {
