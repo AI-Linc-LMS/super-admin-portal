@@ -11,6 +11,7 @@ import {
   Menu,
   Bot,
   Inbox,
+  Sparkles,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../store/authStore';
@@ -30,6 +31,7 @@ const Sidebar: React.FC = () => {
     { name: t('navigation.clients'), href: ROUTES.CLIENTS, icon: Users },
     { name: 'Tenant Requests', href: ROUTES.TENANT_REQUESTS, icon: Inbox },
     { name: t('navigation.courses'), href: ROUTES.COURSES, icon: BookOpen },
+    { name: 'Adaptive Courses', href: ROUTES.ADAPTIVE_COURSES, icon: Sparkles },
     { name: t('navigation.chatbots'), href: ROUTES.CHATBOTS, icon: Bot },
     { name: t('navigation.settings'), href: ROUTES.SETTINGS, icon: Settings },
   ];

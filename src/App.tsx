@@ -10,6 +10,8 @@ import Clients from './pages/Clients';
 import ClientDetails from './pages/ClientDetails';
 import TenantRequests from './pages/TenantRequests';
 import Courses from './pages/Courses';
+import AdaptiveCourses from './pages/AdaptiveCourses';
+import AdaptiveCourseDetails from './pages/AdaptiveCourseDetails';
 import Chatbots from './pages/Chatbots';
 import Settings from './pages/Settings';
 import { useAuthStore } from './store/authStore';
@@ -82,6 +84,8 @@ function App() {
               <Route path="clients/:id" element={<ClientDetails />} />
               <Route path="tenant-requests" element={<TenantRequests />} />
               <Route path="courses" element={<Courses />} />
+              <Route path="adaptive-courses" element={<AdaptiveCourses />} />
+              <Route path="adaptive-courses/:id" element={<AdaptiveCourseDetails />} />
               <Route path="chatbots" element={<Chatbots />} />
               <Route path="settings" element={<Settings />} />
             </Route>

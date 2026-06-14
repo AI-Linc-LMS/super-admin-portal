@@ -1,14 +1,21 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
-import { API_BASE_URL, STORAGE_KEYS } from '../utils/constants';
-import { 
-  Client, 
-  ClientDetails, 
+import { API_BASE_URL, API_ENDPOINTS, STORAGE_KEYS } from '../utils/constants';
+import {
+  Client,
+  ClientDetails,
   Feature,
-  CourseOperationRequest, 
-  CourseOperationResponse, 
-  CourseOperationStatus, 
-  CourseOperationsList 
+  CourseOperationRequest,
+  CourseOperationResponse,
+  CourseOperationStatus,
+  CourseOperationsList
 } from '../types/client';
+import {
+  AdaptiveCourseSummary,
+  AdaptiveCourseDetail,
+  CourseTenantsResponse,
+  AdaptiveJobSummary,
+  AdaptiveJobDetail,
+} from '../types/adaptiveCourse';
 import toast from 'react-hot-toast';
 
 interface ApiError {
@@ -869,6 +876,56 @@ class ApiService {
         operations: mockOperations
       };
     }
+  }
+
+  // ---------- Adaptive Courses (cross-tenant) ----------
+
+  async getAdaptiveCourses(params?: {
+    client_id?: number;
+    is_template?: boolean;
+    search?: string;
+  }): Promise<AdaptiveCourseSummary[]> {
+    const response = await this.get<AdaptiveCourseSummary[] | { results: AdaptiveCourseSummary[] }>(
+      API_ENDPOINTS.ADAPTIVE_COURSES,
+      params
+    );
+    return Array.isArray(response) ? response : response.results || [];
+  }
+
+  async getAdaptiveCourseDetails(id: number): Promise<AdaptiveCourseDetail> {
+    return await this.get<AdaptiveCourseDetail>(API_ENDPOINTS.ADAPTIVE_COURSE_DETAILS(id));
+  }
+
+  async getAdaptiveCourseTenants(id: number): Promise<CourseTenantsResponse> {
+    return await this.get<CourseTenantsResponse>(API_ENDPOINTS.ADAPTIVE_COURSE_TENANTS(id));
+  }
+
+  async getAdaptiveJobs(params?: { client_id?: number }): Promise<AdaptiveJobSummary[]> {
+    const response = await this.get<AdaptiveJobSummary[] | { results: AdaptiveJobSummary[] }>(
+      API_ENDPOINTS.ADAPTIVE_JOBS,
+      params
+    );
+    return Array.isArray(response) ? response : response.results || [];
+  }
+
+  async getAdaptiveJobDetails(jobId: string): Promise<AdaptiveJobDetail> {
+    return await this.get<AdaptiveJobDetail>(API_ENDPOINTS.ADAPTIVE_JOB_DETAILS(jobId));
+  }
+
+  async mapAdaptiveCourse(
+    courseId: number,
+    payload: { client_id: number; mode: 'clone' | 'shared' }
+  ): Promise<any> {
+    return await this.post(API_ENDPOINTS.ADAPTIVE_COURSE_MAP(courseId), payload);
+  }
+
+  async unmapAdaptiveCourse(
+    courseId: number,
+    mappingId: number,
+    deleteClone = false
+  ): Promise<any> {
+    const suffix = deleteClone ? '?delete_clone=true' : '';
+    return await this.delete(`${API_ENDPOINTS.ADAPTIVE_COURSE_UNMAP(courseId, mappingId)}${suffix}`);
   }
 }
 
