@@ -16,6 +16,14 @@ import {
   AdaptiveJobSummary,
   AdaptiveJobDetail,
 } from '../types/adaptiveCourse';
+import {
+  VimeoVideoListResponse,
+  VimeoSyncStatus,
+  VimeoFolder,
+  VimeoUploadTicket,
+  VimeoVideoItem,
+  VimeoMapResultItem,
+} from '../types/vimeo';
 import toast from 'react-hot-toast';
 
 interface ApiError {
@@ -926,6 +934,56 @@ class ApiService {
   ): Promise<any> {
     const suffix = deleteClone ? '?delete_clone=true' : '';
     return await this.delete(`${API_ENDPOINTS.ADAPTIVE_COURSE_UNMAP(courseId, mappingId)}${suffix}`);
+  }
+
+  // ---------- Vimeo library (cross-tenant) ----------
+
+  async getVimeoVideos(params?: {
+    search?: string;
+    transcribed_only?: boolean;
+    mapped?: 'all' | 'mapped' | 'unmapped';
+    limit?: number;
+    offset?: number;
+  }): Promise<VimeoVideoListResponse> {
+    return await this.get<VimeoVideoListResponse>(API_ENDPOINTS.VIMEO_VIDEOS, params);
+  }
+
+  async getVimeoSyncStatus(): Promise<VimeoSyncStatus> {
+    return await this.get<VimeoSyncStatus>(API_ENDPOINTS.VIMEO_SYNC_STATUS);
+  }
+
+  async triggerVimeoSync(checkTextTracks = true): Promise<{ status: string }> {
+    return await this.post(API_ENDPOINTS.VIMEO_SYNC, { check_text_tracks: checkTextTracks });
+  }
+
+  async getVimeoFolders(): Promise<{ results: VimeoFolder[] }> {
+    return await this.get<{ results: VimeoFolder[] }>(API_ENDPOINTS.VIMEO_FOLDERS);
+  }
+
+  async createVimeoFolder(name: string): Promise<VimeoFolder> {
+    return await this.post<VimeoFolder>(API_ENDPOINTS.VIMEO_FOLDERS, { name });
+  }
+
+  async addVideoToVimeoFolder(projectId: string, vimeoId: string): Promise<any> {
+    return await this.post(API_ENDPOINTS.VIMEO_FOLDER_ADD_VIDEO(projectId), { vimeo_id: vimeoId });
+  }
+
+  async createVimeoUpload(payload: {
+    name: string;
+    size: number;
+    description?: string;
+  }): Promise<VimeoUploadTicket> {
+    return await this.post<VimeoUploadTicket>(API_ENDPOINTS.VIMEO_UPLOAD_CREATE, payload);
+  }
+
+  async completeVimeoUpload(payload: { vimeo_id: string; folder_id?: string }): Promise<VimeoVideoItem> {
+    return await this.post<VimeoVideoItem>(API_ENDPOINTS.VIMEO_UPLOAD_COMPLETE, payload);
+  }
+
+  async mapVimeoVideos(
+    mappings: { vimeo_id: string; submodule_id: number }[]
+  ): Promise<{ results: VimeoMapResultItem[] }> {
+    return await this.post(API_ENDPOINTS.VIMEO_MAP, { mappings });
   }
 }
 
