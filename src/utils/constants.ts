@@ -17,6 +17,26 @@ export const API_ENDPOINTS = {
   // AI-Linc Courses
   AI_LINC_COURSES: '/superadmin/api/ai-linc/courses/',
 
+  // Adaptive Courses (cross-tenant)
+  ADAPTIVE_COURSES: '/superadmin/api/adaptive/courses/',
+  ADAPTIVE_COURSE_DETAILS: (id: number) => `/superadmin/api/adaptive/courses/${id}/`,
+  ADAPTIVE_COURSE_TENANTS: (id: number) => `/superadmin/api/adaptive/courses/${id}/tenants/`,
+  ADAPTIVE_COURSE_MAP: (id: number) => `/superadmin/api/adaptive/courses/${id}/map/`,
+  ADAPTIVE_COURSE_UNMAP: (id: number, mappingId: number) =>
+    `/superadmin/api/adaptive/courses/${id}/map/${mappingId}/`,
+  ADAPTIVE_JOBS: '/superadmin/api/adaptive/jobs/',
+  ADAPTIVE_JOB_DETAILS: (jobId: string) => `/superadmin/api/adaptive/jobs/${jobId}/`,
+
+  // Vimeo library (cross-tenant)
+  VIMEO_VIDEOS: '/superadmin/api/vimeo/videos/',
+  VIMEO_SYNC_STATUS: '/superadmin/api/vimeo/sync-status/',
+  VIMEO_SYNC: '/superadmin/api/vimeo/sync/',
+  VIMEO_FOLDERS: '/superadmin/api/vimeo/folders/',
+  VIMEO_FOLDER_ADD_VIDEO: (projectId: string) => `/superadmin/api/vimeo/folders/${projectId}/videos/`,
+  VIMEO_UPLOAD_CREATE: '/superadmin/api/vimeo/uploads/',
+  VIMEO_UPLOAD_COMPLETE: '/superadmin/api/vimeo/uploads/complete/',
+  VIMEO_MAP: '/superadmin/api/vimeo/map/',
+
   // Course Operations
   COURSE_OPERATIONS: {
     DUPLICATE: '/lms/course-operations/duplicate/',
@@ -34,6 +54,9 @@ export const ROUTES = {
   CLIENT_DETAILS: (id: string | number) => `/clients/${id}`,
   TENANT_REQUESTS: '/tenant-requests',
   COURSES: '/courses',
+  ADAPTIVE_COURSES: '/adaptive-courses',
+  ADAPTIVE_COURSE_DETAILS: (id: string | number) => `/adaptive-courses/${id}`,
+  VIMEO_LIBRARY: '/vimeo-library',
   CHATBOTS: '/chatbots',
   ANALYTICS: '/analytics',
   SETTINGS: '/settings',

@@ -1,14 +1,29 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
-import { API_BASE_URL, STORAGE_KEYS } from '../utils/constants';
-import { 
-  Client, 
-  ClientDetails, 
+import { API_BASE_URL, API_ENDPOINTS, STORAGE_KEYS } from '../utils/constants';
+import {
+  Client,
+  ClientDetails,
   Feature,
-  CourseOperationRequest, 
-  CourseOperationResponse, 
-  CourseOperationStatus, 
-  CourseOperationsList 
+  CourseOperationRequest,
+  CourseOperationResponse,
+  CourseOperationStatus,
+  CourseOperationsList
 } from '../types/client';
+import {
+  AdaptiveCourseSummary,
+  AdaptiveCourseDetail,
+  CourseTenantsResponse,
+  AdaptiveJobSummary,
+  AdaptiveJobDetail,
+} from '../types/adaptiveCourse';
+import {
+  VimeoVideoListResponse,
+  VimeoSyncStatus,
+  VimeoFolder,
+  VimeoUploadTicket,
+  VimeoVideoItem,
+  VimeoMapResultItem,
+} from '../types/vimeo';
 import toast from 'react-hot-toast';
 
 interface ApiError {
@@ -869,6 +884,106 @@ class ApiService {
         operations: mockOperations
       };
     }
+  }
+
+  // ---------- Adaptive Courses (cross-tenant) ----------
+
+  async getAdaptiveCourses(params?: {
+    client_id?: number;
+    is_template?: boolean;
+    search?: string;
+  }): Promise<AdaptiveCourseSummary[]> {
+    const response = await this.get<AdaptiveCourseSummary[] | { results: AdaptiveCourseSummary[] }>(
+      API_ENDPOINTS.ADAPTIVE_COURSES,
+      params
+    );
+    return Array.isArray(response) ? response : response.results || [];
+  }
+
+  async getAdaptiveCourseDetails(id: number): Promise<AdaptiveCourseDetail> {
+    return await this.get<AdaptiveCourseDetail>(API_ENDPOINTS.ADAPTIVE_COURSE_DETAILS(id));
+  }
+
+  async getAdaptiveCourseTenants(id: number): Promise<CourseTenantsResponse> {
+    return await this.get<CourseTenantsResponse>(API_ENDPOINTS.ADAPTIVE_COURSE_TENANTS(id));
+  }
+
+  async getAdaptiveJobs(params?: { client_id?: number }): Promise<AdaptiveJobSummary[]> {
+    const response = await this.get<AdaptiveJobSummary[] | { results: AdaptiveJobSummary[] }>(
+      API_ENDPOINTS.ADAPTIVE_JOBS,
+      params
+    );
+    return Array.isArray(response) ? response : response.results || [];
+  }
+
+  async getAdaptiveJobDetails(jobId: string): Promise<AdaptiveJobDetail> {
+    return await this.get<AdaptiveJobDetail>(API_ENDPOINTS.ADAPTIVE_JOB_DETAILS(jobId));
+  }
+
+  async mapAdaptiveCourse(
+    courseId: number,
+    payload: { client_id: number; mode: 'clone' | 'shared' }
+  ): Promise<any> {
+    return await this.post(API_ENDPOINTS.ADAPTIVE_COURSE_MAP(courseId), payload);
+  }
+
+  async unmapAdaptiveCourse(
+    courseId: number,
+    mappingId: number,
+    deleteClone = false
+  ): Promise<any> {
+    const suffix = deleteClone ? '?delete_clone=true' : '';
+    return await this.delete(`${API_ENDPOINTS.ADAPTIVE_COURSE_UNMAP(courseId, mappingId)}${suffix}`);
+  }
+
+  // ---------- Vimeo library (cross-tenant) ----------
+
+  async getVimeoVideos(params?: {
+    search?: string;
+    transcribed_only?: boolean;
+    mapped?: 'all' | 'mapped' | 'unmapped';
+    limit?: number;
+    offset?: number;
+  }): Promise<VimeoVideoListResponse> {
+    return await this.get<VimeoVideoListResponse>(API_ENDPOINTS.VIMEO_VIDEOS, params);
+  }
+
+  async getVimeoSyncStatus(): Promise<VimeoSyncStatus> {
+    return await this.get<VimeoSyncStatus>(API_ENDPOINTS.VIMEO_SYNC_STATUS);
+  }
+
+  async triggerVimeoSync(checkTextTracks = true): Promise<{ status: string }> {
+    return await this.post(API_ENDPOINTS.VIMEO_SYNC, { check_text_tracks: checkTextTracks });
+  }
+
+  async getVimeoFolders(): Promise<{ results: VimeoFolder[] }> {
+    return await this.get<{ results: VimeoFolder[] }>(API_ENDPOINTS.VIMEO_FOLDERS);
+  }
+
+  async createVimeoFolder(name: string): Promise<VimeoFolder> {
+    return await this.post<VimeoFolder>(API_ENDPOINTS.VIMEO_FOLDERS, { name });
+  }
+
+  async addVideoToVimeoFolder(projectId: string, vimeoId: string): Promise<any> {
+    return await this.post(API_ENDPOINTS.VIMEO_FOLDER_ADD_VIDEO(projectId), { vimeo_id: vimeoId });
+  }
+
+  async createVimeoUpload(payload: {
+    name: string;
+    size: number;
+    description?: string;
+  }): Promise<VimeoUploadTicket> {
+    return await this.post<VimeoUploadTicket>(API_ENDPOINTS.VIMEO_UPLOAD_CREATE, payload);
+  }
+
+  async completeVimeoUpload(payload: { vimeo_id: string; folder_id?: string }): Promise<VimeoVideoItem> {
+    return await this.post<VimeoVideoItem>(API_ENDPOINTS.VIMEO_UPLOAD_COMPLETE, payload);
+  }
+
+  async mapVimeoVideos(
+    mappings: { vimeo_id: string; submodule_id: number }[]
+  ): Promise<{ results: VimeoMapResultItem[] }> {
+    return await this.post(API_ENDPOINTS.VIMEO_MAP, { mappings });
   }
 }
 
