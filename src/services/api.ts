@@ -15,6 +15,8 @@ import {
   CourseTenantsResponse,
   AdaptiveJobSummary,
   AdaptiveJobDetail,
+  AdaptiveModule,
+  AdaptiveSubModule,
 } from '../types/adaptiveCourse';
 import {
   VimeoVideoListResponse,
@@ -920,6 +922,23 @@ class ApiService {
 
   async getAdaptiveJobDetails(jobId: string): Promise<AdaptiveJobDetail> {
     return await this.get<AdaptiveJobDetail>(API_ENDPOINTS.ADAPTIVE_JOB_DETAILS(jobId));
+  }
+
+  async createAdaptiveModule(
+    courseId: number,
+    payload: { title: string; weekno?: number }
+  ): Promise<AdaptiveModule> {
+    return await this.post<AdaptiveModule>(API_ENDPOINTS.ADAPTIVE_MODULE_CREATE(courseId), payload);
+  }
+
+  async createAdaptiveSubmodule(
+    moduleId: number,
+    payload: { title: string; description?: string }
+  ): Promise<AdaptiveSubModule> {
+    return await this.post<AdaptiveSubModule>(
+      API_ENDPOINTS.ADAPTIVE_SUBMODULE_CREATE(moduleId),
+      payload
+    );
   }
 
   async mapAdaptiveCourse(

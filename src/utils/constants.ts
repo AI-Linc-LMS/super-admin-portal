@@ -26,6 +26,8 @@ export const API_ENDPOINTS = {
     `/superadmin/api/adaptive/courses/${id}/map/${mappingId}/`,
   ADAPTIVE_JOBS: '/superadmin/api/adaptive/jobs/',
   ADAPTIVE_JOB_DETAILS: (jobId: string) => `/superadmin/api/adaptive/jobs/${jobId}/`,
+  ADAPTIVE_MODULE_CREATE: (courseId: number) => `/superadmin/api/adaptive/courses/${courseId}/modules/`,
+  ADAPTIVE_SUBMODULE_CREATE: (moduleId: number) => `/superadmin/api/adaptive/modules/${moduleId}/submodules/`,
 
   // Vimeo library (cross-tenant)
   VIMEO_VIDEOS: '/superadmin/api/vimeo/videos/',
