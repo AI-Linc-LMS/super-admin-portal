@@ -26,13 +26,17 @@ export const API_ENDPOINTS = {
     `/superadmin/api/adaptive/courses/${id}/map/${mappingId}/`,
   ADAPTIVE_JOBS: '/superadmin/api/adaptive/jobs/',
   ADAPTIVE_JOB_DETAILS: (jobId: string) => `/superadmin/api/adaptive/jobs/${jobId}/`,
+  ADAPTIVE_MODULE_CREATE: (courseId: number) => `/superadmin/api/adaptive/courses/${courseId}/modules/`,
+  ADAPTIVE_SUBMODULE_CREATE: (moduleId: number) => `/superadmin/api/adaptive/modules/${moduleId}/submodules/`,
 
   // Vimeo library (cross-tenant)
   VIMEO_VIDEOS: '/superadmin/api/vimeo/videos/',
   VIMEO_SYNC_STATUS: '/superadmin/api/vimeo/sync-status/',
   VIMEO_SYNC: '/superadmin/api/vimeo/sync/',
   VIMEO_FOLDERS: '/superadmin/api/vimeo/folders/',
+  VIMEO_FOLDER_VIDEOS: (projectId: string) => `/superadmin/api/vimeo/folders/${projectId}/videos/`,
   VIMEO_FOLDER_ADD_VIDEO: (projectId: string) => `/superadmin/api/vimeo/folders/${projectId}/videos/`,
+  VIMEO_MAP_TO_MODULE: (moduleId: number) => `/superadmin/api/vimeo/modules/${moduleId}/map/`,
   VIMEO_UPLOAD_CREATE: '/superadmin/api/vimeo/uploads/',
   VIMEO_UPLOAD_COMPLETE: '/superadmin/api/vimeo/uploads/complete/',
   VIMEO_MAP: '/superadmin/api/vimeo/map/',

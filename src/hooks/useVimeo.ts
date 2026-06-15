@@ -57,6 +57,37 @@ export const useCreateVimeoFolder = () => {
   });
 };
 
+export const useFolderVideos = (projectId: string | null) => {
+  return useQuery({
+    queryKey: ['vimeo-folder-videos', projectId],
+    queryFn: () => apiService.getFolderVideos(projectId as string),
+    enabled: !!projectId,
+    retry: false,
+    staleTime: 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+};
+
+export const useMapVideosToModule = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      moduleId,
+      vimeoIds,
+      activate,
+    }: {
+      moduleId: number;
+      vimeoIds: string[];
+      activate?: boolean;
+    }) => apiService.mapVideosToModule(moduleId, vimeoIds, activate),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['vimeo-videos'] });
+      qc.invalidateQueries({ queryKey: ['vimeo-folder-videos'] });
+      qc.invalidateQueries({ queryKey: ['adaptive-course-details'] });
+    },
+  });
+};
+
 export const useAddVideoToFolder = () => {
   const qc = useQueryClient();
   return useMutation({
@@ -82,10 +113,16 @@ export const useCompleteVimeoUpload = () => {
 export const useMapVimeoVideos = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (mappings: { vimeo_id: string; submodule_id: number }[]) =>
-      apiService.mapVimeoVideos(mappings),
+    mutationFn: ({
+      mappings,
+      activate,
+    }: {
+      mappings: { vimeo_id: string; submodule_id: number }[];
+      activate?: boolean;
+    }) => apiService.mapVimeoVideos(mappings, activate),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['vimeo-videos'] });
+      qc.invalidateQueries({ queryKey: ['vimeo-folder-videos'] });
       qc.invalidateQueries({ queryKey: ['adaptive-course-details'] });
     },
   });

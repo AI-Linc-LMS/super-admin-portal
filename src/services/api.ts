@@ -15,14 +15,18 @@ import {
   CourseTenantsResponse,
   AdaptiveJobSummary,
   AdaptiveJobDetail,
+  AdaptiveModule,
+  AdaptiveSubModule,
 } from '../types/adaptiveCourse';
 import {
   VimeoVideoListResponse,
   VimeoSyncStatus,
   VimeoFolder,
+  VimeoFolderVideosResponse,
   VimeoUploadTicket,
   VimeoVideoItem,
   VimeoMapResultItem,
+  VimeoModuleMapResponse,
 } from '../types/vimeo';
 import toast from 'react-hot-toast';
 
@@ -920,6 +924,23 @@ class ApiService {
     return await this.get<AdaptiveJobDetail>(API_ENDPOINTS.ADAPTIVE_JOB_DETAILS(jobId));
   }
 
+  async createAdaptiveModule(
+    courseId: number,
+    payload: { title: string; weekno?: number }
+  ): Promise<AdaptiveModule> {
+    return await this.post<AdaptiveModule>(API_ENDPOINTS.ADAPTIVE_MODULE_CREATE(courseId), payload);
+  }
+
+  async createAdaptiveSubmodule(
+    moduleId: number,
+    payload: { title: string; description?: string }
+  ): Promise<AdaptiveSubModule> {
+    return await this.post<AdaptiveSubModule>(
+      API_ENDPOINTS.ADAPTIVE_SUBMODULE_CREATE(moduleId),
+      payload
+    );
+  }
+
   async mapAdaptiveCourse(
     courseId: number,
     payload: { client_id: number; mode: 'clone' | 'shared' }
@@ -960,6 +981,21 @@ class ApiService {
     return await this.get<{ results: VimeoFolder[] }>(API_ENDPOINTS.VIMEO_FOLDERS);
   }
 
+  async getFolderVideos(projectId: string): Promise<VimeoFolderVideosResponse> {
+    return await this.get<VimeoFolderVideosResponse>(API_ENDPOINTS.VIMEO_FOLDER_VIDEOS(projectId));
+  }
+
+  async mapVideosToModule(
+    moduleId: number,
+    vimeoIds: string[],
+    activate = false
+  ): Promise<VimeoModuleMapResponse> {
+    return await this.post(API_ENDPOINTS.VIMEO_MAP_TO_MODULE(moduleId), {
+      vimeo_ids: vimeoIds,
+      activate,
+    });
+  }
+
   async createVimeoFolder(name: string): Promise<VimeoFolder> {
     return await this.post<VimeoFolder>(API_ENDPOINTS.VIMEO_FOLDERS, { name });
   }
@@ -981,9 +1017,10 @@ class ApiService {
   }
 
   async mapVimeoVideos(
-    mappings: { vimeo_id: string; submodule_id: number }[]
+    mappings: { vimeo_id: string; submodule_id: number }[],
+    activate = false
   ): Promise<{ results: VimeoMapResultItem[] }> {
-    return await this.post(API_ENDPOINTS.VIMEO_MAP, { mappings });
+    return await this.post(API_ENDPOINTS.VIMEO_MAP, { mappings, activate });
   }
 }
 

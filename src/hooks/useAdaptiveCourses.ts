@@ -88,6 +88,43 @@ export const useUnmapAdaptiveCourse = () => {
   });
 };
 
+export const useCreateAdaptiveModule = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      courseId,
+      title,
+      weekno,
+    }: {
+      courseId: number;
+      title: string;
+      weekno?: number;
+    }) => apiService.createAdaptiveModule(courseId, { title, weekno }),
+    onSuccess: (_, { courseId }) => {
+      queryClient.invalidateQueries({ queryKey: ['adaptive-course-details', courseId] });
+    },
+  });
+};
+
+export const useCreateAdaptiveSubmodule = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      moduleId,
+      title,
+      description,
+    }: {
+      moduleId: number;
+      courseId: number;
+      title: string;
+      description?: string;
+    }) => apiService.createAdaptiveSubmodule(moduleId, { title, description }),
+    onSuccess: (_, { courseId }) => {
+      queryClient.invalidateQueries({ queryKey: ['adaptive-course-details', courseId] });
+    },
+  });
+};
+
 export const useAdaptiveJobDetails = (jobId: string, enabled = true) => {
   return useQuery({
     queryKey: ['adaptive-job-details', jobId],
