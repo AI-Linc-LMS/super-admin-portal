@@ -27,6 +27,8 @@ import {
   useAddVideoToFolder,
   useCompleteVimeoUpload,
   useMapVimeoVideos,
+  useFolderVideos,
+  useMapVideosToModule,
 } from '../hooks/useVimeo';
 import { useAdaptiveCourses, useAdaptiveCourseDetails } from '../hooks/useAdaptiveCourses';
 import { apiService } from '../services/api';
@@ -51,6 +53,7 @@ const MapModal: React.FC<{ video: VimeoVideoItem; onClose: () => void }> = ({ vi
   const { data: courses = [] } = useAdaptiveCourses();
   const [courseId, setCourseId] = useState<number | ''>('');
   const [submoduleId, setSubmoduleId] = useState<number | ''>('');
+  const [activate, setActivate] = useState(false);
   const { data: course } = useAdaptiveCourseDetails(courseId ? Number(courseId) : 0);
   const mapMutation = useMapVimeoVideos();
 
@@ -71,12 +74,17 @@ const MapModal: React.FC<{ video: VimeoVideoItem; onClose: () => void }> = ({ vi
       return;
     }
     try {
-      const res = await mapMutation.mutateAsync([
-        { vimeo_id: video.vimeo_id, submodule_id: Number(submoduleId) },
-      ]);
+      const res = await mapMutation.mutateAsync({
+        mappings: [{ vimeo_id: video.vimeo_id, submodule_id: Number(submoduleId) }],
+        activate,
+      });
       const r = res.results[0];
       if (r?.ok) {
-        toast.success('Video mapped to submodule (companion built).');
+        toast.success(
+          r.pending_transcript
+            ? 'Video attached — companion is inactive until it has a transcript.'
+            : 'Video mapped to submodule (companion built).'
+        );
         onClose();
       } else {
         toast.error(r?.error || 'Mapping failed');
@@ -92,7 +100,7 @@ const MapModal: React.FC<{ video: VimeoVideoItem; onClose: () => void }> = ({ vi
         {!video.has_text_track && (
           <div className="flex items-start gap-2 rounded-md border border-brand-gold/30 bg-brand-gold/10 p-3 text-[13px] text-brand-gold">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-            This video has no transcript yet. A companion needs a transcript — mapping may fail until Vimeo finishes captioning.
+            This video has no transcript yet. It will be attached but the companion stays inactive until Vimeo finishes captioning (a later sync flips it on).
           </div>
         )}
         <div>
@@ -129,6 +137,10 @@ const MapModal: React.FC<{ video: VimeoVideoItem; onClose: () => void }> = ({ vi
             ))}
           </select>
         </div>
+        <label className="inline-flex items-center gap-2 text-[13px] text-text-dim">
+          <input type="checkbox" checked={activate} onChange={(e) => setActivate(e.target.checked)} />
+          Activate companion immediately (only applies if it has a transcript)
+        </label>
         <div className="flex justify-end gap-2 pt-2">
           <Button variant="ghost" onClick={onClose}>
             Cancel
@@ -138,6 +150,235 @@ const MapModal: React.FC<{ video: VimeoVideoItem; onClose: () => void }> = ({ vi
           </Button>
         </div>
       </div>
+    </Modal>
+  );
+};
+
+/* --------------------------- Folder drill-in ----------------------------- */
+
+const BulkMapBar: React.FC<{
+  selectedIds: string[];
+  onDone: () => void;
+}> = ({ selectedIds, onDone }) => {
+  const { data: courses = [] } = useAdaptiveCourses();
+  const [courseId, setCourseId] = useState<number | ''>('');
+  const [mode, setMode] = useState<'module' | 'submodule'>('module');
+  const [moduleId, setModuleId] = useState<number | ''>('');
+  const [submoduleId, setSubmoduleId] = useState<number | ''>('');
+  const [activate, setActivate] = useState(false);
+  const { data: course } = useAdaptiveCourseDetails(courseId ? Number(courseId) : 0);
+  const mapToModule = useMapVideosToModule();
+  const mapToSub = useMapVimeoVideos();
+
+  const modules = useMemo(
+    () => (course?.modules || []).map((m: any) => ({ id: m.id, label: `W${m.weekno} · ${m.title}` })),
+    [course]
+  );
+  const submodules = useMemo(() => {
+    const out: { id: number; label: string }[] = [];
+    (course?.modules || []).forEach((m: any) =>
+      (m.submodules || []).forEach((s: any) =>
+        out.push({ id: s.id, label: `W${m.weekno} · ${s.order}. ${s.title}` })
+      )
+    );
+    return out;
+  }, [course]);
+
+  const busy = mapToModule.isLoading || mapToSub.isLoading;
+
+  const summarize = (results: { ok: boolean; pending_transcript?: boolean }[]) => {
+    const ok = results.filter((r) => r.ok).length;
+    const pending = results.filter((r) => r.ok && r.pending_transcript).length;
+    const failed = results.length - ok;
+    toast.success(
+      `Mapped ${ok}/${results.length}` +
+        (pending ? ` · ${pending} pending transcript` : '') +
+        (failed ? ` · ${failed} failed` : '')
+    );
+    onDone();
+  };
+
+  const submit = async () => {
+    if (!selectedIds.length) return toast.error('Select at least one video');
+    try {
+      if (mode === 'module') {
+        if (!moduleId) return toast.error('Pick a module');
+        const res = await mapToModule.mutateAsync({
+          moduleId: Number(moduleId),
+          vimeoIds: selectedIds,
+          activate,
+        });
+        summarize(res.results);
+      } else {
+        if (!submoduleId) return toast.error('Pick a submodule');
+        const res = await mapToSub.mutateAsync({
+          mappings: selectedIds.map((id) => ({ vimeo_id: id, submodule_id: Number(submoduleId) })),
+          activate,
+        });
+        summarize(res.results);
+      }
+    } catch (e: any) {
+      toast.error(e?.response?.data?.detail || 'Mapping failed');
+    }
+  };
+
+  return (
+    <div className="space-y-3 rounded-lg border border-themed-2 bg-line/[0.02] p-3">
+      <div className="flex items-center gap-2 text-[13px] font-medium text-text">
+        <Link2 className="h-4 w-4 text-brand-cyan" />
+        Map {selectedIds.length} selected {selectedIds.length === 1 ? 'video' : 'videos'}
+      </div>
+      <div className="inline-flex overflow-hidden rounded-lg border border-themed-2">
+        {([
+          ['module', 'One submodule per video'],
+          ['submodule', 'All into one submodule'],
+        ] as const).map(([m, label]) => (
+          <button
+            key={m}
+            onClick={() => setMode(m)}
+            className={cn(
+              'px-3 py-1.5 text-[12px] transition-colors',
+              mode === m ? 'bg-brand-cyan/15 text-brand-cyan' : 'text-text-dim hover:bg-line/[0.05]'
+            )}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      <div className="grid gap-2 sm:grid-cols-2">
+        <select
+          value={courseId}
+          onChange={(e) => {
+            setCourseId(e.target.value ? Number(e.target.value) : '');
+            setModuleId('');
+            setSubmoduleId('');
+          }}
+          className="w-full rounded-lg border border-themed-2 bg-ink-2 px-3 py-2 text-sm text-text"
+        >
+          <option value="">Select a course…</option>
+          {courses.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.title} — {c.client?.name}
+            </option>
+          ))}
+        </select>
+        {mode === 'module' ? (
+          <select
+            value={moduleId}
+            onChange={(e) => setModuleId(e.target.value ? Number(e.target.value) : '')}
+            disabled={!courseId}
+            className="w-full rounded-lg border border-themed-2 bg-ink-2 px-3 py-2 text-sm text-text disabled:opacity-50"
+          >
+            <option value="">{courseId ? 'Select a module…' : 'Pick a course first'}</option>
+            {modules.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.label}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <select
+            value={submoduleId}
+            onChange={(e) => setSubmoduleId(e.target.value ? Number(e.target.value) : '')}
+            disabled={!courseId}
+            className="w-full rounded-lg border border-themed-2 bg-ink-2 px-3 py-2 text-sm text-text disabled:opacity-50"
+          >
+            <option value="">{courseId ? 'Select a submodule…' : 'Pick a course first'}</option>
+            {submodules.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.label}
+              </option>
+            ))}
+          </select>
+        )}
+      </div>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <label className="inline-flex items-center gap-2 text-[12px] text-text-dim">
+          <input type="checkbox" checked={activate} onChange={(e) => setActivate(e.target.checked)} />
+          Activate companions that have a transcript
+        </label>
+        <Button size="sm" onClick={submit} isLoading={busy} disabled={!selectedIds.length}>
+          Map {selectedIds.length} {selectedIds.length === 1 ? 'video' : 'videos'}
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+const FolderVideosModal: React.FC<{ folder: { id: string; name: string }; onClose: () => void }> = ({
+  folder,
+  onClose,
+}) => {
+  const { data, isLoading, error } = useFolderVideos(folder.id);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const videos = data?.results || [];
+
+  const toggle = (id: string) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  const allSelected = videos.length > 0 && selected.size === videos.length;
+  const toggleAll = () =>
+    setSelected(allSelected ? new Set() : new Set(videos.map((v) => v.vimeo_id)));
+
+  return (
+    <Modal isOpen onClose={onClose} title={`Folder: ${folder.name}`} size="lg">
+      {isLoading ? (
+        <div className="py-12 text-center text-text-mute">Loading folder…</div>
+      ) : error ? (
+        <div className="flex items-center gap-2 py-8 text-danger-500">
+          <AlertTriangle className="h-5 w-5" /> Couldn't load this folder's videos.
+        </div>
+      ) : videos.length === 0 ? (
+        <div className="py-12 text-center text-text-mute">This folder is empty.</div>
+      ) : (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between text-[13px] text-text-dim">
+            <label className="inline-flex items-center gap-2">
+              <input type="checkbox" checked={allSelected} onChange={toggleAll} />
+              {selected.size} of {videos.length} selected
+            </label>
+          </div>
+          <div className="max-h-[42vh] space-y-1.5 overflow-y-auto pr-1">
+            {videos.map((v) => {
+              const on = selected.has(v.vimeo_id);
+              return (
+                <button
+                  key={v.id}
+                  onClick={() => toggle(v.vimeo_id)}
+                  className={cn(
+                    'flex w-full items-center gap-3 rounded-md border px-2.5 py-2 text-left transition-colors',
+                    on ? 'border-brand-cyan/50 bg-brand-cyan/10' : 'border-themed hover:border-brand-cyan/30'
+                  )}
+                >
+                  <input type="checkbox" readOnly checked={on} className="pointer-events-none" />
+                  <div className="h-9 w-16 shrink-0 overflow-hidden rounded bg-ink-2">
+                    {v.thumbnail_url ? (
+                      <img src={v.thumbnail_url} alt="" className="h-full w-full object-cover" />
+                    ) : null}
+                  </div>
+                  <span className="line-clamp-1 flex-1 text-[13px] text-text" title={v.title}>
+                    {v.title || `Video ${v.vimeo_id}`}
+                  </span>
+                  {v.has_text_track ? (
+                    <span className="inline-flex items-center gap-1 text-[11px] text-emerald-400">
+                      <Captions className="h-3 w-3" /> CC
+                    </span>
+                  ) : (
+                    <span className="text-[11px] text-brand-gold">no CC</span>
+                  )}
+                  {v.is_mapped && <Link2 className="h-3.5 w-3.5 text-brand-cyan" />}
+                </button>
+              );
+            })}
+          </div>
+          {selected.size > 0 && (
+            <BulkMapBar selectedIds={[...selected]} onDone={() => setSelected(new Set())} />
+          )}
+        </div>
+      )}
     </Modal>
   );
 };
@@ -317,6 +558,7 @@ const VimeoLibrary: React.FC = () => {
   const [uploadOpen, setUploadOpen] = useState(false);
   const [mapVideo, setMapVideo] = useState<VimeoVideoItem | null>(null);
   const [folderVideo, setFolderVideo] = useState<VimeoVideoItem | null>(null);
+  const [openFolder, setOpenFolder] = useState<{ id: string; name: string } | null>(null);
 
   const folders = foldersResp?.results || [];
   const videos = data?.results || [];
@@ -411,11 +653,16 @@ const VimeoLibrary: React.FC = () => {
         {folders.length ? (
           <div className="flex flex-wrap gap-2">
             {folders.map((f) => (
-              <span key={f.id} className="inline-flex items-center gap-1.5 rounded-md border border-themed-2 bg-line/[0.03] px-2.5 py-1 text-[12px] text-text-dim">
+              <button
+                key={f.id}
+                onClick={() => setOpenFolder({ id: f.id, name: f.name })}
+                title="Open folder — view and map its videos"
+                className="inline-flex items-center gap-1.5 rounded-md border border-themed-2 bg-line/[0.03] px-2.5 py-1 text-[12px] text-text-dim transition-colors hover:border-brand-cyan/40 hover:text-brand-cyan"
+              >
                 <Folder className="h-3.5 w-3.5 text-brand-gold" />
                 {f.name}
                 <span className="text-text-mute">({f.video_count})</span>
-              </span>
+              </button>
             ))}
           </div>
         ) : (
@@ -509,6 +756,7 @@ const VimeoLibrary: React.FC = () => {
 
       {/* Modals */}
       {uploadOpen && <UploadModal folders={folders} onClose={() => setUploadOpen(false)} />}
+      {openFolder && <FolderVideosModal folder={openFolder} onClose={() => setOpenFolder(null)} />}
       {mapVideo && <MapModal video={mapVideo} onClose={() => setMapVideo(null)} />}
       {folderVideo && (
         <Modal isOpen onClose={() => setFolderVideo(null)} title={`Add “${folderVideo.title || folderVideo.vimeo_id}” to a folder`} size="sm">

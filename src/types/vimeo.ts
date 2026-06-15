@@ -56,11 +56,23 @@ export interface VimeoUploadTicket {
   upload_link: string;
 }
 
+export interface VimeoFolderVideosResponse {
+  project_id: string;
+  count: number;
+  results: VimeoVideoItem[];
+}
+
 export interface VimeoMapResultItem {
   vimeo_id: string;
-  submodule_id: number | null;
+  submodule_id?: number | null;
   ok: boolean;
   error?: string;
   config_id?: number;
   is_active?: boolean;
+  pending_transcript?: boolean;
+}
+
+export interface VimeoModuleMapResponse {
+  module_id: number;
+  results: VimeoMapResultItem[];
 }
