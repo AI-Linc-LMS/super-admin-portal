@@ -22,6 +22,8 @@ export interface Client {
   subscription_tier?: string;
   subscription_plan?: string;
   is_active?: boolean;
+  /** When on, AI illustrations are generated for this client's adaptive articles. Default off. */
+  generate_adaptive_article_images?: boolean;
   created_at?: string;
   updated_at?: string;
   last_login?: string;

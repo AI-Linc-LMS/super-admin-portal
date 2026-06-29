@@ -26,6 +26,7 @@ import {
   Square,
   Sparkles,
   FolderOpen,
+  Image as ImageIcon,
 } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -52,7 +53,8 @@ import {
   useDeleteCourse,
   useAvailableFeatures,
   useClientFeatures,
-  useUpdateClientFeatures
+  useUpdateClientFeatures,
+  useUpdateClient
 } from '../hooks/useClients';
 import { useBulkCourseOperations } from '../hooks/useBulkCourseOperations';
 import { useBulkDuplicateCoursesProgress } from '../hooks/useBulkDuplicateCourses';
@@ -60,6 +62,7 @@ import { Student, Admin, SuperAdmin, ClientCourse, CourseManager } from '../type
 import toast from 'react-hot-toast';
 import BulkDuplicateCoursesModal from '../components/ui/BulkDuplicateCoursesModal';
 import ClientFeaturesSelector from '../components/ui/ClientFeaturesSelector';
+import StatusToggle from '../components/ui/StatusToggle';
 import ClientFilesBrowser from '../components/files/ClientFilesBrowser';
 
 const ClientDetails: React.FC = () => {
@@ -137,6 +140,22 @@ const ClientDetails: React.FC = () => {
   const { data: availableFeaturesData, isLoading: isLoadingFeatures } = useAvailableFeatures();
   const { data: clientFeaturesData, isLoading: isLoadingClientFeatures } = useClientFeatures(clientId);
   const updateClientFeaturesMutation = useUpdateClientFeatures();
+  const updateClientMutation = useUpdateClient();
+
+  // Per-client boolean toggle for adaptive-article AI images (default off; PATCH so other client
+  // fields aren't clobbered). Mutation invalidates client-details, so the toggle reflects the save.
+  const handleToggleArticleImages = async (next: boolean) => {
+    try {
+      await updateClientMutation.mutateAsync({
+        id: clientId,
+        data: { generate_adaptive_article_images: next },
+        method: 'PATCH',
+      });
+      toast.success(`Adaptive article images ${next ? 'enabled' : 'disabled'}.`);
+    } catch (error) {
+      console.error('Failed to update adaptive article images setting:', error);
+    }
+  };
 
   // Update selectedCourseForDetails when client data changes (e.g., after course manager assignment)
   useEffect(() => {
@@ -712,6 +731,35 @@ const ClientDetails: React.FC = () => {
             onUpdate={handleUpdateFeatures}
             isLoading={isLoadingFeatures || isLoadingClientFeatures}
           />
+        </Card>
+      </motion.div>
+
+      {/* Adaptive Course Settings */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.25 }}
+      >
+        <Card glassmorphism className="mb-6">
+          <div className="flex items-center gap-4 mb-4">
+            <ImageIcon className="w-6 h-6 text-brand-cyan" />
+            <h2 className="text-lg font-bold">Adaptive Course Settings</h2>
+          </div>
+          <div className="flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <p className="font-semibold">Generate images in adaptive articles</p>
+              <p className="text-sm text-gray-400">
+                When on, AI illustrations are generated and attached to this client&apos;s adaptive
+                articles. Off by default — leave off to skip the extra generation cost.
+              </p>
+            </div>
+            <StatusToggle
+              isActive={client?.generate_adaptive_article_images ?? false}
+              onToggle={handleToggleArticleImages}
+              disabled={updateClientMutation.isLoading}
+              size="lg"
+            />
+          </div>
         </Card>
       </motion.div>
 
