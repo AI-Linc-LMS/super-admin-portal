@@ -18,6 +18,7 @@ import {
   AdaptiveModule,
   AdaptiveSubModule,
 } from '../types/adaptiveCourse';
+import { AiTokenUsageParams, AiTokenUsageSummary } from '../types/aiTokenUsage';
 import {
   VimeoVideoListResponse,
   VimeoSyncStatus,
@@ -888,6 +889,12 @@ class ApiService {
         operations: mockOperations
       };
     }
+  }
+
+  // ---------- AI token/cost usage (cross-tenant) ----------
+
+  async getAiTokenUsage(params?: AiTokenUsageParams): Promise<AiTokenUsageSummary> {
+    return await this.get<AiTokenUsageSummary>(API_ENDPOINTS.AI_TOKEN_USAGE, params);
   }
 
   // ---------- Adaptive Courses (cross-tenant) ----------

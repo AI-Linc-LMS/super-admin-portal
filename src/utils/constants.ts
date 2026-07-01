@@ -17,6 +17,9 @@ export const API_ENDPOINTS = {
   // AI-Linc Courses
   AI_LINC_COURSES: '/superadmin/api/ai-linc/courses/',
 
+  // AI token/cost usage (cross-tenant)
+  AI_TOKEN_USAGE: '/superadmin/api/ai-usage/summary/',
+
   // Adaptive Courses (cross-tenant)
   ADAPTIVE_COURSES: '/superadmin/api/adaptive/courses/',
   ADAPTIVE_COURSE_DETAILS: (id: number) => `/superadmin/api/adaptive/courses/${id}/`,
@@ -60,6 +63,7 @@ export const ROUTES = {
   COURSES: '/courses',
   ADAPTIVE_COURSES: '/adaptive-courses',
   ADAPTIVE_COURSE_DETAILS: (id: string | number) => `/adaptive-courses/${id}`,
+  AI_TOKEN_USAGE: '/ai-token-usage',
   VIMEO_LIBRARY: '/vimeo-library',
   CHATBOTS: '/chatbots',
   ANALYTICS: '/analytics',
