@@ -19,6 +19,14 @@ import {
   AdaptiveSubModule,
 } from '../types/adaptiveCourse';
 import { AiTokenUsageParams, AiTokenUsageSummary } from '../types/aiTokenUsage';
+import type {
+  CodingBankDetail,
+  CodingBankItem,
+  MCQBankItem,
+  Paginated,
+  QuestionBankListParams,
+  QuestionBankStats,
+} from '../types/questionBank';
 import {
   VimeoVideoListResponse,
   VimeoSyncStatus,
@@ -1028,6 +1036,28 @@ class ApiService {
     activate = false
   ): Promise<{ results: VimeoMapResultItem[] }> {
     return await this.post(API_ENDPOINTS.VIMEO_MAP, { mappings, activate });
+  }
+
+  // ---------- Question bank (cross-tenant coding + MCQ) ----------
+
+  async getQuestionBankStats(): Promise<QuestionBankStats> {
+    return await this.get<QuestionBankStats>(API_ENDPOINTS.QUESTION_BANK_STATS);
+  }
+
+  async getQuestionBankMcqs(params?: QuestionBankListParams): Promise<Paginated<MCQBankItem>> {
+    return await this.get<Paginated<MCQBankItem>>(API_ENDPOINTS.QUESTION_BANK_MCQS, params);
+  }
+
+  async getQuestionBankMcqDetail(id: number): Promise<MCQBankItem> {
+    return await this.get<MCQBankItem>(API_ENDPOINTS.QUESTION_BANK_MCQ_DETAILS(id));
+  }
+
+  async getQuestionBankCoding(params?: QuestionBankListParams): Promise<Paginated<CodingBankItem>> {
+    return await this.get<Paginated<CodingBankItem>>(API_ENDPOINTS.QUESTION_BANK_CODING, params);
+  }
+
+  async getQuestionBankCodingDetail(id: number): Promise<CodingBankDetail> {
+    return await this.get<CodingBankDetail>(API_ENDPOINTS.QUESTION_BANK_CODING_DETAILS(id));
   }
 }
 
