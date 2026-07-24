@@ -32,6 +32,13 @@ export const API_ENDPOINTS = {
   ADAPTIVE_MODULE_CREATE: (courseId: number) => `/superadmin/api/adaptive/courses/${courseId}/modules/`,
   ADAPTIVE_SUBMODULE_CREATE: (moduleId: number) => `/superadmin/api/adaptive/modules/${moduleId}/submodules/`,
 
+  // Question bank (cross-tenant coding + MCQ)
+  QUESTION_BANK_STATS: '/superadmin/api/question-bank/stats/',
+  QUESTION_BANK_MCQS: '/superadmin/api/question-bank/mcqs/',
+  QUESTION_BANK_MCQ_DETAILS: (id: number) => `/superadmin/api/question-bank/mcqs/${id}/`,
+  QUESTION_BANK_CODING: '/superadmin/api/question-bank/coding/',
+  QUESTION_BANK_CODING_DETAILS: (id: number) => `/superadmin/api/question-bank/coding/${id}/`,
+
   // Vimeo library (cross-tenant)
   VIMEO_VIDEOS: '/superadmin/api/vimeo/videos/',
   VIMEO_SYNC_STATUS: '/superadmin/api/vimeo/sync-status/',
@@ -63,6 +70,7 @@ export const ROUTES = {
   COURSES: '/courses',
   ADAPTIVE_COURSES: '/adaptive-courses',
   ADAPTIVE_COURSE_DETAILS: (id: string | number) => `/adaptive-courses/${id}`,
+  QUESTION_BANK: '/question-bank',
   AI_TOKEN_USAGE: '/ai-token-usage',
   VIMEO_LIBRARY: '/vimeo-library',
   CHATBOTS: '/chatbots',
