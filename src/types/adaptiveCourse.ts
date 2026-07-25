@@ -34,6 +34,7 @@ export interface AdaptiveCourseSummary {
   cloned_from_id: number | null;
   gen_total_tokens: number;
   gen_cost_usd: string; // DRF DecimalField serializes as string
+  gen_provider: string; // '' = platform/OpenAI jobs; 'claude' = Claude Code verified-course pipeline
   mapping_count: number;
 }
 
