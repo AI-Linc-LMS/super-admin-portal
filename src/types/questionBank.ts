@@ -9,6 +9,9 @@ export interface Paginated<T> {
 export interface BankFacets {
   total: number;
   global_verified: number;
+  // The Verified Library — the curated, admitted corpus reuse/embedding/materialization draw on.
+  // The true "verified" count (intersects scope AND our own gate); admin-only.
+  verified_library: number;
   by_source: Record<string, number>;
   by_difficulty: Record<string, number>;
   by_verification: Record<string, number>;
@@ -37,6 +40,7 @@ export interface MCQBankItem {
   source: string;
   scope: string;
   verification_status: string;
+  in_verified_library: boolean;
   external_ref: string | null;
   client: number;
   client_name: string;
@@ -53,6 +57,7 @@ export interface CodingBankItem {
   source: string;
   scope: string;
   verification_status: string;
+  in_verified_library: boolean;
   external_ref: string | null;
   client: number;
   client_name: string;
@@ -85,4 +90,6 @@ export interface QuestionBankListParams {
   verification_status?: string;
   topic?: string;
   client_id?: number;
+  // 'true' isolates the Verified Library partition from the legacy corpus.
+  library?: string;
 }
