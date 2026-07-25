@@ -12,6 +12,7 @@ import {
   Building2,
   CheckCircle2,
   Loader2,
+  Library,
 } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Input from '../components/ui/Input';
@@ -51,6 +52,14 @@ const Pill: React.FC<{ className?: string; children: React.ReactNode }> = ({ cla
   <span className={cn('inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium', className)}>
     {children}
   </span>
+);
+
+// Admin-only badge: this item is in the Verified Library (the curated corpus). Never shown to students.
+const LibraryPill: React.FC = () => (
+  <Pill className="border border-emerald-500/30 bg-emerald-500/10 text-emerald-400">
+    <Library className="h-3 w-3" />
+    Library
+  </Pill>
 );
 
 const StatTile: React.FC<{ icon: React.ReactNode; value: number | string; label: string }> = ({
@@ -94,6 +103,7 @@ const Select: React.FC<{
 
 const QuestionBank: React.FC = () => {
   const [tab, setTab] = useState<Tab>('coding');
+  const [libraryOnly, setLibraryOnly] = useState(false);
   const [searchInput, setSearchInput] = useState('');
   const [difficulty, setDifficulty] = useState('');
   const [source, setSource] = useState('');
@@ -108,7 +118,7 @@ const QuestionBank: React.FC = () => {
   // Any filter/tab/size change returns to the first page.
   useEffect(() => {
     setPage(1);
-  }, [tab, search, difficulty, source, verification, pageSize]);
+  }, [tab, libraryOnly, search, difficulty, source, verification, pageSize]);
 
   const params = useMemo(
     () => ({
@@ -118,8 +128,10 @@ const QuestionBank: React.FC = () => {
       difficulty: difficulty || undefined,
       source: source || undefined,
       verification_status: verification || undefined,
+      // Verified Library partition — isolates the curated corpus from the ~142k legacy rows.
+      library: libraryOnly ? 'true' : undefined,
     }),
-    [page, pageSize, search, difficulty, source, verification],
+    [page, pageSize, search, difficulty, source, verification, libraryOnly],
   );
 
   const stats = useQuestionBankStats();
@@ -166,32 +178,66 @@ const QuestionBank: React.FC = () => {
           label="Global / shared"
         />
         <StatTile
-          icon={<CheckCircle2 className="h-5 w-5" />}
-          value={(stats.data?.coding.by_verification?.passed ?? 0) + (stats.data?.mcq.by_verification?.passed ?? 0)}
-          label="Verified (passed)"
+          icon={<Library className="h-5 w-5" />}
+          value={(stats.data?.coding.verified_library ?? 0) + (stats.data?.mcq.verified_library ?? 0)}
+          label="Verified Library"
         />
       </div>
 
       {/* Tabs + toolbar */}
       <Card className="p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="inline-flex rounded-lg border border-themed-2 bg-line/[0.03] p-1">
-            {(['coding', 'mcq'] as Tab[]).map((t) => (
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="inline-flex rounded-lg border border-themed-2 bg-line/[0.03] p-1">
+              {(['coding', 'mcq'] as Tab[]).map((t) => {
+                const count = libraryOnly
+                  ? t === 'coding'
+                    ? stats.data?.coding.verified_library
+                    : stats.data?.mcq.verified_library
+                  : t === 'coding'
+                    ? stats.data?.coding.total
+                    : stats.data?.mcq.total;
+                return (
+                  <button
+                    key={t}
+                    onClick={() => setTab(t)}
+                    className={cn(
+                      'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors',
+                      tab === t ? 'bg-brand-cyan/15 text-brand-cyan' : 'text-text-mute hover:text-text',
+                    )}
+                  >
+                    {t === 'coding' ? <Code2 className="h-4 w-4" /> : <HelpCircle className="h-4 w-4" />}
+                    {t === 'coding' ? 'Coding' : 'MCQs'}
+                    <span className="ml-1 rounded bg-line/[0.06] px-1.5 py-0.5 font-mono text-[10px] text-text-dim">
+                      {count?.toLocaleString() ?? '—'}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Verified Library partition toggle — isolates the curated corpus from the legacy bank. */}
+            <div className="inline-flex rounded-lg border border-themed-2 bg-line/[0.03] p-1">
               <button
-                key={t}
-                onClick={() => setTab(t)}
+                onClick={() => setLibraryOnly(false)}
                 className={cn(
-                  'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors',
-                  tab === t ? 'bg-brand-cyan/15 text-brand-cyan' : 'text-text-mute hover:text-text',
+                  'rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors',
+                  !libraryOnly ? 'bg-brand-cyan/15 text-brand-cyan' : 'text-text-mute hover:text-text',
                 )}
               >
-                {t === 'coding' ? <Code2 className="h-4 w-4" /> : <HelpCircle className="h-4 w-4" />}
-                {t === 'coding' ? 'Coding' : 'MCQs'}
-                <span className="ml-1 rounded bg-line/[0.06] px-1.5 py-0.5 font-mono text-[10px] text-text-dim">
-                  {(t === 'coding' ? stats.data?.coding.total : stats.data?.mcq.total)?.toLocaleString() ?? '—'}
-                </span>
+                All content
               </button>
-            ))}
+              <button
+                onClick={() => setLibraryOnly(true)}
+                className={cn(
+                  'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors',
+                  libraryOnly ? 'bg-emerald-500/15 text-emerald-400' : 'text-text-mute hover:text-text',
+                )}
+              >
+                <Library className="h-4 w-4" />
+                Verified Library
+              </button>
+            </div>
           </div>
 
           <div className="flex flex-1 flex-wrap items-center justify-end gap-2">
@@ -300,7 +346,10 @@ const QuestionBank: React.FC = () => {
                     <td className="px-3 py-2.5 font-mono text-text-dim tabular-nums">{c.test_case_count}</td>
                     <td className="px-3 py-2.5 text-text-mute">{c.source.replace('_', ' ')}</td>
                     <td className="px-3 py-2.5">
-                      <Pill className={verifyClass(c.verification_status)}>{c.verification_status}</Pill>
+                      <div className="flex flex-wrap items-center gap-1">
+                        <Pill className={verifyClass(c.verification_status)}>{c.verification_status}</Pill>
+                        {c.in_verified_library && <LibraryPill />}
+                      </div>
                     </td>
                     <td className="px-3 py-2.5 text-text-mute">{c.client_name}</td>
                   </tr>
@@ -324,7 +373,10 @@ const QuestionBank: React.FC = () => {
                     <td className="max-w-[160px] truncate px-3 py-2.5 text-text-mute">{m.topic || '—'}</td>
                     <td className="px-3 py-2.5 text-text-mute">{m.source.replace('_', ' ')}</td>
                     <td className="px-3 py-2.5">
-                      <Pill className={verifyClass(m.verification_status)}>{m.verification_status}</Pill>
+                      <div className="flex flex-wrap items-center gap-1">
+                        <Pill className={verifyClass(m.verification_status)}>{m.verification_status}</Pill>
+                        {m.in_verified_library && <LibraryPill />}
+                      </div>
                     </td>
                     <td className="px-3 py-2.5 text-text-mute">{m.client_name}</td>
                   </tr>
@@ -421,6 +473,7 @@ const CodingDetailModal: React.FC<{ id: number; onClose: () => void }> = ({ id, 
             <div className="mt-1 flex flex-wrap items-center gap-2">
               {data && <Pill className={diffClass(data.difficulty_level)}>{data.difficulty_level}</Pill>}
               {data && <Pill className={verifyClass(data.verification_status)}>{data.verification_status}</Pill>}
+              {data?.in_verified_library && <LibraryPill />}
               {data?.external_ref && (
                 <span className="font-mono text-[11px] text-text-mute">{data.external_ref}</span>
               )}
@@ -520,6 +573,7 @@ const McqDetailModal: React.FC<{ mcq: MCQBankItem; onClose: () => void }> = ({ m
               {mcq.question_style === 'multiple' ? 'Multi-select' : 'Single'}
             </Pill>
             <Pill className={verifyClass(mcq.verification_status)}>{mcq.verification_status}</Pill>
+            {mcq.in_verified_library && <LibraryPill />}
             <span className="inline-flex items-center gap-1 text-[11px] text-text-mute">
               <Building2 className="h-3 w-3" />
               {mcq.client_name}
