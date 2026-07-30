@@ -33,6 +33,36 @@ import { Client } from '../types/client';
 import { formatDate, formatNumber, cn } from '../utils/helpers';
 import toast from 'react-hot-toast';
 
+/**
+ * Whether an institution can take money, and whose account it reaches.
+ *
+ * Payments fail closed: an institution with no connected Razorpay account cannot charge at all.
+ * `settles_to === "platform"` is called out separately because it used to be the invisible default —
+ * a tenant with no configuration still took payments, into AI Linc's account rather than its own,
+ * and nothing anywhere showed it. This column exists so that can never be true unnoticed again.
+ */
+const PaymentCell: React.FC<{ payment?: Client['payment'] }> = ({ payment }) => {
+  if (!payment || !payment.connected) {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-widest2 text-amber-500">
+        Not connected
+      </span>
+    );
+  }
+  const onPlatform = payment.settles_to === 'platform';
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-widest2',
+        onPlatform ? 'bg-violet-500/10 text-violet-400' : 'bg-emerald-500/10 text-emerald-500'
+      )}
+      title={payment.key_id_masked || undefined}
+    >
+      {onPlatform ? 'Platform a/c' : 'Own a/c'}
+    </span>
+  );
+};
+
 const Clients: React.FC = () => {
   const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
@@ -213,6 +243,11 @@ const Clients: React.FC = () => {
       'Subscription Tier': client.subscription_tier,
       Students: client.total_students,
       Courses: client.total_courses,
+      Payments: client.payment?.connected
+        ? client.payment.settles_to === 'platform'
+          ? 'Platform account'
+          : 'Own account'
+        : 'Not connected',
       'Monthly Revenue': client.monthly_revenue,
       'Joining Date': formatDate(client.joining_date || client.created_at),
     }));
@@ -402,7 +437,7 @@ const Clients: React.FC = () => {
               <table className="min-w-full">
                 <thead>
                   <tr className="border-b border-themed bg-ink-1/30">
-                    {['Client', 'Status', 'Students', 'Courses', 'Contact', 'Toggle', 'Actions'].map(
+                    {['Client', 'Status', 'Students', 'Courses', 'Payments', 'Contact', 'Toggle', 'Actions'].map(
                       (h) => (
                         <th
                           key={h}
@@ -447,6 +482,9 @@ const Clients: React.FC = () => {
                       </td>
                       <td className="whitespace-nowrap px-6 py-4 text-[13px] text-text">
                         {client.total_courses}
+                      </td>
+                      <td className="whitespace-nowrap px-6 py-4">
+                        <PaymentCell payment={client.payment} />
                       </td>
                       <td className="whitespace-nowrap px-6 py-4 text-[13px] text-text">
                         {client.poc_name || client.contact_person || '—'}

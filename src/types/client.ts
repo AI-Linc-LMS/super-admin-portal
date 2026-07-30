@@ -12,6 +12,14 @@ export interface Client {
   total_admins?: number;
   total_superadmins?: number;
   total_course_managers?: number;
+  /** Whether this institution can take a payment, and whose Razorpay account it settles into.
+   *  Payments fail closed: no connected account means the tenant cannot charge at all. */
+  payment?: {
+    connected: boolean;
+    /** null when nothing is configured. */
+    settles_to: 'institution' | 'platform' | null;
+    key_id_masked: string;
+  };
 
   // Legacy fields for backward compatibility
   logo?: string;
