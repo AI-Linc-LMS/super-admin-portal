@@ -14,6 +14,7 @@ import AdaptiveCourses from './pages/AdaptiveCourses';
 import AdaptiveCourseDetails from './pages/AdaptiveCourseDetails';
 import QuestionBank from './pages/QuestionBank';
 import AiTokenUsage from './pages/AiTokenUsage';
+import Payments from './pages/Payments';
 import VimeoLibrary from './pages/VimeoLibrary';
 import Chatbots from './pages/Chatbots';
 import Settings from './pages/Settings';
@@ -91,6 +92,7 @@ function App() {
               <Route path="adaptive-courses/:id" element={<AdaptiveCourseDetails />} />
               <Route path="question-bank" element={<QuestionBank />} />
               <Route path="ai-token-usage" element={<AiTokenUsage />} />
+              <Route path="payments" element={<Payments />} />
               <Route path="vimeo-library" element={<VimeoLibrary />} />
               <Route path="chatbots" element={<Chatbots />} />
               <Route path="settings" element={<Settings />} />

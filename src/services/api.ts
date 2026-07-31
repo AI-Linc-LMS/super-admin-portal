@@ -19,6 +19,13 @@ import {
   AdaptiveSubModule,
 } from '../types/adaptiveCourse';
 import { AiTokenUsageParams, AiTokenUsageSummary } from '../types/aiTokenUsage';
+import {
+  PaymentsSummary,
+  PaymentsSummaryParams,
+  TenantsReport,
+  LedgerPage,
+  LedgerParams,
+} from '../types/payments';
 import type {
   CodingBankDetail,
   CodingBankItem,
@@ -903,6 +910,24 @@ class ApiService {
 
   async getAiTokenUsage(params?: AiTokenUsageParams): Promise<AiTokenUsageSummary> {
     return await this.get<AiTokenUsageSummary>(API_ENDPOINTS.AI_TOKEN_USAGE, params);
+  }
+
+  // ---------- Payments (cross-tenant) ----------
+  //
+  // These three deliberately have no catch-and-return-demo-data fallback. The client-detail call
+  // has one, and it produced a `total_revenue: 15600` that read as real for a tenant whose request
+  // had simply timed out. Inventing revenue is worse than showing an error.
+
+  async getPaymentsSummary(params?: PaymentsSummaryParams): Promise<PaymentsSummary> {
+    return await this.get<PaymentsSummary>(API_ENDPOINTS.PAYMENTS_SUMMARY, params);
+  }
+
+  async getPaymentsTenants(): Promise<TenantsReport> {
+    return await this.get<TenantsReport>(API_ENDPOINTS.PAYMENTS_TENANTS);
+  }
+
+  async getPaymentsLedger(params?: LedgerParams): Promise<LedgerPage> {
+    return await this.get<LedgerPage>(API_ENDPOINTS.PAYMENTS_LEDGER, params);
   }
 
   // ---------- Adaptive Courses (cross-tenant) ----------

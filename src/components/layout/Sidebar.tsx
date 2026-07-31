@@ -14,6 +14,7 @@ import {
   Sparkles,
   Video,
   Coins,
+  Wallet,
   Database,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -37,6 +38,7 @@ const Sidebar: React.FC = () => {
     { name: 'Adaptive Courses', href: ROUTES.ADAPTIVE_COURSES, icon: Sparkles },
     { name: 'Question Bank', href: ROUTES.QUESTION_BANK, icon: Database },
     { name: 'AI Token Usage', href: ROUTES.AI_TOKEN_USAGE, icon: Coins },
+    { name: 'Payments', href: ROUTES.PAYMENTS, icon: Wallet },
     { name: 'Vimeo Library', href: ROUTES.VIMEO_LIBRARY, icon: Video },
     { name: t('navigation.chatbots'), href: ROUTES.CHATBOTS, icon: Bot },
     { name: t('navigation.settings'), href: ROUTES.SETTINGS, icon: Settings },
