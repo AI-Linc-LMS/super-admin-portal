@@ -69,6 +69,33 @@ export const useMapAdaptiveCourse = () => {
   });
 };
 
+export const usePriceAdaptiveCourseMapping = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      courseId,
+      mappingId,
+      isPaid,
+      price,
+      currency,
+    }: {
+      courseId: number;
+      mappingId: number;
+      isPaid: boolean;
+      price?: string | null;
+      currency?: string;
+    }) =>
+      apiService.priceAdaptiveCourseMapping(courseId, mappingId, {
+        is_paid: isPaid,
+        price,
+        currency,
+      }),
+    onSuccess: (_, { courseId }) => {
+      queryClient.invalidateQueries({ queryKey: ['adaptive-course-tenants', courseId] });
+    },
+  });
+};
+
 export const useUnmapAdaptiveCourse = () => {
   const queryClient = useQueryClient();
   return useMutation({
