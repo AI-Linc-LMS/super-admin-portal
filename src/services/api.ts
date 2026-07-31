@@ -17,6 +17,7 @@ import {
   AdaptiveJobDetail,
   AdaptiveModule,
   AdaptiveSubModule,
+  TenantMapping,
 } from '../types/adaptiveCourse';
 import { AiTokenUsageParams, AiTokenUsageSummary } from '../types/aiTokenUsage';
 import {
@@ -986,6 +987,18 @@ class ApiService {
     payload: { client_id: number; mode: 'clone' | 'shared' }
   ): Promise<any> {
     return await this.post(API_ENDPOINTS.ADAPTIVE_COURSE_MAP(courseId), payload);
+  }
+
+  /** Set what a tenant charges for a SHARED catalog course. Clone mode is refused server-side. */
+  async priceAdaptiveCourseMapping(
+    courseId: number,
+    mappingId: number,
+    payload: { is_paid: boolean; price?: string | null; currency?: string },
+  ): Promise<TenantMapping> {
+    return await this.patch<TenantMapping>(
+      API_ENDPOINTS.ADAPTIVE_COURSE_UNMAP(courseId, mappingId),
+      payload,
+    );
   }
 
   async unmapAdaptiveCourse(

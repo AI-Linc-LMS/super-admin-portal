@@ -68,6 +68,10 @@ export interface TenantMapping {
   mode: MappingMode;
   client: TenantBrief | null;
   cloned_course_id: number | null;
+  /** Shared mode only: what THIS tenant charges. A clone carries its own price on the course. */
+  is_paid: boolean;
+  price: string | null;
+  currency: string;
   is_published: boolean;
   effective_is_published: boolean;
   enrollment_count: number;

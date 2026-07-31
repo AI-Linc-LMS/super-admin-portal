@@ -41,6 +41,7 @@ import {
 import { useClients } from '../hooks/useClients';
 import { ROUTES } from '../utils/constants';
 import { cn } from '../utils/helpers';
+import { MappingPrice } from '../components/adaptive/MappingPrice';
 
 type Tab = 'overview' | 'content' | 'tenants' | 'tokens' | 'students';
 
@@ -542,6 +543,7 @@ const TenantsTab: React.FC<{ courseId: number }> = ({ courseId }) => {
                 <th className="px-4 py-3">Tenant</th>
                 <th className="px-4 py-3">Mode</th>
                 <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3">Price</th>
                 <th className="px-4 py-3">Enrolled</th>
                 <th className="px-4 py-3">Mapped</th>
                 <th className="px-4 py-3" />
@@ -569,6 +571,15 @@ const TenantsTab: React.FC<{ courseId: number }> = ({ courseId }) => {
                     >
                       {mp.effective_is_published ? 'Published' : 'Draft'}
                     </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    {mp.mode === 'clone' ? (
+                      // A clone is a real course with its own price; showing an editor here
+                      // would be a second place to set it and a way for the two to disagree.
+                      <span className="text-[12px] text-text-mute">on the clone</span>
+                    ) : (
+                      <MappingPrice courseId={courseId} mapping={mp} />
+                    )}
                   </td>
                   <td className="px-4 py-3 text-text-dim">{mp.enrollment_count}</td>
                   <td className="px-4 py-3 text-text-mute">
