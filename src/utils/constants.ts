@@ -74,6 +74,7 @@ export const ROUTES = {
   TENANT_REQUESTS: '/tenant-requests',
   COURSES: '/courses',
   ADAPTIVE_COURSES: '/adaptive-courses',
+  COURSE_REQUESTS: '/course-requests',
   ADAPTIVE_COURSE_DETAILS: (id: string | number) => `/adaptive-courses/${id}`,
   QUESTION_BANK: '/question-bank',
   AI_TOKEN_USAGE: '/ai-token-usage',

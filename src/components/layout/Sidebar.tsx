@@ -16,6 +16,7 @@ import {
   Coins,
   Wallet,
   Database,
+  ClipboardCheck,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../store/authStore';
@@ -36,6 +37,7 @@ const Sidebar: React.FC = () => {
     { name: 'Tenant Requests', href: ROUTES.TENANT_REQUESTS, icon: Inbox },
     { name: t('navigation.courses'), href: ROUTES.COURSES, icon: BookOpen },
     { name: 'Adaptive Courses', href: ROUTES.ADAPTIVE_COURSES, icon: Sparkles },
+    { name: 'Course Requests', href: ROUTES.COURSE_REQUESTS, icon: ClipboardCheck },
     { name: 'Question Bank', href: ROUTES.QUESTION_BANK, icon: Database },
     { name: 'AI Token Usage', href: ROUTES.AI_TOKEN_USAGE, icon: Coins },
     { name: 'Payments', href: ROUTES.PAYMENTS, icon: Wallet },
