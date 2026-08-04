@@ -70,6 +70,7 @@ export const ROUTES = {
   COURSES: '/courses',
   ADAPTIVE_COURSES: '/adaptive-courses',
   COURSE_REQUESTS: '/course-requests',
+  TICKETS: '/tickets',
   ADAPTIVE_COURSE_DETAILS: (id: string | number) => `/adaptive-courses/${id}`,
   QUESTION_BANK: '/question-bank',
   AI_TOKEN_USAGE: '/ai-token-usage',
