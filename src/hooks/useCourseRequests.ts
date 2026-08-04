@@ -11,7 +11,7 @@ import {
 const BASE = '/superadmin/api/adaptive/course-requests/';
 
 export const useCourseRequests = (
-  filters: { status?: CourseRequestStatus | 'all'; clientId?: number } = {}
+  filters: { status?: CourseRequestStatus | 'all'; clientId?: number; scope?: string } = {}
 ) => {
   return useQuery({
     queryKey: ['course-requests', filters],
@@ -21,6 +21,7 @@ export const useCourseRequests = (
       // the query key and the request honest about what is being shown.
       params.approval_status = filters.status ?? 'pending';
       if (filters.clientId) params.client = String(filters.clientId);
+      if (filters.scope) params.scope = filters.scope;
       return apiService.get<CourseRequestListResponse>(BASE, params);
     },
     retry: false,

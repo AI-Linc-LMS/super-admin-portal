@@ -26,6 +26,11 @@ export interface CourseRequestBrief {
   description: string;
   target_audience: string;
   duration_weeks: number;
+  /** The module/submodule equivalent of a title. */
+  topic?: string;
+  submodules_count?: number;
+  /** "Course / Week 1" for an incremental request — where the generated content lands. */
+  lands_in?: string;
 }
 
 /** What approving this actually commissions — the reviewer's whole reason for being here. */
@@ -36,9 +41,19 @@ export interface CourseRequestScale {
   estimated_items: number;
 }
 
+export type CourseRequestScope = 'full_course' | 'module' | 'submodule';
+
+export const SCOPE_LABELS: Record<CourseRequestScope, string> = {
+  full_course: 'Whole course',
+  module: 'One week',
+  submodule: 'One topic',
+};
+
 export interface CourseRequestListItem {
   id: number;
   job_id: string;
+  /** A whole course and a single topic sit in the same queue but are very different asks. */
+  scope: CourseRequestScope;
   approval_status: CourseRequestStatus;
   status: string;
   created_at: string;

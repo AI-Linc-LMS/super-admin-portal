@@ -24,6 +24,7 @@ import {
   COURSE_REQUEST_STATUS_TONE,
   CourseRequestListItem,
   CourseRequestStatus,
+  SCOPE_LABELS,
 } from '../types/courseRequest';
 import { cn } from '../utils/helpers';
 
@@ -146,8 +147,10 @@ const RequestCard: React.FC<{
   const pending = row.approval_status === 'pending';
 
   const dirty = useMemo(
-    () => title !== row.brief.title || Number(weeks) !== row.brief.duration_weeks,
-    [title, weeks, row.brief]
+    () =>
+      title !== row.brief.title ||
+      (row.scope === 'full_course' && Number(weeks) !== row.brief.duration_weeks),
+    [title, weeks, row.brief, row.scope]
   );
 
   // Surfaced up front because spend is the entire reason this gate exists.
@@ -170,18 +173,26 @@ const RequestCard: React.FC<{
             >
               {COURSE_REQUEST_STATUS_LABELS[row.approval_status]}
             </span>
+            {/* A whole course and a single topic are very different asks; the badge is what
+                stops a reviewer skimming the queue and treating them the same. */}
+            <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-bold text-muted-foreground">
+              {SCOPE_LABELS[row.scope] ?? row.scope}
+            </span>
           </div>
           <p className="mt-1 text-sm text-muted-foreground">
             <strong>{row.client?.name ?? 'Unknown tenant'}</strong> · requested by{' '}
             {row.requested_by.name || row.requested_by.email}
+            {row.brief.lands_in && <> · into {row.brief.lands_in}</>}
           </p>
         </div>
 
         <div className="flex items-center gap-4 text-sm">
-          <span className="inline-flex items-center gap-1.5 font-semibold">
-            <CalendarRange className="h-4 w-4 text-muted-foreground" />
-            {row.scale.weeks} weeks
-          </span>
+          {row.scale.weeks > 0 && (
+            <span className="inline-flex items-center gap-1.5 font-semibold">
+              <CalendarRange className="h-4 w-4 text-muted-foreground" />
+              {row.scale.weeks} {row.scale.weeks === 1 ? 'week' : 'weeks'}
+            </span>
+          )}
           <span className="inline-flex items-center gap-1.5 font-semibold">
             <Layers className="h-4 w-4 text-muted-foreground" />
             {row.scale.submodules} topics
@@ -233,15 +244,20 @@ const RequestCard: React.FC<{
                   onChange={(e) => setTitle(e.target.value)}
                   disabled={busy}
                 />
-                <Input
-                  label="Weeks"
-                  type="number"
-                  min={1}
-                  max={52}
-                  value={weeks}
-                  onChange={(e) => setWeeks(e.target.value)}
-                  disabled={busy}
-                />
+                {/* Only a whole-course request has a duration to trim. On a week or a topic
+                    the lever is how many topics it generates, which the API exposes as
+                    submodules_count — editable from the detail route rather than here. */}
+                {row.scope === 'full_course' && (
+                  <Input
+                    label="Weeks"
+                    type="number"
+                    min={1}
+                    max={52}
+                    value={weeks}
+                    onChange={(e) => setWeeks(e.target.value)}
+                    disabled={busy}
+                  />
+                )}
               </div>
               {dirty && (
                 <Button
@@ -250,7 +266,10 @@ const RequestCard: React.FC<{
                   onClick={() =>
                     edit.mutate({
                       id: row.id,
-                      brief: { title, duration_weeks: Number(weeks) || row.brief.duration_weeks },
+                      brief:
+                        row.scope === 'full_course'
+                          ? { title, duration_weeks: Number(weeks) || row.brief.duration_weeks }
+                          : { topic: title },
                     })
                   }
                 >
