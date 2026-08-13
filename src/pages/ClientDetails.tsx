@@ -27,6 +27,7 @@ import {
   Sparkles,
   FolderOpen,
   Image as ImageIcon,
+  ShoppingBag,
 } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -62,6 +63,7 @@ import { Student, Admin, SuperAdmin, ClientCourse, CourseManager } from '../type
 import toast from 'react-hot-toast';
 import BulkDuplicateCoursesModal from '../components/ui/BulkDuplicateCoursesModal';
 import ClientFeaturesSelector from '../components/ui/ClientFeaturesSelector';
+import B2CModePanel from '../components/ui/B2CModePanel';
 import StatusToggle from '../components/ui/StatusToggle';
 import ClientFilesBrowser from '../components/files/ClientFilesBrowser';
 
@@ -731,6 +733,21 @@ const ClientDetails: React.FC = () => {
             onUpdate={handleUpdateFeatures}
             isLoading={isLoadingFeatures || isLoadingClientFeatures}
           />
+        </Card>
+      </motion.div>
+
+      {/* B2C Mode */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.22 }}
+      >
+        <Card glassmorphism className="mb-6">
+          <div className="flex items-center gap-4 mb-4">
+            <ShoppingBag className="w-6 h-6 text-brand-cyan" />
+            <h2 className="text-lg font-bold">B2C Mode</h2>
+          </div>
+          <B2CModePanel clientId={clientId} />
         </Card>
       </motion.div>
 
