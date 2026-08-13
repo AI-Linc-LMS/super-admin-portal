@@ -46,6 +46,7 @@ import {
   VimeoModuleMapResponse,
 } from '../types/vimeo';
 import toast from 'react-hot-toast';
+import { B2CClientConfig, B2CConfigUpdate } from '../types/b2c';
 
 interface ApiError {
   message: string;
@@ -1096,6 +1097,20 @@ class ApiService {
 
   async getQuestionBankCodingDetail(id: number): Promise<CodingBankDetail> {
     return await this.get<CodingBankDetail>(API_ENDPOINTS.QUESTION_BANK_CODING_DETAILS(id));
+  }
+
+  // ---- B2C mode -------------------------------------------------------------------------- //
+  // Deliberately NO mock-data fallback, unlike most methods above. These describe whether a
+  // tenant charges learners money. Swapping in fabricated data when the API errors would show
+  // "B2C off / 1 free course" for a tenant whose real state is unknown, and an operator would
+  // act on it — the same failure that made a real backend bug look like a placeholder client.
+  // Let it throw; the panel renders the error.
+  async getB2CConfig(clientId: number): Promise<B2CClientConfig> {
+    return await this.get<B2CClientConfig>(`/superadmin/api/b2c/clients/${clientId}/`);
+  }
+
+  async updateB2CConfig(clientId: number, payload: B2CConfigUpdate): Promise<B2CClientConfig> {
+    return await this.patch<B2CClientConfig>(`/superadmin/api/b2c/clients/${clientId}/`, payload);
   }
 }
 
