@@ -21,6 +21,19 @@ export interface Client {
     key_id_masked: string;
   };
 
+  /** The last day anyone on this tenant was seen, as an ISO date (YYYY-MM-DD). null means the
+   *  backend has no signal at all, which is NOT the same as an empty tenant: the heartbeat behind
+   *  it is written by one frontend stack only, so a tenant served by the Vercel apps or by
+   *  zSkillup can be busy all week and still report nothing. Read the header tooltip on the
+   *  Clients table before acting on it. */
+  last_active_at?: string | null;
+  /** Whole days between last_active_at and today, counted in Asia/Kolkata. null when never seen. */
+  days_since_active?: number | null;
+  /** The bucketed form the UI colours: <=7d live, 8-30d quiet, >30d dormant, no signal ever never.
+   *  Bucketed by the backend on purpose, so this list and the dashboard's active-tenant tile can
+   *  never classify the same institution two different ways. */
+  activity_status?: 'live' | 'quiet' | 'dormant' | 'never';
+
   // Legacy fields for backward compatibility
   logo?: string;
   organization_name?: string;
@@ -34,6 +47,9 @@ export interface Client {
   generate_adaptive_article_images?: boolean;
   created_at?: string;
   updated_at?: string;
+  /** Orphaned. No superadmin endpoint has ever populated this, so it is null for every tenant in
+   *  production. Kept only because older call sites still read it. Anything that wants to know
+   *  when a tenant was last touched must use last_active_at above. */
   last_login?: string;
   student_count?: number;
   students_count?: number; // Alternative naming for backward compatibility
