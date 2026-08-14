@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { AlertTriangle, Check, Loader2, Save } from 'lucide-react';
 import { useB2CConfig, useUpdateB2CConfig } from '../../hooks/useB2C';
-import { B2C_FEATURE_LABELS } from '../../types/b2c';
+import { B2C_FEATURE_LABELS, type B2CFeaturePricing } from '../../types/b2c';
 import Button from './Button';
 
 interface Props {
@@ -25,35 +25,36 @@ const B2CModePanel: React.FC<Props> = ({ clientId }) => {
   const updateConfig = useUpdateB2CConfig();
 
   const [isEnabled, setIsEnabled] = useState(false);
-  const [allowances, setAllowances] = useState<Record<string, number>>({});
+  /** Only the fields the operator actually touched, per feature. Sending back values nobody
+   *  edited is how a stale number gets written over a fresh one — the server accepts partial
+   *  rows precisely so this panel does not have to restate them. */
+  const [drafts, setDrafts] = useState<Record<string, Partial<B2CFeaturePricing>>>({});
   const [justSaved, setJustSaved] = useState(false);
 
   useEffect(() => {
     if (!data) return;
     setIsEnabled(data.is_enabled);
-    setAllowances(
-      Object.fromEntries(data.features.map(f => [f.feature_key, f.free_allowance]))
-    );
+    setDrafts({});
   }, [data]);
 
   const dirty =
     !!data &&
     (data.is_enabled !== isEnabled ||
-      data.features.some(f => (allowances[f.feature_key] ?? 0) !== f.free_allowance));
+      Object.values(drafts).some(d => Object.keys(d).length > 0));
 
   const handleSave = async () => {
     if (!data) return;
+    const edited = Object.entries(drafts)
+      .filter(([, patch]) => Object.keys(patch).length > 0)
+      .map(([feature_key, patch]) => ({ feature_key, ...patch }));
+
     await updateConfig.mutateAsync({
       clientId,
       payload: {
         is_enabled: isEnabled,
-        features: data.features.map(f => ({
-          feature_key: f.feature_key,
-          // Turning B2C off leaves the allowances stored but inert, so flipping it back on
-          // restores the previous configuration rather than silently resetting it to zero.
-          is_enabled: isEnabled,
-          free_allowance: allowances[f.feature_key] ?? 0,
-        })),
+        // Turning B2C off leaves the stored numbers untouched, so flipping it back on restores
+        // the previous configuration rather than silently resetting everything to zero.
+        features: edited.length ? edited : undefined,
       },
     });
     setJustSaved(true);
@@ -114,33 +115,93 @@ const B2CModePanel: React.FC<Props> = ({ clientId }) => {
         </div>
       )}
 
-      <div className="space-y-2">
-        <h3 className="text-sm font-semibold">Free allowance, per email address</h3>
-        <p className="text-xs text-text-mute">
-          Counted across accounts, so signing up again does not reset it.
-        </p>
-        {data.features.map(feature => (
-          <div key={feature.feature_key} className="flex items-center gap-3">
-            <span className="w-40 text-sm">
-              {B2C_FEATURE_LABELS[feature.feature_key] ?? feature.feature_key}
-            </span>
-            <input
-              type="number"
-              min={0}
-              max={100}
-              disabled={!isEnabled}
-              value={allowances[feature.feature_key] ?? 0}
-              onChange={e =>
-                setAllowances(prev => ({
-                  ...prev,
-                  [feature.feature_key]: Math.max(0, Number(e.target.value) || 0),
-                }))
-              }
-              className="w-20 rounded-md border border-white/10 bg-white/5 px-2 py-1 text-sm disabled:opacity-40"
-            />
-            <span className="text-xs text-text-mute">free, then paid</span>
-          </div>
-        ))}
+      <div className="space-y-3">
+        <div>
+          <h3 className="text-sm font-semibold">What this tenant meters</h3>
+          <p className="text-xs text-text-mute">
+            Free tiers count per <strong>email address, across accounts</strong> — signing up again
+            does not reset them. Each row explains what its own numbers mean, because they are not
+            the same shape from one feature to the next.
+          </p>
+        </div>
+
+        {data.features.map(feature => {
+          const meta = feature.meta ?? {};
+          const label = meta.label ?? B2C_FEATURE_LABELS[feature.feature_key] ?? feature.feature_key;
+          const draft = drafts[feature.feature_key] ?? {};
+          const set = (patch: Partial<B2CFeaturePricing>) =>
+            setDrafts(prev => ({
+              ...prev,
+              [feature.feature_key]: { ...prev[feature.feature_key], ...patch },
+            }));
+
+          return (
+            <div
+              key={feature.feature_key}
+              className="rounded-lg border border-white/10 bg-white/[0.02] p-3 space-y-2"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-sm font-semibold">{label}</span>
+                <code className="text-[0.65rem] text-text-mute">{feature.feature_key}</code>
+              </div>
+
+              {/* Free allowance — hidden for features that are not counted at all (roadmaps). */}
+              {meta.free_unit !== null && (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number" min={0} max={100} disabled={!isEnabled}
+                    value={draft.free_allowance ?? feature.free_allowance}
+                    onChange={e => set({ free_allowance: Math.max(0, Number(e.target.value) || 0) })}
+                    className="w-20 rounded-md border border-white/10 bg-white/5 px-2 py-1 text-sm disabled:opacity-40"
+                  />
+                  <span className="text-xs text-text-mute">
+                    free {meta.free_unit ?? 'uses'} per email
+                  </span>
+                </div>
+              )}
+
+              {/* Price — only where the feature has no product row carrying its own price. */}
+              {meta.uses_unit_price && (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number" min={0} step="1" disabled={!isEnabled}
+                    placeholder="not on sale"
+                    value={draft.unit_price ?? feature.unit_price ?? ''}
+                    onChange={e => set({ unit_price: e.target.value === '' ? null : e.target.value })}
+                    className="w-24 rounded-md border border-white/10 bg-white/5 px-2 py-1 text-sm disabled:opacity-40"
+                  />
+                  <span className="text-xs text-text-mute">
+                    {feature.currency} for one more
+                  </span>
+                </div>
+              )}
+
+              {/* Preview — roadmaps only. */}
+              {meta.uses_preview && (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number" min={0} max={100} disabled={!isEnabled}
+                    value={draft.preview_percent ?? feature.preview_percent}
+                    onChange={e =>
+                      set({
+                        preview_percent: Math.min(100, Math.max(0, Number(e.target.value) || 0)),
+                      })
+                    }
+                    className="w-20 rounded-md border border-white/10 bg-white/5 px-2 py-1 text-sm disabled:opacity-40"
+                  />
+                  <span className="text-xs text-text-mute">% of a paid path opened as a taste</span>
+                </div>
+              )}
+
+              <p className="text-[0.7rem] leading-relaxed text-text-mute">
+                {meta.free_help}
+                {meta.uses_unit_price && meta.price_help ? ` ${meta.price_help}` : ''}
+                {meta.uses_preview && meta.preview_help ? ` ${meta.preview_help}` : ''}
+                {!meta.uses_unit_price && meta.price_help ? ` ${meta.price_help}` : ''}
+              </p>
+            </div>
+          );
+        })}
       </div>
 
       {isEnabled && (
