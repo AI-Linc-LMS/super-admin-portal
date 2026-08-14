@@ -143,24 +143,22 @@ class ApiService {
               return this.api.request(originalRequest);
             } catch (refreshError) {
               console.error('❌ Token refresh failed:', refreshError);
-              // Don't automatically redirect on refresh failure - let the user stay logged in
-              console.warn('⚠️ Token refresh failed, but keeping user logged in for demo purposes');
-              return Promise.reject(error); // Return original error, don't call handleAuthError
+              // The session is unrecoverable at this point and no later call will succeed either.
+              // Keeping the operator on the page leaves a screen that still looks signed in while
+              // every request behind it 401s, so an empty list reads as "there are no tenants"
+              // rather than "you are logged out". Send them to login instead.
+              this.handleAuthError();
+              return Promise.reject(error);
             }
           } else {
             console.log('🚫 Not attempting token refresh for auth endpoint');
-            // For auth endpoints, just reject the error without automatic logout
+            // Login and refresh both render their own failure message, so a toast here doubles it.
             return Promise.reject(error);
           }
         }
 
-        // Don't show toast errors for API calls that are expected to fail in demo mode
-        if (error.response?.status !== 401) {
-          this.handleError(error);
-        } else {
-          console.warn('⚠️ 401 error ignored to prevent automatic logout in demo mode');
-        }
-        
+        this.handleError(error);
+
         return Promise.reject(error);
       }
     );
@@ -204,6 +202,11 @@ class ApiService {
       switch (status) {
         case 400:
           message = data.message || 'Bad request';
+          break;
+        case 401:
+          // Only reached once a refresh has already been tried and the retry 401'd too. Silence
+          // here is what let an expired session look like a working one.
+          message = 'Your session has expired. Please sign in again';
           break;
         case 403:
           message = 'You do not have permission to perform this action';
@@ -256,369 +259,66 @@ class ApiService {
   }
 
   // Client-specific API methods
+  //
+  // None of these catch the error and return hand-built data any more, the way the payments and
+  // B2C methods below never did. The fallbacks were indistinguishable from a real response: a 403
+  // on toggleClientStatus resolved with `{ message: "Client deactivated successfully" }`, the page
+  // fired a success toast, and the tenant stayed active. deleteClient was worse, reporting a
+  // finished tenant hard delete that never ran. A read fabricated its own version of the truth:
+  // a timed-out client detail became "Demo Client" with 125 students. An operator cannot tell a
+  // rejected write from an applied one, so let these throw and let the caller show the failure.
   async getClients(params?: any): Promise<Client[]> {
-    try {
-      const response = await this.get<Client[] | { results: Client[] }>('/superadmin/api/clients/', params);
-      // The API now returns an array directly, not wrapped in a results object
-      return Array.isArray(response) ? response : response.results || [];
-    } catch (error) {
-      console.warn('⚠️ Failed to fetch clients from API, using demo data');
-      // Return demo data that matches the new API format
-      return [
-        {
-          id: 1,
-          name: 'TechCorp Solutions',
-          slug: 'techcorp-solutions',
-          logo_url: null,
-          email: 'admin@techcorp.com',
-          phone_number: '+1-555-0123',
-          joining_date: '2025-01-15T10:30:00',
-          poc_name: 'John Smith',
-          total_students: 245,
-          total_courses: 18,
-          // Legacy fields for backward compatibility
-          organization_name: 'TechCorp Solutions Ltd.',
-          status: 'active',
-          subscription_tier: 'enterprise',
-          is_active: true,
-          created_at: '2025-01-15T10:30:00Z',
-          contact_person: 'John Smith',
-          industry: 'Technology'
-        },
-        {
-          id: 2,
-          name: 'EduLearn Institute',
-          slug: 'edulearn-institute',
-          logo_url: null,
-          email: 'contact@edulearn.org',
-          phone_number: '+1-555-0456',
-          joining_date: '2025-02-20T09:15:00',
-          poc_name: 'Sarah Wilson',
-          total_students: 156,
-          total_courses: 12,
-          // Legacy fields for backward compatibility
-          organization_name: 'EduLearn Institute Inc.',
-          status: 'active',
-          subscription_tier: 'professional',
-          is_active: true,
-          created_at: '2025-02-20T09:15:00Z',
-          contact_person: 'Sarah Wilson',
-          industry: 'Education'
-        }
-      ];
-    }
+    const response = await this.get<Client[] | { results: Client[] }>('/superadmin/api/clients/', params);
+    // The API now returns an array directly, not wrapped in a results object
+    return Array.isArray(response) ? response : response.results || [];
   }
 
   async getClientDetails(id: number): Promise<ClientDetails> {
-    try {
-      return await this.get<ClientDetails>(`/superadmin/api/clients/${id}/`);
-    } catch (error) {
-      console.warn(`⚠️ Failed to fetch client ${id} details from API, using demo data`);
-      // Return demo data that matches the new API format
-      return {
-        id,
-        name: 'Demo Client',
-        slug: 'demo-client',
-        logo_url: null,
-        email: 'demo@example.com',
-        phone_number: '+1-555-0123',
-        joining_date: '2025-01-15T10:30:00',
-        poc_name: 'John Demo',
-        total_students: 125,
-        total_courses: 15,
-        // Legacy fields for backward compatibility
-        organization_name: 'Demo Organization',
-        phone: '+1-555-0123',
-        address: '123 Demo Street, Demo City, DC 12345',
-        status: 'active',
-        subscription_plan: 'professional',
-        is_active: true,
-        created_at: '2025-01-15T10:30:00Z',
-        updated_at: '2025-03-10T14:20:00Z',
-        last_login: '2025-03-09T16:45:00Z',
-        student_count: 125,
-        instructor_count: 8,
-        course_count: 15,
-        active_enrollments: 98,
-        total_revenue: 15600,
-        monthly_revenue: 2800,
-        contact_person: 'John Demo',
-        industry: 'Technology',
-        website: 'https://demo.example.com',
-        description: 'This is demo client data shown when the API is unavailable.',
-        courses: [
-          {
-            id: 1,
-            title: 'Introduction to Programming',
-            subtitle: null,
-            slug: 'intro-programming',
-            description: 'Learn the basics of programming',
-            difficulty_level: 'Easy' as const,
-            duration_in_hours: 40,
-            price: '299.00',
-            is_free: false,
-            certificate_available: true,
-            thumbnail: null,
-            published: true,
-            enrolled_students_count: 45,
-            instructors: [
-              { id: 1, name: 'John Instructor' }
-            ],
-            created_at: '2025-01-20T10:00:00Z',
-            updated_at: '2025-03-05T15:30:00Z',
-            // Legacy fields
-            difficulty: 'Easy' as const,
-            is_published: true,
-            enrollment_count: 45,
-            completion_rate: 85,
-            duration: 40,
-            category: 'Programming'
-          },
-          {
-            id: 2,
-            title: 'Advanced Web Development',
-            subtitle: null,
-            slug: 'advanced-web-dev',
-            description: 'Master advanced web development techniques',
-            difficulty_level: 'Hard' as const,
-            duration_in_hours: 80,
-            price: '599.00',
-            is_free: false,
-            certificate_available: true,
-            thumbnail: null,
-            published: true,
-            enrolled_students_count: 32,
-            instructors: [
-              { id: 2, name: 'Jane Expert' }
-            ],
-            created_at: '2025-02-01T11:00:00Z',
-            updated_at: '2025-03-08T09:15:00Z',
-            // Legacy fields
-            difficulty: 'Hard' as const,
-            is_published: true,
-            enrollment_count: 32,
-            completion_rate: 72,
-            duration: 80,
-            category: 'Web Development'
-          }
-        ],
-        students: [
-          {
-            id: 1,
-            user_id: 101,
-            name: 'Alice Johnson',
-            first_name: 'Alice',
-            last_name: 'Johnson',
-            email: 'alice.johnson@email.com',
-            username: 'alice.johnson@email.com',
-            profile_pic_url: 'https://lh3.googleusercontent.com/a/demo-profile-1',
-            role: 'student',
-            is_active: true,
-            phone_number: '+1-555-0001',
-            bio: 'Passionate about learning new technologies',
-            social_links: {},
-            date_of_birth: '1995-03-15',
-            created_at: '2025-01-20T10:00:00Z',
-            updated_at: '2025-03-05T15:30:00Z'
-          },
-          {
-            id: 2,
-            user_id: 102,
-            name: 'Bob Smith',
-            first_name: 'Bob',
-            last_name: 'Smith',
-            email: 'bob.smith@email.com',
-            username: 'bob.smith@email.com',
-            profile_pic_url: null,
-            role: 'student',
-            is_active: true,
-            phone_number: null,
-            bio: null,
-            social_links: {},
-            date_of_birth: null,
-            created_at: '2025-02-01T11:00:00Z',
-            updated_at: '2025-03-08T09:15:00Z'
-          },
-          {
-            id: 3,
-            user_id: 103,
-            name: 'Charlie Brown',
-            first_name: 'Charlie',
-            last_name: 'Brown',
-            email: 'charlie.brown@email.com',
-            username: 'charlie.brown@email.com',
-            profile_pic_url: 'https://lh3.googleusercontent.com/a/demo-profile-3',
-            role: 'student',
-            is_active: false,
-            phone_number: '+1-555-0003',
-            bio: 'Currently taking a break from studies',
-            social_links: {},
-            date_of_birth: '1992-07-22',
-            created_at: '2025-01-25T14:30:00Z',
-            updated_at: '2025-03-01T12:15:00Z'
-          }
-        ],
-        statistics: {
-          total_students: 125,
-          total_instructors: 8,
-          total_courses: 15,
-          active_enrollments: 98,
-          completed_courses: 67,
-          revenue_this_month: 2800,
-          growth_rate: 12.5,
-          enrollment_trend: [
-            { date: '2025-03-01', enrollments: 15, completions: 8 },
-            { date: '2025-03-02', enrollments: 12, completions: 6 },
-            { date: '2025-03-03', enrollments: 18, completions: 10 },
-            { date: '2025-03-04', enrollments: 14, completions: 7 },
-            { date: '2025-03-05', enrollments: 16, completions: 9 }
-          ],
-          course_popularity: [
-            { course_name: 'Introduction to Programming', enrollments: 45, completion_rate: 85 },
-            { course_name: 'Advanced Web Development', enrollments: 32, completion_rate: 72 },
-            { course_name: 'Data Science Basics', enrollments: 28, completion_rate: 68 }
-          ]
-        }
-      };
-    }
+    return await this.get<ClientDetails>(`/superadmin/api/clients/${id}/`);
   }
 
   async createClient(clientData: Partial<Client>) {
-    try {
-      const response = await this.post('/superadmin/api/clients/create/', clientData);
-      console.log('✅ Client created successfully:', response);
-      return response;
-    } catch (error) {
-      console.warn('⚠️ Failed to create client via API, simulating success');
-      // Simulate successful creation in demo mode
-      const mockResponse = {
-        message: "Client created successfully",
-        client: {
-          id: Math.floor(Math.random() * 1000) + 100,
-          name: clientData.name || '',
-          slug: clientData.slug || '',
-          logo_url: clientData.logo_url || null,
-          email: clientData.email || null,
-          phone_number: clientData.phone_number || null,
-          joining_date: clientData.joining_date || new Date().toISOString(),
-          poc_name: clientData.poc_name || null,
-          total_students: 0,
-          total_courses: 0,
-          ...clientData
-        }
-      };
-      return mockResponse;
-    }
+    const response = await this.post('/superadmin/api/clients/create/', clientData);
+    console.log('✅ Client created successfully:', response);
+    return response;
   }
 
   async updateClient(id: number, clientData: Partial<Client>, method: 'PUT' | 'PATCH' = 'PUT') {
-    try {
-      const endpoint = `/superadmin/api/clients/${id}/update/`;
-      const response = method === 'PATCH' 
-        ? await this.patch(endpoint, clientData)
-        : await this.put(endpoint, clientData);
-      console.log(`✅ Client ${id} updated successfully:`, response);
-      return response;
-    } catch (error) {
-      console.warn(`⚠️ Failed to update client ${id} via API, simulating success`);
-      // Simulate successful update in demo mode
-      const mockResponse = {
-        message: "Client updated successfully",
-        client: {
-          id,
-          name: clientData.name || 'Updated Client',
-          slug: clientData.slug || 'updated-client',
-          logo_url: clientData.logo_url || null,
-          email: clientData.email || null,
-          phone_number: clientData.phone_number || null,
-          joining_date: clientData.joining_date || new Date().toISOString(),
-          poc_name: clientData.poc_name || null,
-          is_active: clientData.is_active !== undefined ? clientData.is_active : true,
-          total_students: Math.floor(Math.random() * 100),
-          total_courses: Math.floor(Math.random() * 20),
-          updated_at: new Date().toISOString(),
-          ...clientData
-        }
-      };
-      return mockResponse;
-    }
+    const endpoint = `/superadmin/api/clients/${id}/update/`;
+    const response = method === 'PATCH'
+      ? await this.patch(endpoint, clientData)
+      : await this.put(endpoint, clientData);
+    console.log(`✅ Client ${id} updated successfully:`, response);
+    return response;
   }
 
   async toggleClientStatus(id: number, isActive: boolean) {
-    try {
-      // Use the existing update endpoint with PATCH method to update only is_active field
-      const endpoint = `/superadmin/api/clients/${id}/update/`;
-      const response = await this.patch(endpoint, { is_active: isActive });
-      console.log(`✅ Client ${id} status toggled to ${isActive ? 'active' : 'inactive'}:`, response);
-      return response;
-    } catch (error) {
-      console.warn(`⚠️ Failed to toggle client ${id} status via API, simulating success`);
-      // Simulate successful status toggle in demo mode
-      const mockResponse = {
-        message: `Client ${isActive ? 'activated' : 'deactivated'} successfully`,
-        client: {
-          id,
-          is_active: isActive,
-          updated_at: new Date().toISOString()
-        }
-      };
-      return mockResponse;
-    }
+    // Use the existing update endpoint with PATCH method to update only is_active field
+    const endpoint = `/superadmin/api/clients/${id}/update/`;
+    const response = await this.patch(endpoint, { is_active: isActive });
+    console.log(`✅ Client ${id} status toggled to ${isActive ? 'active' : 'inactive'}:`, response);
+    return response;
   }
 
   async deleteClient(id: number) {
-    try {
-      return await this.delete(`/superadmin/api/clients/${id}/delete/`);
-    } catch (error) {
-      console.warn(`⚠️ Failed to delete client ${id} via API, simulating success`);
-      // Simulate successful deletion in demo mode
-      return { message: 'Client deleted successfully' };
-    }
+    return await this.delete(`/superadmin/api/clients/${id}/delete/`);
   }
 
   async changeUserRole(clientId: number, userId: number, newRole: string) {
-    try {
-      const endpoint = `/superadmin/api/clients/${clientId}/users/change-role/`;
-      const response = await this.patch(endpoint, {
-        user_id: userId,
-        new_role: newRole
-      });
-      console.log(`✅ User ${userId} role changed to ${newRole} for client ${clientId}:`, response);
-      return response;
-    } catch (error) {
-      console.warn(`⚠️ Failed to change user ${userId} role via API, simulating success`);
-      // Simulate successful role change in demo mode
-      const mockResponse = {
-        message: `User role changed to ${newRole} successfully`,
-        user: {
-          id: userId,
-          role: newRole,
-          updated_at: new Date().toISOString()
-        }
-      };
-      return mockResponse;
-    }
+    const endpoint = `/superadmin/api/clients/${clientId}/users/change-role/`;
+    const response = await this.patch(endpoint, {
+      user_id: userId,
+      new_role: newRole
+    });
+    console.log(`✅ User ${userId} role changed to ${newRole} for client ${clientId}:`, response);
+    return response;
   }
 
   async updateCourse(clientId: number, courseId: number, courseData: { price?: number; is_free?: boolean; published?: boolean; enrollment_enabled?: boolean; content_lock_enabled?: boolean; certificate_available?: boolean }) {
-    try {
-      const endpoint = `/superadmin/api/clients/${clientId}/courses/${courseId}/update/`;
-      const response = await this.patch(endpoint, courseData);
-      console.log(`✅ Course ${courseId} updated successfully for client ${clientId}:`, response);
-      return response;
-    } catch (error) {
-      console.warn(`⚠️ Failed to update course ${courseId} via API, simulating success`);
-      // Simulate successful course update in demo mode
-      const mockResponse = {
-        message: 'Course updated successfully',
-        course: {
-          id: courseId,
-          ...courseData,
-          updated_at: new Date().toISOString()
-        }
-      };
-      return mockResponse;
-    }
+    const endpoint = `/superadmin/api/clients/${clientId}/courses/${courseId}/update/`;
+    const response = await this.patch(endpoint, courseData);
+    console.log(`✅ Course ${courseId} updated successfully for client ${clientId}:`, response);
+    return response;
   }
 
   async assignCourseManager(clientId: number, courseId: number, userProfileId: number | null) {
@@ -660,192 +360,67 @@ class ApiService {
   }
 
   // Features API methods
+  //
+  // Same no-fallback rule as the client methods above. The mock feature list was the worst of the
+  // reads to fake: it named five features every tenant looked entitled to, so a failed fetch let
+  // an operator grant or revoke against a list the backend had never confirmed.
   async getAvailableFeatures(): Promise<{ total_features: number; features: Feature[] }> {
-    try {
-      const response = await this.get<{ total_features: number; features: Feature[] }>('/accounts/features/');
-      console.log('✅ Available features fetched:', response);
-      return response;
-    } catch (error) {
-      console.warn('⚠️ Failed to fetch available features via API, using mock response');
-      // Mock response for demo
-      const mockResponse = {
-        total_features: 5,
-        features: [
-          { id: 1, name: 'LMS' },
-          { id: 2, name: 'Assessment' },
-          { id: 3, name: 'Live Class' },
-          { id: 4, name: 'Community Forum' },
-          { id: 5, name: 'Mock Interview' }
-        ]
-      };
-      return mockResponse;
-    }
+    const response = await this.get<{ total_features: number; features: Feature[] }>('/accounts/features/');
+    console.log('✅ Available features fetched:', response);
+    return response;
   }
 
   async getClientFeatures(clientId: number): Promise<{ features: Feature[] }> {
-    try {
-      const endpoint = `/accounts/clients/${clientId}/features/select/`;
-      const response = await this.get<{ features: Feature[] }>(endpoint);
-      console.log(`✅ Client ${clientId} features fetched:`, response);
-      return response;
-    } catch (error) {
-      console.warn(`⚠️ Failed to fetch client ${clientId} features via API, using mock response`);
-      // Mock response for demo - return empty array if client has no features
-      const mockResponse = {
-        features: []
-      };
-      return mockResponse;
-    }
+    const endpoint = `/accounts/clients/${clientId}/features/select/`;
+    const response = await this.get<{ features: Feature[] }>(endpoint);
+    console.log(`✅ Client ${clientId} features fetched:`, response);
+    return response;
   }
 
   async updateClientFeatures(clientId: number, featureIds: number[]): Promise<{ message: string; client: ClientDetails }> {
-    try {
-      const endpoint = `/accounts/clients/${clientId}/features/select/`;
-      const response = await this.patch<{ message: string; client: ClientDetails }>(endpoint, {
-        feature_ids: featureIds
-      });
-      console.log(`✅ Client ${clientId} features updated successfully:`, response);
-      return response;
-    } catch (error) {
-      console.warn(`⚠️ Failed to update client ${clientId} features via API, simulating success`);
-      // Simulate successful feature update in demo mode
-      const mockResponse = {
-        message: 'Features selected successfully',
-        client: {
-          id: clientId,
-          name: 'Mock Client',
-          slug: 'mock-client',
-          total_students: 0,
-          total_courses: 0,
-          courses: [],
-          features: featureIds.map(id => ({
-            id,
-            name: `Feature ${id}`
-          }))
-        } as ClientDetails
-      };
-      return mockResponse;
-    }
+    const endpoint = `/accounts/clients/${clientId}/features/select/`;
+    const response = await this.patch<{ message: string; client: ClientDetails }>(endpoint, {
+      feature_ids: featureIds
+    });
+    console.log(`✅ Client ${clientId} features updated successfully:`, response);
+    return response;
   }
 
   // Course Operations API methods
+  //
+  // Same no-fallback rule as the client methods above, and these needed it most: they are the only
+  // methods here wired to a DESTRUCTIVE action. Every one of them used to catch the error and
+  // resolve with a hand-built operation, so a 403 on delete returned
+  // `{ message: "Course deletion initiated successfully", operation_id: "del_<random>" }`. The page
+  // then polled that invented id, getOperationStatus rolled a RANDOM status out of
+  // ['pending','in_progress','completed'], and on 'completed' the operator got a green
+  // "Course deleted successfully!" toast and a page reload for a deletion that never ran. A
+  // failed destructive operation has to look failed, so let these throw.
   async duplicateCourse(request: CourseOperationRequest): Promise<CourseOperationResponse> {
-    try {
-      const response = await this.post<CourseOperationResponse>('/lms/course-operations/duplicate/', request);
-      console.log('✅ Course duplication initiated:', response);
-      return response;
-    } catch (error) {
-      console.warn('⚠️ Failed to initiate course duplication via API, using mock response');
-      // Mock response for demo
-      const mockResponse: CourseOperationResponse = {
-        message: 'Course duplication initiated successfully',
-        operation_id: `dup_${Math.random().toString(36).substr(2, 12)}`,
-        status: 'pending',
-        estimated_time: '2-5 minutes',
-        status_check_url: `/lms/course-operations/dup_${Math.random().toString(36).substr(2, 12)}/status/`,
-        source_course: {
-          id: request.course_id!,
-          title: 'Mock Course Title',
-          client: 'Source Client'
-        },
-        destination_client: 'Destination Client'
-      };
-      return mockResponse;
-    }
+    const response = await this.post<CourseOperationResponse>('/lms/course-operations/duplicate/', request);
+    console.log('✅ Course duplication initiated:', response);
+    return response;
   }
 
   async bulkDuplicateCourses(request: CourseOperationRequest): Promise<CourseOperationResponse> {
-    try {
-      const response = await this.post<CourseOperationResponse>('/lms/course-operations/bulk-duplicate/', request);
-      console.log('✅ Bulk course duplication initiated:', response);
-      return response;
-    } catch (error) {
-      console.warn('⚠️ Failed to initiate bulk course duplication via API, using mock response');
-      // Mock response for demo
-      const mockResponse: CourseOperationResponse = {
-        message: 'Bulk course duplication initiated successfully',
-        operation_id: `bulk_${Math.random().toString(36).substr(2, 12)}`,
-        status: 'pending',
-        estimated_time: '10-25 minutes',
-        status_check_url: `/lms/course-operations/bulk_${Math.random().toString(36).substr(2, 12)}/status/`,
-        courses_to_duplicate: Math.floor(Math.random() * 20) + 5,
-        destination_client: 'Destination Client'
-      };
-      return mockResponse;
-    }
+    const response = await this.post<CourseOperationResponse>('/lms/course-operations/bulk-duplicate/', request);
+    console.log('✅ Bulk course duplication initiated:', response);
+    return response;
   }
 
   async deleteCourse(request: CourseOperationRequest): Promise<CourseOperationResponse> {
-    try {
-      const response = await this.post<CourseOperationResponse>('/lms/course-operations/delete/', request);
-      console.log('✅ Course deletion initiated:', response);
-      return response;
-    } catch (error) {
-      console.warn('⚠️ Failed to initiate course deletion via API, using mock response');
-      // Mock response for demo
-      const mockResponse: CourseOperationResponse = {
-        message: 'Course deletion initiated successfully',
-        operation_id: `del_${Math.random().toString(36).substr(2, 12)}`,
-        status: 'pending',
-        estimated_time: '1-3 minutes',
-        status_check_url: `/lms/course-operations/del_${Math.random().toString(36).substr(2, 12)}/status/`,
-        course: {
-          id: request.course_id!,
-          title: 'Mock Course Title',
-          client: 'Client Name'
-        },
-        deletion_summary: {
-          modules: 3,
-          submodules: 8,
-          content_items: 45,
-          video_tutorials: 25,
-          quizzes: 20,
-          mcq_questions: 60,
-          articles: 0,
-          coding_problems: 0,
-          assignments: 0,
-          comments: 5,
-          enrolled_students: Math.floor(Math.random() * 50),
-          likes: Math.floor(Math.random() * 20)
-        },
-        warning: 'This action is irreversible. All course content and student progress will be permanently deleted.'
-      };
-      return mockResponse;
-    }
+    const response = await this.post<CourseOperationResponse>('/lms/course-operations/delete/', request);
+    console.log('✅ Course deletion initiated:', response);
+    return response;
   }
 
+  // The status poller decides whether the UI declares an operation done, so this is the last place
+  // that may guess. Reporting 'completed' because the poll itself failed is how a destructive
+  // operation gets announced as finished without ever having started.
   async getOperationStatus(operationId: string): Promise<CourseOperationStatus> {
-    try {
-      const response = await this.get<CourseOperationStatus>(`/lms/course-operations/${operationId}/status/`);
-      console.log(`✅ Operation status fetched for ${operationId}:`, response);
-      return response;
-    } catch (error) {
-      console.warn(`⚠️ Failed to fetch operation status for ${operationId}, using mock response`);
-      // Mock response for demo - simulate different statuses
-      const statuses: Array<'pending' | 'in_progress' | 'completed' | 'failed'> = ['pending', 'in_progress', 'completed'];
-      const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
-      const progress = randomStatus === 'completed' ? 100 : randomStatus === 'in_progress' ? Math.floor(Math.random() * 80) + 10 : 0;
-      
-      const mockResponse: CourseOperationStatus = {
-        operation_id: operationId,
-        operation_type: operationId.startsWith('dup_') ? 'duplicate' : operationId.startsWith('bulk_') ? 'bulk_duplicate' : 'delete',
-        status: randomStatus,
-        progress,
-        message: randomStatus === 'completed' ? 'Operation completed successfully' : 
-                randomStatus === 'in_progress' ? 'Operation in progress...' : 'Operation pending...',
-        created_at: new Date(Date.now() - Math.random() * 300000).toISOString(), // Random time in last 5 minutes
-        completed_at: randomStatus === 'completed' ? new Date().toISOString() : undefined,
-        result_data: randomStatus === 'completed' ? {
-          new_course_id: Math.floor(Math.random() * 1000) + 100,
-          new_course_title: 'Duplicated Course Title',
-          new_course_slug: 'duplicated-course-slug',
-          modules_count: Math.floor(Math.random() * 10) + 1,
-          content_count: Math.floor(Math.random() * 50) + 10,
-          published: false
-        } : undefined
-      };
-      return mockResponse;
-    }
+    const response = await this.get<CourseOperationStatus>(`/lms/course-operations/${operationId}/status/`);
+    console.log(`✅ Operation status fetched for ${operationId}:`, response);
+    return response;
   }
 
   async getOperationsList(params?: { 
@@ -854,58 +429,9 @@ class ApiService {
     limit?: number; 
     offset?: number; 
   }): Promise<CourseOperationsList> {
-    try {
-      const response = await this.get<CourseOperationsList>('/lms/course-operations/', params);
-      console.log('✅ Operations list fetched:', response);
-      return response;
-    } catch (error) {
-      console.warn('⚠️ Failed to fetch operations list, using mock response');
-      // Mock response for demo
-      const mockOperations: CourseOperationStatus[] = [
-        {
-          operation_id: 'dup_mock1',
-          operation_type: 'duplicate',
-          status: 'completed',
-          progress: 100,
-          message: 'Course duplication completed successfully',
-          created_at: new Date(Date.now() - 3600000).toISOString(),
-          completed_at: new Date(Date.now() - 3400000).toISOString(),
-          result_data: {
-            new_course_id: 205,
-            new_course_title: 'Introduction to React - Copy',
-            published: false
-          }
-        },
-        {
-          operation_id: 'bulk_mock2',
-          operation_type: 'bulk_duplicate',
-          status: 'in_progress',
-          progress: 65,
-          message: 'Bulk duplication in progress...',
-          created_at: new Date(Date.now() - 1800000).toISOString()
-        },
-        {
-          operation_id: 'del_mock3',
-          operation_type: 'delete',
-          status: 'failed',
-          progress: 0,
-          message: 'Course deletion failed',
-          created_at: new Date(Date.now() - 900000).toISOString(),
-          completed_at: new Date(Date.now() - 800000).toISOString(),
-          error_details: {
-            error_type: 'ValidationError',
-            error_message: 'Cannot delete course with active enrollments'
-          }
-        }
-      ];
-
-      return {
-        total_count: mockOperations.length,
-        limit: params?.limit || 20,
-        offset: params?.offset || 0,
-        operations: mockOperations
-      };
-    }
+    const response = await this.get<CourseOperationsList>('/lms/course-operations/', params);
+    console.log('✅ Operations list fetched:', response);
+    return response;
   }
 
   // ---------- AI token/cost usage (cross-tenant) ----------
@@ -917,8 +443,9 @@ class ApiService {
   // ---------- Payments (cross-tenant) ----------
   //
   // These three deliberately have no catch-and-return-demo-data fallback. The client-detail call
-  // has one, and it produced a `total_revenue: 15600` that read as real for a tenant whose request
-  // had simply timed out. Inventing revenue is worse than showing an error.
+  // used to, and it produced a `total_revenue: 15600` that read as real for a tenant whose request
+  // had simply timed out. Inventing revenue is worse than showing an error. No method in this file
+  // has such a fallback any more; do not be the one to add the next.
 
   async getPaymentsSummary(params?: PaymentsSummaryParams): Promise<PaymentsSummary> {
     return await this.get<PaymentsSummary>(API_ENDPOINTS.PAYMENTS_SUMMARY, params);
@@ -1100,7 +627,7 @@ class ApiService {
   }
 
   // ---- B2C mode -------------------------------------------------------------------------- //
-  // Deliberately NO mock-data fallback, unlike most methods above. These describe whether a
+  // Deliberately NO mock-data fallback, which most methods above once had. These describe whether a
   // tenant charges learners money. Swapping in fabricated data when the API errors would show
   // "B2C off / 1 free course" for a tenant whose real state is unknown, and an operator would
   // act on it — the same failure that made a real backend bug look like a placeholder client.

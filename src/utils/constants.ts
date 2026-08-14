@@ -1,6 +1,5 @@
 export const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://be-app.ailinc.com';
 export const DEBUG_MODE = false; // Set to false in production
-export const BYPASS_AUTH_FOR_DEBUG = true; // Set to false in production
 
 export const API_ENDPOINTS = {
   // Authentication

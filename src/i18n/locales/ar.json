@@ -85,7 +85,14 @@
     "clientsFound": "عميل موجود",
     "searchClients": "البحث في العملاء...",
     "filterByStatus": "تصفية حسب الحالة",
-    "allClients": "جميع العملاء"
+    "allClients": "جميع العملاء",
+    "activityLive": "نشط (7 أيام)",
+    "activityQuiet": "هادئ (8-30 يومًا)",
+    "activityDormant": "خامد (31+ يومًا)",
+    "activityNever": "لم يُرَ قط",
+    "loadFailed": "تعذر تحميل العملاء. هذه القائمة فارغة لأن الطلب فشل، وليس لعدم وجود مستأجرين.",
+    "exportFailed": "تعذر التصدير: فشل تحميل قائمة العملاء.",
+    "exportEmpty": "لا يوجد شيء لتصديره للمرشحات الحالية."
   },
   "courses": {
     "title": "الدورات",

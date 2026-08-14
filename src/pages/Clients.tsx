@@ -17,11 +17,14 @@ import {
   Edit,
   AlertTriangle,
   ChevronDown,
+  Info,
+  Trash2,
   LucideIcon,
 } from 'lucide-react';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import ClientFormModal from '../components/ui/ClientFormModal';
+import ClientPurgeModal from '../components/ui/ClientPurgeModal';
 import StatusToggle from '../components/ui/StatusToggle';
 import {
   useClients,
@@ -63,120 +66,108 @@ const PaymentCell: React.FC<{ payment?: Client['payment'] }> = ({ payment }) => 
   );
 };
 
+/**
+ * Everything this activity number cannot see.
+ *
+ * Copied from the backend serializer that computes it (superadmin_portal/serializers.py,
+ * ClientListSerializer.get_last_active_at) rather than paraphrased, because this column is read
+ * while deciding who gets switched off and the blind spots have to travel with the number.
+ */
+const ACTIVITY_CAVEATS =
+  'Last day anyone on the tenant was seen. Limits: the heartbeat behind it is posted by one ' +
+  'frontend stack only, so tenants served by the Vercel apps or zSkillup can be busy and report ' +
+  'nothing. Days are Asia/Kolkata, not the tenant\'s own midnight. It counts staff as well as ' +
+  'students, so an admin poking at their dashboard makes a tenant look alive. Partner-API-only ' +
+  'tenants never write either table and always read as Never. Treat Never as no evidence, not as ' +
+  'proof of an empty tenant.';
+
+/**
+ * How long ago anyone was seen on this institution.
+ *
+ * Same chip as PaymentCell above, deliberately: both columns are scanned in one sweep and a second
+ * visual language for "status" makes the row harder to read, not easier. The buckets are the
+ * backend's (ACTIVITY_LIVE_DAYS / ACTIVITY_QUIET_DAYS) and are never recomputed here, so this list
+ * and the dashboard's active-tenant tile cannot classify the same institution two different ways.
+ *
+ * "Never" is mute rather than red, and an absent field says Unknown rather than Never. The metric
+ * has real blind spots (see ACTIVITY_CAVEATS), so no signal is an absence of evidence. Only a
+ * tenant we have seen, and have not seen for a month, earns the alarming colour.
+ */
+const ActivityCell: React.FC<{ client: Client }> = ({ client }) => {
+  const status = client.activity_status;
+  const days = client.days_since_active;
+  const base =
+    'inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-widest2';
+
+  // Unreachable against the current backend: activity_status is a SerializerMethodField in
+  // Meta.fields, so the key is always present and always a non-empty string. Kept because the
+  // failure it guards is a cached bundle talking to a deploy that predates the field, and the
+  // alternative to "Unknown" there is a chip that silently reads "Never".
+  if (!status) {
+    return (
+      <span className={cn(base, 'bg-line/[0.06] text-text-mute')} title={ACTIVITY_CAVEATS}>
+        Unknown
+      </span>
+    );
+  }
+  if (status === 'never') {
+    return (
+      <span
+        className={cn(base, 'bg-line/[0.06] text-text-mute')}
+        title="No heartbeat and no completed content, ever. Not proof the tenant is unused."
+      >
+        Never
+      </span>
+    );
+  }
+
+  const tone =
+    status === 'live'
+      ? 'bg-emerald-500/10 text-emerald-500'
+      : status === 'quiet'
+      ? 'bg-amber-500/10 text-amber-500'
+      : 'bg-danger-500/10 text-danger-500';
+  const label = status === 'live' ? 'Live' : status === 'quiet' ? 'Quiet' : 'Dormant';
+
+  return (
+    <span className={cn(base, tone)} title={client.last_active_at || undefined}>
+      {/* No day count on Live. Inside the week the exact number is noise, and "Live 0d" reads as a
+          measurement of nothing; on the other two the age IS the reason the chip is that colour. */}
+      {status !== 'live' && typeof days === 'number' ? `${label} ${days}d` : label}
+    </span>
+  );
+};
+
 const Clients: React.FC = () => {
   const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  // Separate from statusFilter because they answer different questions. is_active is a switch
+  // somebody threw; activity is what the tenant actually did. The pair an operator hunts for is
+  // "active and dormant", which neither filter can express on its own.
+  const [activityFilter, setActivityFilter] = useState<
+    'all' | 'live' | 'quiet' | 'dormant' | 'never'
+  >('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
 
-  const { data: clients, isLoading, error } = useClients();
+  // The purge target survives the close, so the modal keeps rendering its own tenant through the
+  // exit animation instead of blanking to "Purge institution?" on the way out.
+  const [purgeTarget, setPurgeTarget] = useState<Client | null>(null);
+  const [isPurgeModalOpen, setIsPurgeModalOpen] = useState(false);
+
+  // Read once so the header cell and the tooltip lookup below compare against the same string.
+  const lastActiveHeader = t('clients.lastActive');
+
+  const { data: clients, isLoading, isFetching, error, refetch } = useClients();
   const createClientMutation = useCreateClient();
   const updateClientMutation = useUpdateClient();
   const toggleStatusMutation = useToggleClientStatus();
 
-  const fallbackClients: Client[] = [
-    {
-      id: 1,
-      name: 'TechCorp Solutions',
-      slug: 'techcorp-solutions',
-      organization_name: 'TechCorp Solutions Ltd.',
-      email: 'admin@techcorp.com',
-      phone: '+1-555-0123',
-      phone_number: '+1-555-0123',
-      joining_date: '2023-08-15T10:30:00Z',
-      poc_name: 'John Smith',
-      address: '123 Business Ave, San Francisco, CA',
-      status: 'active',
-      subscription_tier: 'enterprise',
-      is_active: true,
-      total_students: 1250,
-      student_count: 1250,
-      students_count: 1250,
-      instructor_count: 45,
-      course_count: 24,
-      courses_count: 24,
-      total_courses: 24,
-      active_enrollments: 980,
-      created_at: '2023-08-15T10:30:00Z',
-      updated_at: '2024-05-20T14:45:00Z',
-      last_login: '2024-05-20T14:45:00Z',
-      total_revenue: 125000,
-      monthly_revenue: 12500,
-      logo_url: undefined,
-      contact_person: 'John Smith',
-      industry: 'Technology',
-    },
-    {
-      id: 2,
-      name: 'EduMaster Institute',
-      slug: 'edumaster-institute',
-      organization_name: 'EduMaster Institute Inc.',
-      email: 'contact@edumaster.edu',
-      phone: '+1-555-0456',
-      phone_number: '+1-555-0456',
-      joining_date: '2023-11-20T09:15:00Z',
-      poc_name: 'Dr. Sarah Johnson',
-      address: '456 Education Blvd, Boston, MA',
-      status: 'active',
-      subscription_tier: 'premium',
-      is_active: true,
-      total_students: 890,
-      student_count: 890,
-      students_count: 890,
-      instructor_count: 32,
-      course_count: 18,
-      courses_count: 18,
-      total_courses: 18,
-      active_enrollments: 765,
-      created_at: '2023-11-20T09:15:00Z',
-      updated_at: '2024-05-19T11:20:00Z',
-      last_login: '2024-05-19T11:20:00Z',
-      total_revenue: 89000,
-      monthly_revenue: 8900,
-      logo_url: undefined,
-      contact_person: 'Dr. Sarah Johnson',
-      industry: 'Education',
-    },
-    {
-      id: 3,
-      name: 'Healthcare Training Co',
-      slug: 'healthcare-training-co',
-      organization_name: 'Healthcare Training Company',
-      email: 'info@healthtraining.com',
-      phone: '+1-555-0789',
-      phone_number: '+1-555-0789',
-      joining_date: '2024-01-10T16:45:00Z',
-      poc_name: 'Michael Davis',
-      address: '789 Medical Center Dr, Chicago, IL',
-      status: 'inactive',
-      subscription_tier: 'basic',
-      is_active: false,
-      total_students: 345,
-      student_count: 345,
-      students_count: 345,
-      instructor_count: 12,
-      course_count: 8,
-      courses_count: 8,
-      total_courses: 8,
-      active_enrollments: 234,
-      created_at: '2024-01-10T16:45:00Z',
-      updated_at: '2024-05-18T08:30:00Z',
-      last_login: '2024-05-18T08:30:00Z',
-      total_revenue: 28000,
-      monthly_revenue: 2800,
-      logo_url: undefined,
-      contact_person: 'Michael Davis',
-      industry: 'Healthcare',
-    },
-  ];
-
-  const clientsData = clients || fallbackClients;
-
-  const filteredClients = clientsData.filter((client) => {
+  const filteredClients = (clients ?? []).filter((client) => {
     const q = searchQuery.toLowerCase();
     const matchesSearch =
       client.name?.toLowerCase().includes(q) ||
@@ -186,7 +177,11 @@ const Clients: React.FC = () => {
     let matchesStatus = true;
     if (statusFilter === 'active') matchesStatus = client.is_active === true;
     else if (statusFilter === 'inactive') matchesStatus = client.is_active === false;
-    return matchesSearch && matchesStatus;
+    // Compared against the backend's own bucket rather than re-derived from days_since_active, so
+    // a tenant can never be filtered into one bucket and badged as another.
+    const matchesActivity =
+      activityFilter === 'all' || client.activity_status === activityFilter;
+    return matchesSearch && matchesStatus && matchesActivity;
   });
 
   const handleOpenCreateModal = () => {
@@ -202,6 +197,10 @@ const Clients: React.FC = () => {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedClient(null);
+  };
+  const handleOpenPurgeModal = (client: Client) => {
+    setPurgeTarget(client);
+    setIsPurgeModalOpen(true);
   };
 
   const handleSubmitClient = async (clientData: Partial<Client>) => {
@@ -233,6 +232,25 @@ const Clients: React.FC = () => {
   };
 
   const exportClients = () => {
+    // Refuse rather than download nothing. On a failed fetch `filteredClients` is [], which used to
+    // produce a 0-byte file AND a green success toast: the operator walks away believing they hold
+    // an export of the tenant list. An empty export is never the answer the button was asked for.
+    if (error) {
+      toast.error(
+        t('clients.exportFailed', {
+          defaultValue: 'Cannot export: the client list failed to load.',
+        })
+      );
+      return;
+    }
+    if (filteredClients.length === 0) {
+      toast.error(
+        t('clients.exportEmpty', {
+          defaultValue: 'Nothing to export for the current filters.',
+        })
+      );
+      return;
+    }
     const csvData = filteredClients.map((client) => ({
       Name: client.name,
       Organization: client.organization_name || client.name,
@@ -240,6 +258,13 @@ const Clients: React.FC = () => {
       Phone: client.phone_number || client.phone,
       'POC Name': client.poc_name || client.contact_person,
       Status: client.is_active ? 'Active' : 'Inactive',
+      // Blank when the backend sent no bucket at all, rather than 'Never': the export is read away
+      // from the tooltip that explains the difference, so it must not turn "we did not measure"
+      // into "nobody was ever here".
+      'Last Active': client.activity_status
+        ? client.last_active_at || 'Never'
+        : '',
+      'Activity Status': client.activity_status || '',
       'Subscription Tier': client.subscription_tier,
       Students: client.total_students,
       Courses: client.total_courses,
@@ -284,19 +309,37 @@ const Clients: React.FC = () => {
 
   return (
     <div className="space-y-8">
+      {/*
+        This used to be a gold "demo mode" notice sitting above three invented tenants, so a 403
+        and a working page looked the same. It is now the only thing rendered in place of the list:
+        an operator who cannot see the tenants must not be left guessing whether there are none.
+      */}
       {!!error && (
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex items-start gap-3 rounded-xl border border-brand-gold/25 bg-brand-gold/[0.05] px-4 py-3"
+          className="flex items-start gap-3 rounded-xl border border-danger-500/30 bg-danger-500/[0.06] px-4 py-3"
         >
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-brand-gold" />
-          <div className="text-[13px] leading-relaxed text-text-dim">
-            <span className="font-mono text-[10px] font-semibold uppercase tracking-widest2 text-brand-gold">
-              {t('dashboard.demoMode')}
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-danger-500" />
+          <div className="flex-1 text-[13px] leading-relaxed text-text-dim">
+            <span className="font-mono text-[10px] font-semibold uppercase tracking-widest2 text-danger-500">
+              {t('common.error')}
             </span>
-            <span className="ml-2">{t('dashboard.apiWarning')}</span>
+            <span className="ml-2">
+              {t('clients.loadFailed', {
+                defaultValue:
+                  'Could not load clients. This list is empty because the request failed, not because there are no tenants.',
+              })}
+            </span>
           </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => refetch()}
+            disabled={isFetching}
+          >
+            {t('common.tryAgain')}
+          </Button>
         </motion.div>
       )}
 
@@ -404,6 +447,26 @@ const Clients: React.FC = () => {
             </select>
             <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-mute" />
           </div>
+          <div className="relative">
+            <select
+              value={activityFilter}
+              onChange={(e) => setActivityFilter(e.target.value as any)}
+              title={ACTIVITY_CAVEATS}
+              className="h-10 appearance-none rounded-lg border border-themed-2 bg-ink-1/60 pl-3 pr-9
+                text-[14px] text-text transition-colors
+                focus:outline-none focus:border-brand-cyan/40 focus:bg-ink-1/90
+                focus:shadow-[0_0_0_3px_rgba(0,224,255,0.10)]"
+            >
+              <option value="all">
+                {t('filters.all')} {t('clients.lastActive').toLowerCase()}
+              </option>
+              <option value="live">{t('clients.activityLive')}</option>
+              <option value="quiet">{t('clients.activityQuiet')}</option>
+              <option value="dormant">{t('clients.activityDormant')}</option>
+              <option value="never">{t('clients.activityNever')}</option>
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-mute" />
+          </div>
         </div>
       </motion.section>
 
@@ -413,7 +476,7 @@ const Clients: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45, delay: 0.12 }}
       >
-        {viewMode === 'grid' ? (
+        {!error && (viewMode === 'grid' ? (
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
             {filteredClients.map((client, i) => (
               <ClientCard
@@ -421,6 +484,7 @@ const Clients: React.FC = () => {
                 client={client}
                 index={i}
                 onEdit={() => handleOpenEditModal(client)}
+                onPurge={() => handleOpenPurgeModal(client)}
                 onToggle={(s) => handleToggleStatus(client.id, s)}
                 togglePending={toggleStatusMutation.isPending}
                 t={t}
@@ -437,7 +501,7 @@ const Clients: React.FC = () => {
               <table className="min-w-full">
                 <thead>
                   <tr className="border-b border-themed bg-ink-1/30">
-                    {['Client', 'Status', 'Students', 'Courses', 'Payments', 'Contact', 'Toggle', 'Actions'].map(
+                    {['Client', 'Status', lastActiveHeader, 'Students', 'Courses', 'Payments', 'Contact', 'Toggle', 'Actions'].map(
                       (h) => (
                         <th
                           key={h}
@@ -445,8 +509,14 @@ const Clients: React.FC = () => {
                             'whitespace-nowrap px-6 py-3 text-left font-mono text-[10px] font-semibold uppercase tracking-widest2 text-text-mute',
                             h === 'Actions' && 'text-right'
                           )}
+                          // The caveats ride on the header rather than on each chip: the operator
+                          // needs them once, while reading the column, not forty times.
+                          title={h === lastActiveHeader ? ACTIVITY_CAVEATS : undefined}
                         >
                           {h}
+                          {h === lastActiveHeader && (
+                            <Info className="ml-1 inline h-3 w-3 align-[-2px] text-text-mute" />
+                          )}
                         </th>
                       )
                     )}
@@ -477,6 +547,9 @@ const Clients: React.FC = () => {
                       <td className="whitespace-nowrap px-6 py-4">
                         <StatusPill active={client.is_active !== false} />
                       </td>
+                      <td className="whitespace-nowrap px-6 py-4">
+                        <ActivityCell client={client} />
+                      </td>
                       <td className="whitespace-nowrap px-6 py-4 text-[13px] text-text">
                         {formatNumber(client.total_students)}
                       </td>
@@ -493,6 +566,7 @@ const Clients: React.FC = () => {
                         <StatusToggle
                           isActive={client.is_active !== false}
                           onToggle={(s) => handleToggleStatus(client.id, s)}
+                          disabled={toggleStatusMutation.isPending}
                           size="sm"
                           showLabels={false}
                         />
@@ -517,6 +591,17 @@ const Clients: React.FC = () => {
                               {t('common.view')}
                             </Button>
                           </Link>
+                          {/* Opens the plan, never the delete. Nothing is destroyed until the
+                              manifest has been read and the tenant's name typed out. */}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-danger-500 hover:bg-danger-500/10 hover:text-danger-500"
+                            leftIcon={<Trash2 className="h-3.5 w-3.5" />}
+                            onClick={() => handleOpenPurgeModal(client)}
+                          >
+                            {t('common.delete')}
+                          </Button>
                         </div>
                       </td>
                     </tr>
@@ -525,9 +610,10 @@ const Clients: React.FC = () => {
               </table>
             </div>
           </div>
-        )}
+        ))}
 
-        {filteredClients.length === 0 && (
+        {/* Gated on !error so a failed fetch cannot be read as "this platform has no tenants". */}
+        {!error && filteredClients.length === 0 && (
           <div className="mt-2 flex flex-col items-center justify-center rounded-xl border border-dashed border-themed-2 bg-line/[0.02] py-16 text-center">
             <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-themed bg-line/[0.03]">
               <Users className="h-6 w-6 text-text-mute" />
@@ -550,6 +636,15 @@ const Clients: React.FC = () => {
         onSubmit={handleSubmitClient}
         mode={modalMode}
         client={selectedClient}
+      />
+
+      <ClientPurgeModal
+        client={purgeTarget}
+        isOpen={isPurgeModalOpen}
+        onClose={() => setIsPurgeModalOpen(false)}
+        // refetch, not an optimistic splice: the worker finishes long after the 202, and the list
+        // has to come from the backend that just stopped serving that tenant.
+        onPurged={() => refetch()}
       />
     </div>
   );
@@ -637,6 +732,7 @@ interface ClientCardProps {
   client: Client;
   index: number;
   onEdit: () => void;
+  onPurge: () => void;
   onToggle: (s: boolean) => Promise<void>;
   togglePending: boolean;
   t: (key: string, opts?: any) => string;
@@ -646,6 +742,7 @@ const ClientCard: React.FC<ClientCardProps> = ({
   client,
   index,
   onEdit,
+  onPurge,
   onToggle,
   togglePending,
   t,
@@ -737,6 +834,16 @@ const ClientCard: React.FC<ClientCardProps> = ({
           <Meta label={t('clients.joinedDate')}>
             {formatDate(client.joining_date || client.created_at)}
           </Meta>
+          {/* Same chip as the table column, same caveats. The card is where a tenant gets looked
+              at one at a time, which is exactly when "when was anyone last here" gets asked. */}
+          <Meta label={t('clients.lastActive')} className="col-span-2">
+            <span className="inline-flex items-center gap-2" title={ACTIVITY_CAVEATS}>
+              <ActivityCell client={client} />
+              {client.last_active_at ? (
+                <span className="text-text-mute">{formatDate(client.last_active_at)}</span>
+              ) : null}
+            </span>
+          </Meta>
           {client.email && (
             <Meta label={t('clients.email')} className="col-span-2">
               <span className="break-all">{client.email}</span>
@@ -749,6 +856,7 @@ const ClientCard: React.FC<ClientCardProps> = ({
           <StatusToggle
             isActive={!inactive}
             onToggle={onToggle}
+            disabled={togglePending}
             size="sm"
             showLabels
           />
@@ -771,6 +879,16 @@ const ClientCard: React.FC<ClientCardProps> = ({
                 {t('common.view')}
               </Button>
             </Link>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-danger-500 hover:bg-danger-500/10 hover:text-danger-500"
+              leftIcon={<Trash2 className="h-3.5 w-3.5" />}
+              onClick={onPurge}
+              disabled={togglePending}
+            >
+              {t('common.delete')}
+            </Button>
           </div>
         </div>
       </div>

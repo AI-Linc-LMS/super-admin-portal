@@ -38,13 +38,6 @@ const Dashboard: React.FC = () => {
     error: clientsError,
   } = useClients();
 
-  const fallbackStats = {
-    total_students: 642,
-    total_clients: 8,
-    total_courses: 25,
-    total_active_clients: 7,
-  };
-
   const [showContent, setShowContent] = React.useState(false);
 
   React.useEffect(() => {
@@ -81,7 +74,13 @@ const Dashboard: React.FC = () => {
     );
   }
 
-  const stats = dashboardStats || fallbackStats;
+  // No invented numbers. These four tiles used to fall back to a hard-coded
+  // { total_students: 642, ..., total_active_clients: 7 } whenever the request failed, so an
+  // expired superadmin token produced a Clients page correctly showing "request failed" with zero
+  // rows and, right next to it, a Dashboard confidently reporting 7 active clients.
+  // total_active_clients is the exact number the backend change exists to make honest, and a
+  // placeholder that contradicts the list it is derived from undoes that. "n/a" says what is true.
+  const stat = (value: number | undefined) => (value === undefined ? 'n/a' : value);
   const courses = coursesData?.courses?.slice(0, 4) || [];
   const clients = clientsData?.slice(0, 4) || [];
   const showApiWarning = !dashboardStats || !coursesData || !clientsData;
@@ -157,26 +156,26 @@ const Dashboard: React.FC = () => {
       >
         <StatsCard
           title={t('dashboard.totalStudents')}
-          value={stats.total_students}
+          value={stat(dashboardStats?.total_students)}
           icon={GraduationCap}
           color="primary"
           format="number"
         />
         <StatsCard
           title={t('dashboard.totalClients')}
-          value={stats.total_clients}
+          value={stat(dashboardStats?.total_clients)}
           icon={Building2}
           color="secondary"
         />
         <StatsCard
           title={t('dashboard.totalCourses')}
-          value={stats.total_courses}
+          value={stat(dashboardStats?.total_courses)}
           icon={BookOpen}
           color="accent"
         />
         <StatsCard
           title={t('dashboard.activeClients')}
-          value={stats.total_active_clients}
+          value={stat(dashboardStats?.total_active_clients)}
           icon={UserCheck}
           color="primary"
         />
