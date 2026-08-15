@@ -3,6 +3,7 @@ import { API_BASE_URL, API_ENDPOINTS, STORAGE_KEYS } from '../utils/constants';
 import {
   Client,
   ClientDetails,
+  PurgedClient,
   Feature,
   CourseOperationRequest,
   CourseOperationResponse,
@@ -275,6 +276,32 @@ class ApiService {
 
   async getClientDetails(id: number): Promise<ClientDetails> {
     return await this.get<ClientDetails>(`/superadmin/api/clients/${id}/`);
+  }
+
+  /**
+   * Tenants that have actually been destroyed, from the purge audit trail.
+   *
+   * A second endpoint rather than a flag on getClients(), because there is nothing left to filter:
+   * a purged tenant has no Client row at all, so these rows can only come from ClientPurge. Never
+   * merge the two arrays. The shapes are different on purpose (superadmin_portal/serializers.py
+   * ::PurgedClientSerializer emits no `id`), and a combined list is one map() away from building a
+   * detail link to a tenant the database has forgotten.
+   *
+   * Only `completed` and `partial` purges come back. `refused` in particular is excluded server
+   * side, which matters: a refused purge destroyed nothing and its tenant is still serving traffic,
+   * so showing it here would tell an operator a live customer had been wiped.
+   *
+   * Same no-fallback rule as every method above: a failure throws so the page can say the list
+   * failed. An invented empty graveyard reads as "we have never purged anyone".
+   */
+  async getPurgedClients(): Promise<PurgedClient[]> {
+    // Tolerates a paginated wrapper the way getClients does, even though the view returns a bare
+    // array today: the cost is one Array.isArray and the alternative is a blank page the day
+    // somebody adds pagination to it.
+    const response = await this.get<PurgedClient[] | { results: PurgedClient[] }>(
+      '/superadmin/api/clients/purged/'
+    );
+    return Array.isArray(response) ? response : response.results || [];
   }
 
   async createClient(clientData: Partial<Client>) {

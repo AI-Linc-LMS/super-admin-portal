@@ -13,6 +13,30 @@ export const useClients = (params?: any) => {
   });
 };
 
+/**
+ * The graveyard: tenants that no longer exist, from the purge audit trail.
+ *
+ * Separate query key from ['clients'] because it is a separate source of truth, and separate on
+ * purpose: invalidating the client list after a purge must not silently mark this list fresh, and
+ * vice versa. `enabled` keeps it from firing until an operator actually asks for the Purged filter,
+ * so the ordinary clients page costs exactly what it costs today.
+ */
+export const usePurgedClients = (enabled: boolean = true) => {
+  return useQuery({
+    queryKey: ['clients-purged'],
+    queryFn: () => apiService.getPurgedClients(),
+    enabled,
+    retry: false,
+    // Shorter than the 5 minutes the client list uses. A purge queued from this very page finishes
+    // in the worker minutes later, and switching back to the Purged filter is exactly how an
+    // operator checks whether it landed. Enabling a stale query refetches, so 30s is what stops
+    // that check from being answered out of a cache written before the purge ran.
+    staleTime: 30 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+  });
+};
+
 export const useClientDetails = (clientId: number) => {
   return useQuery<ClientDetails | null>({
     queryKey: ['client-details', clientId],

@@ -89,6 +89,55 @@ export interface Client {
   hide_available_courses_from_students?: boolean;
 }
 
+/**
+ * A tenant that has actually been destroyed, read off the purge audit trail.
+ * Mirrors superadmin_portal/serializers.py::PurgedClientSerializer field for field.
+ *
+ * This is deliberately NOT a `Client` and must never be widened into one. There is no Client row
+ * behind it: the purge deletes the row rather than flagging it, so every number a Client carries
+ * (students, courses, revenue, activity) has no value here, not even zero. Typing it separately is
+ * what stops a purged row being handed to a component that would link to /clients/<id> and send an
+ * operator to a 404 they would read as "the portal is broken" rather than "the tenant is gone".
+ *
+ * Note the absence of `id`. The backend omits it on purpose, and adding one here, even a derived
+ * one, would let a purged row satisfy the places that key on Client['id'].
+ *
+ * Only `completed` and `partial` purges ever appear. The backend excludes `refused` (destroyed
+ * nothing, tenant still live and serving traffic), `failed` (stopped mid-way, belongs in a retry
+ * queue), `dry_run` (a preview) and `pending`/`running` (unfinished). So a row being in this list
+ * is itself the claim that the database step ran.
+ */
+export interface PurgedClient {
+  /** Primary key of the ClientPurge audit row, NOT of any client. */
+  purge_id: number;
+  /** The id the tenant used to have. A historical fact for cross-referencing old logs and tickets,
+   *  never a live reference: nothing answers at /clients/<client_id> any more. */
+  client_id: number;
+  client_name: string;
+  slug: string;
+  /** `partial` means the database step ran but an external system was left dirty. It is destroyed
+   *  AND unfinished, which is why it is not folded into `completed`. */
+  status: 'completed' | 'partial';
+  /** The backend's own wording for `status` (e.g. "Completed with errors"). Rendered rather than
+   *  re-derived here, so the portal cannot describe a status differently from the audit trail. */
+  status_label: string;
+  /** Hard-coded false by the backend for every row. Kept because it states the thing the whole
+   *  screen depends on, rather than leaving it implied by which tab you are looking at. */
+  client_exists: boolean;
+  /** True only for `completed`. False means leftovers survive somewhere, see degraded_steps. */
+  fully_destroyed: boolean;
+  /** Named steps that ran and did not finish, e.g. ["netlify"]. Non-empty means a live site, a
+   *  bucket of a former customer's files or an OAuth grant is still out there and needs a human. */
+  degraded_steps: string[];
+  /** Display name of the operator who ordered it. null when that account was deleted afterwards
+   *  (the FK is SET_NULL), which is a normal state for an old row and not a bug. */
+  requested_by: string | null;
+  created_at: string;
+  /** When the purge finished. Nullable because rows written by older code paths may not have it,
+   *  which is why the UI falls back to created_at rather than printing an empty cell. */
+  completed_at: string | null;
+}
+
 export interface Feature {
   id: number;
   name: string;
