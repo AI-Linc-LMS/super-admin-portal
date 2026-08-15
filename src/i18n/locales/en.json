@@ -80,6 +80,7 @@
     "inactive": "Inactive",
     "joinedDate": "Joined Date",
     "lastActive": "Last Active",
+    "siteUrl": "Site",
     "activityLive": "Live (7 days)",
     "activityQuiet": "Quiet (8-30 days)",
     "activityDormant": "Dormant (31+ days)",

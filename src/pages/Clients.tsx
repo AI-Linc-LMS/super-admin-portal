@@ -19,6 +19,7 @@ import {
   ChevronDown,
   Info,
   Trash2,
+  ExternalLink,
   LucideIcon,
 } from 'lucide-react';
 import Button from '../components/ui/Button';
@@ -134,6 +135,90 @@ const ActivityCell: React.FC<{ client: Client }> = ({ client }) => {
       {/* No day count on Live. Inside the week the exact number is noise, and "Live 0d" reads as a
           measurement of nothing; on the other two the age IS the reason the chip is that colour. */}
       {status !== 'live' && typeof days === 'number' ? `${label} ${days}d` : label}
+    </span>
+  );
+};
+
+/**
+ * Why a derived address is not the same kind of thing as a configured one.
+ *
+ * The backend always returns a site_url, but when nothing is configured it assembles
+ * <slug>.ailinc.com and labels that "derived". For every tenant living on its own domain the guess
+ * is simply wrong: FDE Academy is served from test.fde.academy while the derived form,
+ * fde-academy.ailinc.com, does not resolve. An operator clicking through to a dead host cannot tell
+ * a broken tenant from a bad guess, so the guess has to announce itself before it is clicked.
+ */
+const DERIVED_SITE_CAVEAT =
+  'Guessed from the tenant slug because no custom domain or Netlify site is configured. It may ' +
+  'not resolve at all. Set a custom domain on this client to correct it.';
+
+/**
+ * The host to print for a site link.
+ *
+ * Operators scan these, they do not read them: "test.fde.academy" is the identifying part and the
+ * scheme and trailing slash are noise in a 12px meta row. Falls back to trimming the string by hand
+ * rather than rendering nothing, because a URL the backend built but this browser's URL parser
+ * rejects is still more useful on screen than a blank cell.
+ */
+const siteHost = (url: string): string => {
+  try {
+    return new URL(url).host;
+  } catch {
+    return url.replace(/^[a-z][a-z0-9+.-]*:\/\//i, '').replace(/\/+$/, '');
+  }
+};
+
+/**
+ * One-click passage from this portal into a customer's live LMS.
+ *
+ * Two hazards are defended here. First, these are third-party origins: without rel="noopener" the
+ * page we open keeps a handle on window.opener and can navigate this portal somewhere else, so the
+ * pair noopener+noreferrer is not optional. Second, a derived URL is a guess (see
+ * DERIVED_SITE_CAVEAT) and must not be dressed like a fact; it renders in the muted token with a
+ * dotted underline and carries an explicit "guess" chip, the same chip vocabulary the activity and
+ * payment columns already use, so nothing new has to be learned to read it.
+ */
+const SiteLink: React.FC<{ client: Client; className?: string }> = ({ client, className }) => {
+  // Absent only against a deploy older than the field, the same stale-bundle case ActivityCell
+  // guards. "Unknown" rather than a blank or a dash: it says the portal has no address for this
+  // tenant, not that the tenant has no site, and it beats re-guessing the address here in the
+  // client where the caveat text would not travel with it.
+  if (!client.site_url) {
+    return <span className={cn('text-text-mute', className)}>Unknown</span>;
+  }
+
+  const derived = client.site_url_source === 'derived';
+  const host = siteHost(client.site_url);
+
+  return (
+    <span className={cn('inline-flex min-w-0 items-center gap-2', className)}>
+      <a
+        href={client.site_url}
+        target="_blank"
+        rel="noopener noreferrer"
+        // The card is not clickable today, but it is a hover-lifted tile that is one product
+        // decision away from being wrapped in a Link. Stopping here means opening the tenant site
+        // can never also navigate the portal underneath it.
+        onClick={(e) => e.stopPropagation()}
+        title={derived ? `${client.site_url} - ${DERIVED_SITE_CAVEAT}` : client.site_url}
+        className={cn(
+          'inline-flex min-w-0 items-center gap-1.5 transition-colors hover:text-brand-cyan',
+          derived
+            ? 'text-text-mute underline decoration-dotted underline-offset-2'
+            : 'text-text-dim'
+        )}
+      >
+        <span className="truncate">{host}</span>
+        <ExternalLink className="h-3 w-3 shrink-0" strokeWidth={1.75} />
+      </a>
+      {derived && (
+        <span
+          className="shrink-0 rounded-full bg-line/[0.06] px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-widest2 text-text-mute"
+          title={DERIVED_SITE_CAVEAT}
+        >
+          Guess
+        </span>
+      )}
     </span>
   );
 };
@@ -265,6 +350,11 @@ const Clients: React.FC = () => {
         ? client.last_active_at || 'Never'
         : '',
       'Activity Status': client.activity_status || '',
+      'Site URL': client.site_url || '',
+      // The source ships with the URL for the same reason the chip does on screen. A spreadsheet is
+      // read far from this page, and a derived guess pasted into a column headed "Site URL" with
+      // nothing beside it becomes a fact the moment someone mails it to a customer.
+      'Site URL Source': client.site_url_source || '',
       'Subscription Tier': client.subscription_tier,
       Students: client.total_students,
       Courses: client.total_courses,
@@ -501,7 +591,10 @@ const Clients: React.FC = () => {
               <table className="min-w-full">
                 <thead>
                   <tr className="border-b border-themed bg-ink-1/30">
-                    {['Client', 'Status', lastActiveHeader, 'Students', 'Courses', 'Payments', 'Contact', 'Toggle', 'Actions'].map(
+                    {/* Site rides along in the table too. Grid and list are the same page behind a
+                        toggle, and a link that exists in one of them is a link operators report as
+                        missing rather than one they think to go looking for. */}
+                    {['Client', 'Status', lastActiveHeader, 'Students', 'Courses', 'Payments', 'Contact', 'Site', 'Toggle', 'Actions'].map(
                       (h) => (
                         <th
                           key={h}
@@ -561,6 +654,9 @@ const Clients: React.FC = () => {
                       </td>
                       <td className="whitespace-nowrap px-6 py-4 text-[13px] text-text">
                         {client.poc_name || client.contact_person || '—'}
+                      </td>
+                      <td className="max-w-[220px] px-6 py-4 text-[13px]">
+                        <SiteLink client={client} />
                       </td>
                       <td className="whitespace-nowrap px-6 py-4">
                         <StatusToggle
@@ -843,6 +939,12 @@ const ClientCard: React.FC<ClientCardProps> = ({
                 <span className="text-text-mute">{formatDate(client.last_active_at)}</span>
               ) : null}
             </span>
+          </Meta>
+          {/* The one row an operator actually clicks. It sits in the meta strip rather than beside
+              Edit/View/Delete on purpose: those three act on the tenant record in this portal,
+              while this one leaves for a third-party site, and mixing the two invites a misclick. */}
+          <Meta label={t('clients.siteUrl', { defaultValue: 'Site' })} className="col-span-2">
+            <SiteLink client={client} />
           </Meta>
           {client.email && (
             <Meta label={t('clients.email')} className="col-span-2">

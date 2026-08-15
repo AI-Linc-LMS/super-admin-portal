@@ -34,6 +34,24 @@ export interface Client {
    *  never classify the same institution two different ways. */
   activity_status?: 'live' | 'quiet' | 'dormant' | 'never';
 
+  /** Absolute URL of the tenant's live LMS, e.g. "https://test.fde.academy". Always sent by the
+   *  backend and never null, but it is NOT a promise that anything answers there: when
+   *  site_url_source is "derived" the backend only guessed <slug>.ailinc.com because no domain was
+   *  configured, and that guess is wrong for every tenant on its own domain (FDE Academy is served
+   *  from test.fde.academy, and fde-academy.ailinc.com does not resolve at all). Optional here only
+   *  so a cached bundle talking to a deploy that predates the field does not read undefined as a
+   *  real address. Anything that renders it must first check site_url_source. */
+  site_url?: string;
+  /** Where site_url came from, and therefore how much it can be trusted. "custom_domain" and
+   *  "netlify" are configured facts; "derived" is a guess assembled from the slug and must never be
+   *  presented to an operator as a known-good address. */
+  site_url_source?: 'custom_domain' | 'netlify' | 'derived';
+  /** The domain an operator pinned for this tenant, bare host and no scheme, "" when unset. This is
+   *  the writable field: correcting a wrong derived guess means setting this. Empty does NOT mean
+   *  the tenant has no site, only that nobody pinned one, so site_url falls back to Netlify or to
+   *  the slug guess. */
+  custom_domain?: string;
+
   // Legacy fields for backward compatibility
   logo?: string;
   organization_name?: string;

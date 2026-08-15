@@ -28,6 +28,7 @@ import {
   FolderOpen,
   Image as ImageIcon,
   ShoppingBag,
+  ExternalLink,
 } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -66,6 +67,29 @@ import ClientFeaturesSelector from '../components/ui/ClientFeaturesSelector';
 import B2CModePanel from '../components/ui/B2CModePanel';
 import StatusToggle from '../components/ui/StatusToggle';
 import ClientFilesBrowser from '../components/files/ClientFilesBrowser';
+
+/**
+ * Why a derived site address is shown differently from a configured one.
+ *
+ * The backend always returns a site_url, but with nothing configured it assembles
+ * <slug>.ailinc.com and marks that "derived". For any tenant on its own domain that guess is wrong:
+ * FDE Academy lives at test.fde.academy, and the derived fde-academy.ailinc.com does not resolve.
+ * Presenting the guess like a known-good link sends an operator to a dead host and makes a missing
+ * setting look like an outage, so the guess says so before it is clicked.
+ */
+const DERIVED_SITE_CAVEAT =
+  'Guessed from the tenant slug because no custom domain or Netlify site is configured. It may ' +
+  'not resolve at all. Set a custom domain on this client to correct it.';
+
+/** Host only. The scheme and trailing slash are noise beside the email in the identity row. Falls
+ *  back to trimming by hand so a URL this browser's parser rejects still renders something. */
+const siteHost = (url: string): string => {
+  try {
+    return new URL(url).host;
+  } catch {
+    return url.replace(/^[a-z][a-z0-9+.-]*:\/\//i, '').replace(/\/+$/, '');
+  }
+};
 
 const ClientDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -606,7 +630,7 @@ const ClientDetails: React.FC = () => {
                 </div>
                 <div className="flex-1">
                   <h2 className="text-xl font-bold text-text mb-1">{client.name}</h2>
-                  <div className="flex items-center gap-4 text-sm text-text-dim mb-2">
+                  <div className="flex flex-wrap items-center gap-4 text-sm text-text-dim mb-2">
                     {client.email && (
                       <div className="flex items-center gap-1">
                         <Mail className="w-4 h-4" />
@@ -619,6 +643,42 @@ const ClientDetails: React.FC = () => {
                         <a href={client.website} target="_blank" rel="noopener noreferrer" className="hover:text-brand-cyan">
                           Website
                         </a>
+                      </div>
+                    )}
+                    {/* The tenant's live LMS, sat with the other identifying facts because "which
+                        site is this" is part of who the tenant is. ExternalLink rather than the
+                        Globe above so the marketing website and the LMS stay distinguishable.
+                        rel="noopener" is load-bearing, not boilerplate: these are third-party
+                        origins and the opened page would otherwise hold window.opener and be able
+                        to navigate this portal. Absent only on a bundle older than the field. */}
+                    {client.site_url && (
+                      <div className="flex items-center gap-2">
+                        <ExternalLink className="w-4 h-4" />
+                        <a
+                          href={client.site_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title={
+                            client.site_url_source === 'derived'
+                              ? `${client.site_url} - ${DERIVED_SITE_CAVEAT}`
+                              : client.site_url
+                          }
+                          className={
+                            client.site_url_source === 'derived'
+                              ? 'text-text-mute underline decoration-dotted underline-offset-2 hover:text-brand-cyan'
+                              : 'hover:text-brand-cyan'
+                          }
+                        >
+                          {siteHost(client.site_url)}
+                        </a>
+                        {client.site_url_source === 'derived' && (
+                          <span
+                            className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-line/[0.06] text-text-mute"
+                            title={DERIVED_SITE_CAVEAT}
+                          >
+                            Guessed address
+                          </span>
+                        )}
                       </div>
                     )}
                   </div>
