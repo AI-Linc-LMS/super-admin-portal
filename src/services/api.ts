@@ -48,6 +48,7 @@ import {
 } from '../types/vimeo';
 import toast from 'react-hot-toast';
 import { B2CClientConfig, B2CConfigUpdate } from '../types/b2c';
+import type { RepairPlan, RepairRequest } from '../types/clientPurge';
 
 interface ApiError {
   message: string;
@@ -665,6 +666,23 @@ class ApiService {
 
   async updateB2CConfig(clientId: number, payload: B2CConfigUpdate): Promise<B2CClientConfig> {
     return await this.patch<B2CClientConfig>(`/superadmin/api/b2c/clients/${clientId}/`, payload);
+  }
+
+  // ---- Cross-tenant purge repair --------------------------------------------------------- //
+  // The way out of a cross_tenant_cascade refusal, which is otherwise a dead end in the portal.
+  // ONE endpoint with two meanings: `execute: false` reads and writes nothing, `execute: true`
+  // re-homes the rows the plan marked. The caller must always show the plan before sending the
+  // second one, so `execute` is a required argument here rather than defaulting to anything: a
+  // repair that mutates because a parameter was left off is exactly the accident this shape
+  // prevents. Errors are left to throw, like the B2C and payments methods above and unlike the
+  // older client methods: this mutates rows belonging to OTHER live tenants, and a fabricated
+  // "nothing to do" on a failed request would tell an operator the crossing is clean when it is
+  // not.
+  async repairCrossTenant(clientId: number, payload: RepairRequest): Promise<RepairPlan> {
+    return await this.post<RepairPlan>(
+      `/superadmin/api/clients/${clientId}/purge/repair-cross-tenant/`,
+      payload
+    );
   }
 }
 
