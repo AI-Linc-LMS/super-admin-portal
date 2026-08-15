@@ -34,6 +34,24 @@ export interface Client {
    *  never classify the same institution two different ways. */
   activity_status?: 'live' | 'quiet' | 'dormant' | 'never';
 
+  /** Absolute URL of the tenant's live LMS, e.g. "https://test.fde.academy". Always sent by the
+   *  backend and never null, but it is NOT a promise that anything answers there: when
+   *  site_url_source is "derived" the backend only guessed <slug>.ailinc.com because no domain was
+   *  configured, and that guess is wrong for every tenant on its own domain (FDE Academy is served
+   *  from test.fde.academy, and fde-academy.ailinc.com does not resolve at all). Optional here only
+   *  so a cached bundle talking to a deploy that predates the field does not read undefined as a
+   *  real address. Anything that renders it must first check site_url_source. */
+  site_url?: string;
+  /** Where site_url came from, and therefore how much it can be trusted. "custom_domain" and
+   *  "netlify" are configured facts; "derived" is a guess assembled from the slug and must never be
+   *  presented to an operator as a known-good address. */
+  site_url_source?: 'custom_domain' | 'netlify' | 'derived';
+  /** The domain an operator pinned for this tenant, bare host and no scheme, "" when unset. This is
+   *  the writable field: correcting a wrong derived guess means setting this. Empty does NOT mean
+   *  the tenant has no site, only that nobody pinned one, so site_url falls back to Netlify or to
+   *  the slug guess. */
+  custom_domain?: string;
+
   // Legacy fields for backward compatibility
   logo?: string;
   organization_name?: string;
@@ -69,6 +87,55 @@ export interface Client {
 
   // Tenant-wide course visibility. When true, students only see courses they're enrolled in.
   hide_available_courses_from_students?: boolean;
+}
+
+/**
+ * A tenant that has actually been destroyed, read off the purge audit trail.
+ * Mirrors superadmin_portal/serializers.py::PurgedClientSerializer field for field.
+ *
+ * This is deliberately NOT a `Client` and must never be widened into one. There is no Client row
+ * behind it: the purge deletes the row rather than flagging it, so every number a Client carries
+ * (students, courses, revenue, activity) has no value here, not even zero. Typing it separately is
+ * what stops a purged row being handed to a component that would link to /clients/<id> and send an
+ * operator to a 404 they would read as "the portal is broken" rather than "the tenant is gone".
+ *
+ * Note the absence of `id`. The backend omits it on purpose, and adding one here, even a derived
+ * one, would let a purged row satisfy the places that key on Client['id'].
+ *
+ * Only `completed` and `partial` purges ever appear. The backend excludes `refused` (destroyed
+ * nothing, tenant still live and serving traffic), `failed` (stopped mid-way, belongs in a retry
+ * queue), `dry_run` (a preview) and `pending`/`running` (unfinished). So a row being in this list
+ * is itself the claim that the database step ran.
+ */
+export interface PurgedClient {
+  /** Primary key of the ClientPurge audit row, NOT of any client. */
+  purge_id: number;
+  /** The id the tenant used to have. A historical fact for cross-referencing old logs and tickets,
+   *  never a live reference: nothing answers at /clients/<client_id> any more. */
+  client_id: number;
+  client_name: string;
+  slug: string;
+  /** `partial` means the database step ran but an external system was left dirty. It is destroyed
+   *  AND unfinished, which is why it is not folded into `completed`. */
+  status: 'completed' | 'partial';
+  /** The backend's own wording for `status` (e.g. "Completed with errors"). Rendered rather than
+   *  re-derived here, so the portal cannot describe a status differently from the audit trail. */
+  status_label: string;
+  /** Hard-coded false by the backend for every row. Kept because it states the thing the whole
+   *  screen depends on, rather than leaving it implied by which tab you are looking at. */
+  client_exists: boolean;
+  /** True only for `completed`. False means leftovers survive somewhere, see degraded_steps. */
+  fully_destroyed: boolean;
+  /** Named steps that ran and did not finish, e.g. ["netlify"]. Non-empty means a live site, a
+   *  bucket of a former customer's files or an OAuth grant is still out there and needs a human. */
+  degraded_steps: string[];
+  /** Display name of the operator who ordered it. null when that account was deleted afterwards
+   *  (the FK is SET_NULL), which is a normal state for an old row and not a bug. */
+  requested_by: string | null;
+  created_at: string;
+  /** When the purge finished. Nullable because rows written by older code paths may not have it,
+   *  which is why the UI falls back to created_at rather than printing an empty cell. */
+  completed_at: string | null;
 }
 
 export interface Feature {

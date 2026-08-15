@@ -1,11 +1,39 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { X, Save, Loader2, Building2 } from 'lucide-react';
+import { X, Save, Loader2, Building2, Globe } from 'lucide-react';
 import Modal from './Modal';
 import Button from './Button';
 import Input from './Input';
 import { Client } from '../../types/client';
 import toast from 'react-hot-toast';
+
+/**
+ * Turn whatever the operator pasted into the bare host the backend stores.
+ *
+ * Operators copy the address out of a browser, so what lands in this field is "https://test.fde.
+ * academy/" far more often than "test.fde.academy". The backend already strips a pasted scheme;
+ * rejecting the paste here instead would mean the UI refuses input the API would have accepted,
+ * which reads as a bug. Path, query and fragment go too: a custom domain is a host, and keeping
+ * "/login" would produce a site_url nobody can reach.
+ */
+const normalizeCustomDomain = (raw: string): string =>
+  raw
+    .trim()
+    .replace(/^[a-z][a-z0-9+.-]*:\/\//i, '')
+    .replace(/[/?#].*$/, '')
+    .replace(/\.+$/, '')
+    .toLowerCase();
+
+/**
+ * The same hostname shape the backend enforces: labels of 1 to 63 characters, no leading or
+ * trailing hyphen, at least one dot.
+ *
+ * Written with explicit label groups instead of the backend's lookbehind form because a lookbehind
+ * in a shipped bundle is a runtime SyntaxError on browsers that predate ES2018, and a regex that
+ * throws while validating would take the whole client form down, not just this field.
+ */
+const HOSTNAME_RE =
+  /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/;
 
 export interface ClientFormModalProps {
   isOpen: boolean;
@@ -32,6 +60,7 @@ const ClientFormModal: React.FC<ClientFormModalProps> = ({
     phone_number: '',
     joining_date: '',
     poc_name: '',
+    custom_domain: '',
     hide_available_courses_from_students: false,
   });
 
@@ -61,6 +90,10 @@ const ClientFormModal: React.FC<ClientFormModalProps> = ({
           phone_number: client.phone_number || '',
           joining_date: formattedDate,
           poc_name: client.poc_name || '',
+          // Seeded from custom_domain, never from site_url: site_url may be a Netlify address or a
+          // slug guess, and pre-filling the field with one of those would turn merely opening the
+          // edit modal and saving into pinning a domain nobody chose.
+          custom_domain: client.custom_domain || '',
           hide_available_courses_from_students: client.hide_available_courses_from_students ?? false,
         });
       } else {
@@ -72,6 +105,7 @@ const ClientFormModal: React.FC<ClientFormModalProps> = ({
           phone_number: '',
           joining_date: new Date().toISOString().split('T')[0],
           poc_name: '',
+          custom_domain: '',
           hide_available_courses_from_students: false,
         });
       }
@@ -117,6 +151,21 @@ const ClientFormModal: React.FC<ClientFormModalProps> = ({
       newErrors.logo_url = 'Logo URL must be a valid HTTP/HTTPS URL';
     }
 
+    // Mirrors the backend rule in superadmin_portal/serializers.py::validate_custom_domain rather
+    // than sitting looser than it. Anything this form lets through that the API refuses comes back
+    // as a 400 that handleSubmit below can only render as "Failed to update client", so the
+    // operator learns the save failed but not which character caused it. A port is the case that
+    // really happens: the API rejects one outright, but a looser check here accepted
+    // "learn.example.com:8443" and turned a one-word correction into an unexplained failure.
+    const domain = normalizeCustomDomain(formData.custom_domain || '');
+    if (domain && /:\d+$/.test(domain)) {
+      newErrors.custom_domain = 'No port here: the tenant site is always reached over https on 443';
+    } else if (domain && !domain.includes('.')) {
+      newErrors.custom_domain = 'Needs a full hostname, for example learn.example.com';
+    } else if (domain && (domain.length > 253 || !HOSTNAME_RE.test(domain))) {
+      newErrors.custom_domain = 'Enter a hostname such as learn.example.com';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -140,6 +189,11 @@ const ClientFormModal: React.FC<ClientFormModalProps> = ({
         email: formData.email?.trim() || null,
         phone_number: formData.phone_number?.trim() || null,
         poc_name: formData.poc_name?.trim() || null,
+        // Empty string, not null: the contract types custom_domain as a string that is "" when
+        // unset, and "" is also how an operator un-pins a domain and drops the tenant back to the
+        // Netlify or slug fallback. Normalized again here so a paste that never lost focus, and so
+        // never hit the blur handler, is still stored as the bare host.
+        custom_domain: normalizeCustomDomain(formData.custom_domain || ''),
         hide_available_courses_from_students: !!formData.hide_available_courses_from_students,
         // Format joining_date properly
         joining_date: formData.joining_date
@@ -289,6 +343,26 @@ const ClientFormModal: React.FC<ClientFormModalProps> = ({
             onChange={(e) => handleInputChange('logo_url', e.target.value)}
             error={errors.logo_url}
             helpText="Optional URL to the client's logo image"
+          />
+        </div>
+
+        {/* Custom domain */}
+        <div>
+          <label htmlFor="custom_domain" className="block text-sm font-medium text-text mb-2">
+            Custom domain
+          </label>
+          <Input
+            id="custom_domain"
+            type="text"
+            placeholder="learn.example.com"
+            value={formData.custom_domain || ''}
+            onChange={(e) => handleInputChange('custom_domain', e.target.value)}
+            // Normalized on blur rather than on every keystroke so the operator can see exactly
+            // what will be saved before submitting, without the field fighting them mid-word.
+            onBlur={(e) => handleInputChange('custom_domain', normalizeCustomDomain(e.target.value))}
+            error={errors.custom_domain}
+            leftIcon={<Globe className="w-4 h-4" />}
+            helpText="Optional. Where this client's LMS actually lives. Paste the address or type the bare host, either works. Leave blank to fall back to the Netlify site, or to <slug>.ailinc.com if there is none, which is only a guess and may not resolve."
           />
         </div>
 
