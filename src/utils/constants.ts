@@ -16,6 +16,11 @@ export const API_ENDPOINTS = {
   // AI-Linc Courses
   AI_LINC_COURSES: '/superadmin/api/ai-linc/courses/',
 
+  // AI Tutor per-tenant config (which realtime model a client runs on)
+  AI_TUTOR_MODELS: '/superadmin/api/ai-tutor/models/',
+  AI_TUTOR_CLIENT_CONFIG: (clientId: number) =>
+    `/superadmin/api/ai-tutor/clients/${clientId}/config/`,
+
   // AI token/cost usage (cross-tenant)
   AI_TOKEN_USAGE: '/superadmin/api/ai-usage/summary/',
 

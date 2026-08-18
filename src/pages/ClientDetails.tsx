@@ -29,6 +29,7 @@ import {
   Image as ImageIcon,
   ShoppingBag,
   ExternalLink,
+  Mic,
 } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -65,6 +66,7 @@ import toast from 'react-hot-toast';
 import BulkDuplicateCoursesModal from '../components/ui/BulkDuplicateCoursesModal';
 import ClientFeaturesSelector from '../components/ui/ClientFeaturesSelector';
 import B2CModePanel from '../components/ui/B2CModePanel';
+import AiTutorSettingsPanel from '../components/ui/AiTutorSettingsPanel';
 import StatusToggle from '../components/ui/StatusToggle';
 import ClientFilesBrowser from '../components/files/ClientFilesBrowser';
 
@@ -808,6 +810,21 @@ const ClientDetails: React.FC = () => {
             <h2 className="text-lg font-bold">B2C Mode</h2>
           </div>
           <B2CModePanel clientId={clientId} />
+        </Card>
+      </motion.div>
+
+      {/* AI Tutor */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.24 }}
+      >
+        <Card glassmorphism className="mb-6">
+          <div className="flex items-center gap-4 mb-4">
+            <Mic className="w-6 h-6 text-brand-cyan" />
+            <h2 className="text-lg font-bold">AI Tutor</h2>
+          </div>
+          <AiTutorSettingsPanel clientId={clientId} />
         </Card>
       </motion.div>
 
