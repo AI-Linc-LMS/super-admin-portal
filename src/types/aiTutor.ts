@@ -34,6 +34,12 @@ export interface ClientTutorConfig {
   max_session_minutes: number;
   daily_cost_ceiling_usd: string;
   coding_enabled: boolean;
+  /** Ask the tutor for shorter turns. Audio out is ~83% of the bill. */
+  concise_mode: boolean;
+  /** How quickly the tutor takes its turn: low | medium | high. */
+  turn_detection_eagerness: string;
+  /** gpt-4o-mini-transcribe instead of whisper-1 for the transcript. */
+  cheap_transcription: boolean;
   updated_at: string | null;
 }
 
@@ -57,5 +63,8 @@ export type ClientTutorConfigUpdate = Partial<
     | 'max_session_minutes'
     | 'daily_cost_ceiling_usd'
     | 'coding_enabled'
+    | 'concise_mode'
+    | 'turn_detection_eagerness'
+    | 'cheap_transcription'
   >
 >;
