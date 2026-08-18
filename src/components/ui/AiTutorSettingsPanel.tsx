@@ -130,10 +130,25 @@ const AiTutorSettingsPanel: React.FC<Props> = ({ clientId }) => {
   // a toggle flips rather than only after a save.
   const activeModel =
     models.find(m => m.id === (selectedModel || data?.platform_default)) ?? defaultModel;
+  // Every input to the estimate comes from the same place the FIELDS do.
+  //
+  // The levers were read through value() (draft-aware) while the two minute values were read
+  // from the last server payload, so half the block was live and half was stale — and it
+  // still printed "Reflects your unsaved changes". Raising minutes/student from 120 to 1200
+  // left the monthly figure completely unmoved, understating what was about to be saved by a
+  // factor of ten, on the one screen an operator sets budgets from.
+  const draftSessionMinutes = Number(
+    value('max_session_minutes') ?? data?.cost_model.session_minutes ?? 0
+  );
+  const draftMonthlyMinutes = Number(
+    value('monthly_minutes_per_student') ?? data?.cost_model.monthly_minutes_per_student ?? 0
+  );
   const estimate = estimateFor(activeModel, data?.cost_model, {
     concise: Boolean(value('concise_mode')),
     pacing: String(value('turn_detection_eagerness') ?? 'medium'),
     cheapTranscription: Boolean(value('cheap_transcription')),
+    sessionMinutes: draftSessionMinutes,
+    monthlyMinutesPerStudent: draftMonthlyMinutes,
   });
 
   return (
@@ -386,7 +401,7 @@ const AiTutorSettingsPanel: React.FC<Props> = ({ clientId }) => {
                 ${estimate.perSession.toFixed(2)}
               </p>
               <p className="text-xs text-gray-400">
-                per session ({data?.cost_model.session_minutes} min cap)
+                per session ({draftSessionMinutes} min cap)
               </p>
             </div>
             <div>
@@ -395,7 +410,7 @@ const AiTutorSettingsPanel: React.FC<Props> = ({ clientId }) => {
               </p>
               <p className="text-xs text-gray-400">
                 per month if all {data?.cost_model.students} students use their full{' '}
-                {data?.cost_model.monthly_minutes_per_student} min
+                {draftMonthlyMinutes} min
               </p>
             </div>
           </div>
@@ -455,7 +470,14 @@ const AiTutorSettingsPanel: React.FC<Props> = ({ clientId }) => {
 function estimateFor(
   model: TutorModelOption | undefined,
   cost: TutorCostModel | undefined,
-  opts: { concise: boolean; pacing: string; cheapTranscription: boolean }
+  opts: {
+    concise: boolean;
+    pacing: string;
+    cheapTranscription: boolean;
+    /** Drafted, not saved: the operator is pricing what they are about to commit. */
+    sessionMinutes: number;
+    monthlyMinutesPerStudent: number;
+  }
 ): { perMin: number; perSession: number; monthly: number; steps: Array<[string, string]> } | null {
   const base = model?.usd_per_minute ? Number(model.usd_per_minute) : NaN;
   if (!Number.isFinite(base) || !cost) return null;
@@ -478,10 +500,17 @@ function estimateFor(
   apply(opts.cheapTranscription, 'cheap_transcription', 'Cheaper transcription');
 
   const perMin = base * factor;
+  // A half-typed field yields NaN; guard so the tiles never render "$NaN".
+  const sessionMin = Number.isFinite(opts.sessionMinutes) ? opts.sessionMinutes : 0;
+  const monthlyMin = Number.isFinite(opts.monthlyMinutesPerStudent)
+    ? opts.monthlyMinutesPerStudent
+    : 0;
   return {
     perMin,
-    perSession: perMin * (cost.session_minutes || 0),
-    monthly: perMin * (cost.monthly_minutes_per_student || 0) * (cost.students || 0),
+    perSession: perMin * sessionMin,
+    // students stays server-side on purpose: it is a UserProfile count, not a form field,
+    // so it cannot be stale in the way the minute values were.
+    monthly: perMin * monthlyMin * (cost.students || 0),
     steps,
   };
 }
