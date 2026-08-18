@@ -29,6 +29,8 @@ export interface ClientTutorConfig {
   /** The override resolved against the platform default. Read-only. */
   effective_model: string;
   effective_model_detail: TutorModelOption | null;
+  /** What this tenant's SAVED configuration is expected to cost per metered minute. */
+  estimated_usd_per_minute: string | null;
   voice: string;
   monthly_minutes_per_student: number;
   max_session_minutes: number;
@@ -43,6 +45,20 @@ export interface ClientTutorConfig {
   updated_at: string | null;
 }
 
+/**
+ * Everything needed to price a configuration LIVE, before it is saved.
+ *
+ * Supplied by the backend rather than hardcoded here, so the operator can never be shown a
+ * cost the backend disagrees with.
+ */
+export interface TutorCostModel {
+  /** Fraction of the total bill each lever is estimated to remove, keyed by lever. */
+  lever_savings: Record<string, string>;
+  session_minutes: number;
+  monthly_minutes_per_student: number;
+  students: number;
+}
+
 export interface ClientTutorConfigResponse {
   /** False when this tenant has never been configured, which is how the tutor stays off. */
   exists: boolean;
@@ -50,6 +66,7 @@ export interface ClientTutorConfigResponse {
   models: TutorModelOption[];
   platform_default: string;
   measurement_basis: string;
+  cost_model: TutorCostModel;
   created?: boolean;
 }
 

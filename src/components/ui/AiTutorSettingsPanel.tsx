@@ -2,7 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { AlertTriangle, Check, Loader2, Mic, Save, Sparkles } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAiTutorConfig, useUpdateAiTutorConfig } from '../../hooks/useAiTutorConfig';
-import type { ClientTutorConfigUpdate, TutorModelOption } from '../../types/aiTutor';
+import type {
+  ClientTutorConfigUpdate,
+  TutorCostModel,
+  TutorModelOption,
+} from '../../types/aiTutor';
 import Button from './Button';
 import StatusToggle from './StatusToggle';
 
@@ -121,6 +125,16 @@ const AiTutorSettingsPanel: React.FC<Props> = ({ clientId }) => {
 
   const selectedModel = value('realtime_model') ?? '';
   const defaultModel = models.find(m => m.id === data?.platform_default);
+
+  // Priced from what is on screen right now, draft included, so the number moves the moment
+  // a toggle flips rather than only after a save.
+  const activeModel =
+    models.find(m => m.id === (selectedModel || data?.platform_default)) ?? defaultModel;
+  const estimate = estimateFor(activeModel, data?.cost_model, {
+    concise: Boolean(value('concise_mode')),
+    pacing: String(value('turn_detection_eagerness') ?? 'medium'),
+    cheapTranscription: Boolean(value('cheap_transcription')),
+  });
 
   return (
     <div className="space-y-6">
@@ -353,6 +367,61 @@ const AiTutorSettingsPanel: React.FC<Props> = ({ clientId }) => {
         </div>
       </div>
 
+      {/* What this configuration costs ------------------------------------------- */}
+      {estimate && (
+        <div className="rounded-lg border border-brand-cyan/40 bg-brand-cyan/5 p-4">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-brand-cyan">
+            What this configuration costs
+          </p>
+
+          <div className="mb-4 grid gap-4 sm:grid-cols-3">
+            <div>
+              <p className="font-mono text-2xl font-semibold tabular-nums">
+                ${estimate.perMin.toFixed(4)}
+              </p>
+              <p className="text-xs text-gray-400">per minute</p>
+            </div>
+            <div>
+              <p className="font-mono text-2xl font-semibold tabular-nums">
+                ${estimate.perSession.toFixed(2)}
+              </p>
+              <p className="text-xs text-gray-400">
+                per session ({data?.cost_model.session_minutes} min cap)
+              </p>
+            </div>
+            <div>
+              <p className="font-mono text-2xl font-semibold tabular-nums">
+                ${estimate.monthly.toFixed(0)}
+              </p>
+              <p className="text-xs text-gray-400">
+                per month if all {data?.cost_model.students} students use their full{' '}
+                {data?.cost_model.monthly_minutes_per_student} min
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-1 border-t border-brand-cyan/20 pt-3">
+            {estimate.steps.map(([label, delta]) => (
+              <div key={label} className="flex justify-between text-xs">
+                <span className="text-gray-400">{label}</span>
+                <span className="font-mono text-gray-300">{delta}</span>
+              </div>
+            ))}
+            <div className="flex justify-between pt-1 text-xs font-semibold">
+              <span>Estimated</span>
+              <span className="font-mono">${estimate.perMin.toFixed(4)}/min</span>
+            </div>
+          </div>
+
+          <p className="mt-3 text-xs text-gray-500">
+            The base rate is measured from real billed sessions ({data?.measurement_basis}).
+            The percentages are estimates: no controlled before/after has been run on the cost
+            saver levers yet, so treat them as a direction, not a quote.
+            {dirty && ' Reflects your unsaved changes.'}
+          </p>
+        </div>
+      )}
+
       <div className="flex items-center justify-end gap-3 border-t border-themed pt-4">
         {justSaved && !dirty && (
           <span className="flex items-center gap-1.5 text-sm text-emerald-400">
@@ -371,6 +440,51 @@ const AiTutorSettingsPanel: React.FC<Props> = ({ clientId }) => {
     </div>
   );
 };
+
+
+/**
+ * What the CURRENTLY SELECTED configuration costs, priced live before it is saved.
+ *
+ * Rates and savings factors both come from the API. Nothing here is a hardcoded price, so
+ * the operator cannot be shown a number the backend disagrees with, and re-measuring on the
+ * server updates this screen without a frontend release.
+ *
+ * Multiplicative, matching the backend: stacking levers must never drive the estimate to
+ * zero, because a spend screen that reads $0.00 is worse than one that reads nothing.
+ */
+function estimateFor(
+  model: TutorModelOption | undefined,
+  cost: TutorCostModel | undefined,
+  opts: { concise: boolean; pacing: string; cheapTranscription: boolean }
+): { perMin: number; perSession: number; monthly: number; steps: Array<[string, string]> } | null {
+  const base = model?.usd_per_minute ? Number(model.usd_per_minute) : NaN;
+  if (!Number.isFinite(base) || !cost) return null;
+
+  const savings = cost.lever_savings || {};
+  const steps: Array<[string, string]> = [[`Base rate (${model?.label ?? 'model'})`, `$${base.toFixed(4)}/min`]];
+
+  let factor = 1;
+  const apply = (on: boolean, key: string, label: string) => {
+    const pct = Number(savings[key] ?? 0);
+    if (!on || !Number.isFinite(pct) || pct <= 0) {
+      if (on) steps.push([label, 'no confirmed saving']);
+      return;
+    }
+    factor *= 1 - pct;
+    steps.push([label, `\u2212${Math.round(pct * 100)}%`]);
+  };
+  apply(opts.concise, 'concise_mode', 'Concise tutor');
+  apply(opts.pacing === 'low', 'pacing_low', 'Response pacing (waits longer)');
+  apply(opts.cheapTranscription, 'cheap_transcription', 'Cheaper transcription');
+
+  const perMin = base * factor;
+  return {
+    perMin,
+    perSession: perMin * (cost.session_minutes || 0),
+    monthly: perMin * (cost.monthly_minutes_per_student || 0) * (cost.students || 0),
+    steps,
+  };
+}
 
 function labelFor(models: TutorModelOption[], id?: string): string {
   return models.find(m => m.id === id)?.label ?? id ?? 'unknown';
