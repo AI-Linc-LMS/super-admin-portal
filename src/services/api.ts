@@ -21,6 +21,10 @@ import {
   TenantMapping,
 } from '../types/adaptiveCourse';
 import { AiTokenUsageParams, AiTokenUsageSummary } from '../types/aiTokenUsage';
+import type {
+  ClientTutorConfigResponse,
+  ClientTutorConfigUpdate,
+} from '../types/aiTutor';
 import {
   PaymentsSummary,
   PaymentsSummaryParams,
@@ -59,6 +63,40 @@ interface ApiError {
 // Extend the Axios request config to include _retry property
 interface RetryableAxiosRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;
+}
+
+/**
+ * The first human-readable reason out of a DRF error body.
+ *
+ * DRF shapes vary: {"detail": "..."}, {"field": ["reason"]}, {"non_field_errors": [...]},
+ * or a bare string. This walks them in the order a reader cares about and stops at the
+ * first string it finds, so a rejected save says what to change instead of "Bad request".
+ */
+function firstValidationMessage(data: any): string | null {
+  if (!data) return null;
+  if (typeof data === 'string') return data;
+  if (typeof data.detail === 'string') return data.detail;
+
+  const walk = (value: any, depth = 0): string | null => {
+    if (depth > 3) return null;
+    if (typeof value === 'string') return value;
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        const found = walk(item, depth + 1);
+        if (found) return found;
+      }
+      return null;
+    }
+    if (value && typeof value === 'object') {
+      for (const key of Object.keys(value)) {
+        const found = walk(value[key], depth + 1);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+
+  return walk(data);
 }
 
 class ApiService {
@@ -203,7 +241,11 @@ class ApiService {
 
       switch (status) {
         case 400:
-          message = data.message || 'Bad request';
+          // DRF reports validation failures as {field: ["reason", ...]} with no `message`
+          // key, so this used to collapse every rejected form to "Bad request" and throw
+          // the only actionable part away. Surface the first real reason instead, whatever
+          // field it came from, rather than an allowlist each caller has to maintain.
+          message = data?.message || firstValidationMessage(data) || 'Bad request';
           break;
         case 401:
           // Only reached once a refresh has already been tried and the retry 401'd too. Silence
@@ -466,6 +508,28 @@ class ApiService {
 
   async getAiTokenUsage(params?: AiTokenUsageParams): Promise<AiTokenUsageSummary> {
     return await this.get<AiTokenUsageSummary>(API_ENDPOINTS.AI_TOKEN_USAGE, params);
+  }
+
+  // ---------- AI Tutor per-tenant config ----------
+  //
+  // Which realtime model a tenant's tutor runs on. The model list is served alongside the
+  // config rather than hardcoded here, so the measured per-minute costs shown in the picker
+  // cannot drift away from what the backend actually bills.
+
+  async getClientTutorConfig(clientId: number): Promise<ClientTutorConfigResponse> {
+    return await this.get<ClientTutorConfigResponse>(
+      API_ENDPOINTS.AI_TUTOR_CLIENT_CONFIG(clientId)
+    );
+  }
+
+  async updateClientTutorConfig(
+    clientId: number,
+    data: ClientTutorConfigUpdate
+  ): Promise<ClientTutorConfigResponse> {
+    return await this.patch<ClientTutorConfigResponse>(
+      API_ENDPOINTS.AI_TUTOR_CLIENT_CONFIG(clientId),
+      data
+    );
   }
 
   // ---------- Payments (cross-tenant) ----------

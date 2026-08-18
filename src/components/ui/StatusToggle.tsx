@@ -10,6 +10,14 @@ export interface StatusToggleProps {
   size?: 'sm' | 'md' | 'lg';
   showLabels?: boolean;
   className?: string;
+  /**
+   * Names what this switch controls, for assistive technology.
+   *
+   * Without it every StatusToggle on a page announces the same "Toggle status: currently
+   * active", which is unusable as soon as a panel mounts two of them - and one of ours is a
+   * per-tenant kill switch sitting next to a far less consequential option.
+   */
+  ariaLabel?: string;
 }
 
 const SIZE_MAP = {
@@ -25,6 +33,7 @@ const StatusToggle: React.FC<StatusToggleProps> = ({
   size = 'md',
   showLabels = true,
   className,
+  ariaLabel,
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const s = SIZE_MAP[size];
@@ -70,7 +79,7 @@ const StatusToggle: React.FC<StatusToggleProps> = ({
         )}
         role="switch"
         aria-checked={isActive}
-        aria-label={`Toggle status: currently ${isActive ? 'active' : 'inactive'}`}
+        aria-label={ariaLabel ?? `Toggle status: currently ${isActive ? 'active' : 'inactive'}`}
       >
         <motion.span
           animate={{ x: isActive ? s.travel : 0 }}

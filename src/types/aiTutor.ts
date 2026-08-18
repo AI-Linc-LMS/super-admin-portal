@@ -1,0 +1,61 @@
+/**
+ * AI Tutor per-tenant configuration, as served by
+ * `/superadmin/api/ai-tutor/clients/<id>/config/`.
+ *
+ * The cost figures are measured on production traffic and come FROM the backend rather than
+ * being written here. That is deliberate: a per-minute rate typed into the frontend goes
+ * stale the moment a vendor changes a price or the platform re-measures, and nothing would
+ * catch it.
+ */
+
+export interface TutorModelOption {
+  id: string;
+  label: string;
+  blurb: string;
+  recommended: boolean;
+  /** Measured USD per metered minute on this platform's own traffic. */
+  usd_per_minute: string | null;
+  usd_per_15_min_session: string | null;
+  /** Where this sits against the most expensive option, as a percentage. */
+  percent_of_baseline?: number;
+}
+
+export interface ClientTutorConfig {
+  client: number;
+  client_name: string;
+  is_enabled: boolean;
+  /** Empty string means "follow the platform default". */
+  realtime_model: string;
+  /** The override resolved against the platform default. Read-only. */
+  effective_model: string;
+  effective_model_detail: TutorModelOption | null;
+  voice: string;
+  monthly_minutes_per_student: number;
+  max_session_minutes: number;
+  daily_cost_ceiling_usd: string;
+  coding_enabled: boolean;
+  updated_at: string | null;
+}
+
+export interface ClientTutorConfigResponse {
+  /** False when this tenant has never been configured, which is how the tutor stays off. */
+  exists: boolean;
+  config: ClientTutorConfig;
+  models: TutorModelOption[];
+  platform_default: string;
+  measurement_basis: string;
+  created?: boolean;
+}
+
+export type ClientTutorConfigUpdate = Partial<
+  Pick<
+    ClientTutorConfig,
+    | 'is_enabled'
+    | 'realtime_model'
+    | 'voice'
+    | 'monthly_minutes_per_student'
+    | 'max_session_minutes'
+    | 'daily_cost_ceiling_usd'
+    | 'coding_enabled'
+  >
+>;
