@@ -265,6 +265,94 @@ const AiTutorSettingsPanel: React.FC<Props> = ({ clientId }) => {
         />
       </div>
 
+      {/* Cost saver -------------------------------------------------------------
+
+          Audio OUT is ~83% of what a session costs, so the only levers here are ones that
+          make the tutor GENERATE less speech. Playback speed and a tight output-token cap
+          are deliberately absent: speed is post-processing on audio that is already
+          generated and already billed, so it saves nothing while making $/min look worse,
+          and a tight token cap counts tool-call JSON and can truncate a tool call. */}
+      <div className="rounded-lg border border-themed bg-ink-1/30 p-4">
+        <div className="mb-1 flex items-center gap-2">
+          <Sparkles className="h-4 w-4 text-brand-cyan" />
+          <p className="font-semibold">Cost saver</p>
+        </div>
+        <p className="mb-4 text-sm text-gray-400">
+          The tutor&apos;s own speech is about 83% of the bill, so the saving here comes from
+          it talking less, not from lower quality. Roughly 25-30% on top of the model choice.
+        </p>
+
+        <div className="space-y-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <p className="text-sm font-medium">Concise tutor</p>
+              <p className="text-xs text-gray-500">
+                Two sentences, then hand back to the learner. Lists go on the canvas instead
+                of being read aloud, and the agenda and wrap-up are not spoken.
+              </p>
+            </div>
+            <StatusToggle
+              isActive={Boolean(value('concise_mode'))}
+              onToggle={async next => set('concise_mode', next)}
+              disabled={updateConfig.isLoading}
+              ariaLabel="Concise tutor mode"
+            />
+          </div>
+
+          <div className="flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <p className="text-sm font-medium">Cheaper transcription</p>
+              <p className="text-xs text-gray-500">
+                Uses gpt-4o-mini-transcribe for the transcript. The tutor hears the audio
+                directly, so this only affects the written record and the recap.
+              </p>
+            </div>
+            <StatusToggle
+              isActive={Boolean(value('cheap_transcription'))}
+              onToggle={async next => set('cheap_transcription', next)}
+              disabled={updateConfig.isLoading}
+              ariaLabel="Cheaper transcription model"
+            />
+          </div>
+
+          <div>
+            <p className="text-sm font-medium">Response pacing</p>
+            <p className="mb-2 text-xs text-gray-500">
+              How quickly the tutor takes its turn. Waiting longer means fewer half-spoken
+              replies that the learner talks over, and those are billed whether heard or not.
+            </p>
+            <div className="flex gap-2">
+              {[
+                { id: 'low', label: 'Waits longer', hint: 'cheapest' },
+                { id: 'medium', label: 'Balanced', hint: 'default' },
+                { id: 'high', label: 'Jumps in', hint: 'chattiest' },
+              ].map(opt => {
+                const active = (value('turn_detection_eagerness') ?? 'medium') === opt.id;
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    disabled={updateConfig.isLoading}
+                    onClick={() => set('turn_detection_eagerness', opt.id)}
+                    aria-pressed={active}
+                    className={
+                      'flex-1 rounded-lg border px-3 py-2 text-left text-sm transition-colors ' +
+                      'focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-cyan ' +
+                      (active
+                        ? 'border-brand-cyan bg-brand-cyan/10'
+                        : 'border-themed bg-ink-1/40 hover:border-gray-500')
+                    }
+                  >
+                    <span className="block font-medium">{opt.label}</span>
+                    <span className="block text-xs text-gray-500">{opt.hint}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="flex items-center justify-end gap-3 border-t border-themed pt-4">
         {justSaved && !dirty && (
           <span className="flex items-center gap-1.5 text-sm text-emerald-400">
