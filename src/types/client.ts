@@ -87,6 +87,9 @@ export interface Client {
 
   // Tenant-wide course visibility. When true, students only see courses they're enrolled in.
   hide_available_courses_from_students?: boolean;
+  /** When true, the student-side Certificates surface is hidden for this client. Admin
+   *  certificate management is separate and keeps its own `admin_certificates` feature. */
+  hide_certificates_from_students?: boolean;
 }
 
 /**

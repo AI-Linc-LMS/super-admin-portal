@@ -62,6 +62,7 @@ const ClientFormModal: React.FC<ClientFormModalProps> = ({
     poc_name: '',
     custom_domain: '',
     hide_available_courses_from_students: false,
+    hide_certificates_from_students: false,
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -95,6 +96,7 @@ const ClientFormModal: React.FC<ClientFormModalProps> = ({
           // edit modal and saving into pinning a domain nobody chose.
           custom_domain: client.custom_domain || '',
           hide_available_courses_from_students: client.hide_available_courses_from_students ?? false,
+          hide_certificates_from_students: client.hide_certificates_from_students ?? false,
         });
       } else {
         setFormData({
@@ -107,6 +109,7 @@ const ClientFormModal: React.FC<ClientFormModalProps> = ({
           poc_name: '',
           custom_domain: '',
           hide_available_courses_from_students: false,
+          hide_certificates_from_students: false,
         });
       }
       setErrors({});
@@ -195,6 +198,7 @@ const ClientFormModal: React.FC<ClientFormModalProps> = ({
         // never hit the blur handler, is still stored as the bare host.
         custom_domain: normalizeCustomDomain(formData.custom_domain || ''),
         hide_available_courses_from_students: !!formData.hide_available_courses_from_students,
+        hide_certificates_from_students: !!formData.hide_certificates_from_students,
         // Format joining_date properly
         joining_date: formData.joining_date
           ? `${formData.joining_date}T${new Date().toISOString().split('T')[1]}`
@@ -388,6 +392,35 @@ const ClientFormModal: React.FC<ClientFormModalProps> = ({
               <span className="block text-xs text-text-secondary mt-1">
                 When enabled, students of this client only see courses they're enrolled in.
                 The "Available Courses" list is hidden from the student course module.
+              </span>
+            </span>
+          </label>
+        </div>
+
+        {/* Student certificates */}
+        <div className="rounded-lg border border-themed p-4">
+          <label htmlFor="hide_certificates_from_students" className="flex items-start gap-3 cursor-pointer">
+            <input
+              id="hide_certificates_from_students"
+              type="checkbox"
+              className="mt-1 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+              checked={!!formData.hide_certificates_from_students}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  hide_certificates_from_students: e.target.checked,
+                }))
+              }
+            />
+            <span>
+              <span className="block text-sm font-medium text-text">
+                Hide the Certificates module from students
+              </span>
+              <span className="block text-xs text-text-secondary mt-1">
+                When enabled, students of this client do not see the Certificates page, its nav
+                entry or the points ladder, and cannot claim new certificates. Admin certificate
+                management is separate and is unaffected. Certificates already issued keep working:
+                their public verification links stay live for anyone holding one.
               </span>
             </span>
           </label>
