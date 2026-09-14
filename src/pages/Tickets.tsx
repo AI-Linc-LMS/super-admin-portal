@@ -14,7 +14,9 @@ import {
   Inbox,
   LifeBuoy,
   Mail,
+  MessageCircle,
   Paperclip,
+  Phone,
   RefreshCw,
   RotateCcw,
   Search,
@@ -43,6 +45,13 @@ import {
   TicketStatus,
 } from '../types/ticket';
 import { cn, formatDate } from '../utils/helpers';
+import {
+  greetingName,
+  mailtoHref,
+  telFromContact,
+  ticketChatMessage,
+  whatsappChatUrl,
+} from '../utils/ticketContact';
 
 /* ------------------------------------------------------------------------------------------------
  * Chips.
@@ -1029,6 +1038,106 @@ const DetailMeta: React.FC<{ label: string; children: React.ReactNode }> = ({
   </div>
 );
 
+const PREFERENCE_LABEL: Record<string, string> = {
+  whatsapp: 'Prefers WhatsApp',
+  phone: 'Prefers a call',
+  email: 'Prefers email',
+};
+
+const CONTACT_LINK =
+  'inline-flex h-8 items-center gap-1.5 rounded-lg border px-3 text-[13px] font-medium ' +
+  'transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-cyan/60';
+
+/**
+ * How a super admin reaches the person who raised the ticket, without leaving the queue.
+ *
+ * The same three actions the LMS gives a tenant's own admin (components/tickets/
+ * TicketContactActions.tsx). The API has returned the number and a ready WhatsApp link since the
+ * number became required; this panel was the one staff screen that still did not show them.
+ *
+ * The chat opens with a note naming the INSTITUTION, not AI Linc: the learner raised the ticket with
+ * their institution, and a super admin resolving it already emails them exactly as that admin would.
+ */
+const ReachThem: React.FC<{ ticket: Ticket }> = ({ ticket }) => {
+  const name = greetingName(ticket.raised_by);
+  const chat = whatsappChatUrl(
+    ticket,
+    ticketChatMessage({
+      learnerName: name,
+      orgName: ticket.client?.name,
+      ticketId: ticket.id,
+      subject: ticket.subject,
+    })
+  );
+  const call = telFromContact(ticket);
+  const email = mailtoHref(
+    (ticket.contact_email || ticket.raised_by?.email || '').trim(),
+    `Your support ticket #${ticket.id}`
+  );
+  const preference = ticket.contact_preference
+    ? PREFERENCE_LABEL[ticket.contact_preference]
+    : undefined;
+
+  return (
+    <div data-testid="ticket-reach-them" className="border-t border-themed pt-4">
+      <MicroLabel>Reach {name ? name.split(/\s+/)[0] : 'them'}</MicroLabel>
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        {chat ? (
+          <a
+            href={chat}
+            target="_blank"
+            // wa.me is a third-party origin: without noopener it keeps a handle on this portal.
+            rel="noopener noreferrer"
+            className={cn(
+              CONTACT_LINK,
+              'border-emerald-500/35 bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/15'
+            )}
+          >
+            <MessageCircle className="h-3.5 w-3.5" strokeWidth={1.75} />
+            WhatsApp <span className="font-mono text-[12px]">{ticket.contact_phone}</span>
+          </a>
+        ) : (
+          <span className="text-[13px] text-text-mute">
+            {ticket.contact_phone
+              ? `${ticket.contact_phone} (not a WhatsApp number)`
+              : // Both causes read the same: raised before the number was required, or from a tenant
+                // site still on the older Support form.
+                'No contact number on this ticket.'}
+          </span>
+        )}
+
+        {call && (
+          <a
+            href={call}
+            className={cn(
+              CONTACT_LINK,
+              'border-themed-2 text-text hover:border-brand-cyan/50 hover:text-brand-cyan'
+            )}
+          >
+            <Phone className="h-3.5 w-3.5" strokeWidth={1.75} />
+            Call
+          </a>
+        )}
+
+        {email && (
+          <a
+            href={email}
+            className={cn(
+              CONTACT_LINK,
+              'border-themed-2 text-text hover:border-brand-cyan/50 hover:text-brand-cyan'
+            )}
+          >
+            <Mail className="h-3.5 w-3.5" strokeWidth={1.75} />
+            Email
+          </a>
+        )}
+
+        {preference && <span className="text-[12px] text-text-mute">{preference}</span>}
+      </div>
+    </div>
+  );
+};
+
 const TicketDetail: React.FC<{ ticket: Ticket }> = ({ ticket }) => {
   const [notes, setNotes] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -1099,6 +1208,8 @@ const TicketDetail: React.FC<{ ticket: Ticket }> = ({ ticket }) => {
           </DetailMeta>
         )}
       </div>
+
+      <ReachThem ticket={ticket} />
 
       {(attachments.length > 0 || adminAttachments.length > 0) && (
         <div className="border-t border-themed pt-4">
