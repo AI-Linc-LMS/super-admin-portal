@@ -1,0 +1,81 @@
+/**
+ * Links that let a super admin reach the person who raised a ticket.
+ *
+ * Ported unchanged from the LMS frontend (lib/utils/whatsapp.ts) so both staff surfaces accept
+ * exactly the same numbers. The backend stores the ticket's contact number as E.164
+ * ("+919876543210") and sends a ready `whatsapp_url`, so it is the authority. The derivation here
+ * is only a fallback for a payload without that field, and accepts nothing looser than the backend
+ * does, so it can never produce a link the server would have refused.
+ */
+
+const E164 = /^\+[1-9]\d{7,14}$/;
+
+/** The number exactly as WhatsApp and a dialer want it, or null when it cannot be dialled. */
+export function dialableNumber(phone?: string | null): string | null {
+  const compact = (phone ?? "").replace(/[\s\-().]/g, "");
+  return E164.test(compact) ? compact : null;
+}
+
+/**
+ * A wa.me link, optionally with a message already typed. Prefers the server's link; falls back to
+ * deriving one from the number; null when neither can be dialled (an old free-form number).
+ */
+export function whatsappChatUrl(
+  contact: { whatsapp_url?: string | null; contact_phone?: string | null },
+  message?: string,
+): string | null {
+  let base = (contact.whatsapp_url ?? "").trim();
+  if (!/^https:\/\/wa\.me\/\d{8,15}$/.test(base)) {
+    const number = dialableNumber(contact.contact_phone);
+    base = number ? `https://wa.me/${number.slice(1)}` : "";
+  }
+  if (!base) return null;
+  const text = (message ?? "").trim();
+  return text ? `${base}?text=${encodeURIComponent(text)}` : base;
+}
+
+/** A tel: link for the same number, or null. */
+export function telHref(phone?: string | null): string | null {
+  const number = dialableNumber(phone);
+  return number ? `tel:${number}` : null;
+}
+
+/**
+ * A tel: link from the same source as the WhatsApp button. The server's whatsapp_url already
+ * resolved an older bare number with the tenant's country code, so Call must not refuse a number
+ * WhatsApp accepted.
+ */
+export function telFromContact(contact: { whatsapp_url?: string | null; contact_phone?: string | null }): string | null {
+  const m = /^https:\/\/wa\.me\/(\d{8,15})$/.exec((contact.whatsapp_url ?? "").trim());
+  return m ? `tel:+${m[1]}` : telHref(contact.contact_phone);
+}
+
+/**
+ * A mailto: link whose address cannot smuggle in ?cc= / &bcc= / &body=. Django's EmailField accepts
+ * those characters in the local part, and RFC 6068 requires them percent-encoded in a mailto URI.
+ */
+export function mailtoHref(email: string, subject?: string): string | null {
+  const addr = (email ?? "").trim();
+  const at = addr.lastIndexOf("@");
+  if (at < 1 || at === addr.length - 1) return null;
+  const to = `${encodeURIComponent(addr.slice(0, at))}@${encodeURIComponent(addr.slice(at + 1))}`;
+  return subject ? `mailto:${to}?subject=${encodeURIComponent(subject)}` : `mailto:${to}`;
+}
+
+/** The note support opens the chat with, so the learner knows at once who is writing and why. */
+export function ticketChatMessage(opts: {
+  learnerName?: string | null;
+  orgName?: string | null;
+  ticketId: number;
+  subject?: string | null;
+}): string {
+  const first = (opts.learnerName ?? "").trim().split(/\s+/)[0];
+  const greeting = first ? `Hi ${first},` : "Hi,";
+  const from = (opts.orgName ?? "").trim();
+  const about = (opts.subject ?? "").trim();
+  return [
+    greeting,
+    `this is ${from ? `${from} support` : "support"} about your ticket #${opts.ticketId}` +
+      (about ? `: "${about}".` : "."),
+  ].join(" ");
+}

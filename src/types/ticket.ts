@@ -71,6 +71,14 @@ export interface Ticket {
   resolution_history?: Array<Record<string, unknown>>;
   reopen_history?: Array<Record<string, unknown>>;
   cohort_name?: string | null;
+  /** How to reach the reporter. Required on new tickets since 2026-09-14; empty on older ones and
+   *  on tickets from a tenant site still running the older Support form. */
+  contact_email?: string;
+  /** E.164, e.g. "+966501234567". Older rows may hold a bare number or nothing. */
+  contact_phone?: string;
+  contact_preference?: 'whatsapp' | 'phone' | 'email' | '';
+  /** A ready wa.me link built by the server, or null when the number cannot be dialled. */
+  whatsapp_url?: string | null;
 }
 
 /** Platform-wide, never scoped to the current filter — see the list view's comment. */
