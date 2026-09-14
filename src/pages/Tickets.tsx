@@ -46,6 +46,7 @@ import {
 } from '../types/ticket';
 import { cn, formatDate } from '../utils/helpers';
 import {
+  greetingName,
   mailtoHref,
   telFromContact,
   ticketChatMessage,
@@ -1058,7 +1059,7 @@ const CONTACT_LINK =
  * their institution, and a super admin resolving it already emails them exactly as that admin would.
  */
 const ReachThem: React.FC<{ ticket: Ticket }> = ({ ticket }) => {
-  const name = ticket.raised_by?.full_name?.trim() || '';
+  const name = greetingName(ticket.raised_by);
   const chat = whatsappChatUrl(
     ticket,
     ticketChatMessage({
