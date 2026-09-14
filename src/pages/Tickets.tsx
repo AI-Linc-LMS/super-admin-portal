@@ -1171,9 +1171,11 @@ const TicketDetail: React.FC<{ ticket: Ticket }> = ({ ticket }) => {
       ...attachments.map((url, i) => ({ url, label: `From reporter ${i + 1}` })),
       ...adminAttachments.map((url, i) => ({ url, label: `From admin ${i + 1}` })),
     ],
-    // The arrays are fresh on every render of a refetched ticket; key on their contents.
+    // Keyed on the files' PATHS. The API re-signs every URL on each read, so keying on the URLs
+    // rebuilt this list on every refetch (window focus after 20s) and reloaded the file on screen.
+    // The URLs already held stay valid for 7 days.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [attachments.join('\n'), adminAttachments.join('\n')]
+    [attachments.map((u) => u.split('?', 1)[0]).join('\n'), adminAttachments.map((u) => u.split('?', 1)[0]).join('\n')]
   );
   const [viewing, setViewing] = useState<number | null>(null);
 
