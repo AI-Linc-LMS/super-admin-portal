@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, ExternalLink, FileText, FileWarning } from 'lucide-react';
 
 import Modal from '../ui/Modal';
@@ -65,9 +65,37 @@ const TicketAttachmentViewer: React.FC<Props> = ({ items, index, onIndex, onClos
   const position = open ? index : shown?.position ?? 0;
   const kind = current ? attachmentKind(current.url) : 'other';
   const many = items.length > 1;
-  // By path, so moving to the next file does not inherit the previous one's failure, and a
-  // re-signed URL for the same file keeps it.
+  // By path, so moving to the next file does not inherit the previous one's failure.
   const [failed, setFailed] = useState<string | null>(null);
+  // The URL each file is SHOWN with, per path. The API re-signs every URL on each read; swapping
+  // src on every refetch would restart a video, so the first URL is kept until it fails.
+  const held = useRef(new Map<string, string>());
+  const [, retried] = useState(0);
+
+  // Closing forgets both: reopening loads with the newest URL and never shows a stale error.
+  useEffect(() => {
+    if (!open) {
+      held.current.clear();
+      setFailed(null);
+    }
+  }, [open]);
+
+  // A refetch that shrinks the list below the open file closes the viewer PROPERLY, so the parent
+  // does not keep an index that reopens it by itself when the list grows back.
+  useEffect(() => {
+    if (index !== null && index >= items.length) onClose();
+  }, [index, items.length, onClose]);
+
+  // A failed file retries once when a newer signature arrives (a transient error, or an URL past
+  // its 7-day expiry on a row left open), instead of staying "removed" until the row collapses.
+  useEffect(() => {
+    if (!current || !failed) return;
+    const p = attachmentPath(current.url);
+    if (failed === p && held.current.get(p) !== current.url) {
+      held.current.set(p, current.url);
+      setFailed(null);
+    }
+  }, [current, failed]);
 
   useEffect(() => {
     if (!open || !many) return;
@@ -82,6 +110,18 @@ const TicketAttachmentViewer: React.FC<Props> = ({ items, index, onIndex, onClos
 
   const path = current ? attachmentPath(current.url) : '';
   const broken = !!current && failed === path;
+  if (current && path && !held.current.has(path)) held.current.set(path, current.url);
+  const src = (path && held.current.get(path)) || current?.url || '';
+  const onMediaError = () => {
+    if (!current) return;
+    // The held URL may simply be older than the one we have now: try that before giving up.
+    if (held.current.get(path) !== current.url) {
+      held.current.set(path, current.url);
+      retried((n) => n + 1);
+      return;
+    }
+    setFailed(path);
+  };
   const title = current
     ? many
       ? `${current.label} · ${position + 1} of ${items.length}`
@@ -133,18 +173,18 @@ const TicketAttachmentViewer: React.FC<Props> = ({ items, index, onIndex, onClos
                 // Keyed by path, not URL: the API re-signs every URL on each read, and a refetch
                 // (window focus after 20s) must not reload the file on screen.
                 key={path}
-                src={current.url}
+                src={src}
                 alt={current.label}
-                onError={() => setFailed(path)}
+                onError={onMediaError}
                 className="mx-auto max-h-[70vh] w-auto rounded-lg object-contain"
               />
             ) : (
               <video
                 key={path}
-                src={current.url}
+                src={src}
                 controls
                 playsInline
-                onError={() => setFailed(path)}
+                onError={onMediaError}
                 className="mx-auto max-h-[70vh] w-full rounded-lg bg-black"
               />
             )}
