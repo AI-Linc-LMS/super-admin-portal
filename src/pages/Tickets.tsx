@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
+import TicketAttachmentViewer from '../components/tickets/TicketAttachmentViewer';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import {
@@ -1165,6 +1166,23 @@ const TicketDetail: React.FC<{ ticket: Ticket }> = ({ ticket }) => {
 
   const attachments = ticket.user_attachments ?? [];
   const adminAttachments = ticket.admin_attachments ?? [];
+  const attachmentItems = useMemo(
+    () => [
+      ...attachments.map((url, i) => ({ url, label: `From reporter ${i + 1}` })),
+      ...adminAttachments.map((url, i) => ({ url, label: `From admin ${i + 1}` })),
+    ],
+    // Carries the NEWEST signed URLs. The viewer keeps showing each file with the URL it opened
+    // with (so a refetch never restarts a video) and falls back to these when that one fails.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [attachments.join('\n'), adminAttachments.join('\n')]
+  );
+  const [viewing, setViewing] = useState<number | null>(null);
+  // Owned here, not in the viewer: when a refetch leaves no attachments the whole section, viewer
+  // included, unmounts, so only this component can drop an index that would reopen the viewer by
+  // itself once they come back.
+  useEffect(() => {
+    if (viewing !== null && viewing >= attachmentItems.length) setViewing(null);
+  }, [viewing, attachmentItems.length]);
 
   return (
     <div className="space-y-5 rounded-xl border border-themed bg-ink-1/40 p-5">
@@ -1215,27 +1233,30 @@ const TicketDetail: React.FC<{ ticket: Ticket }> = ({ ticket }) => {
         <div className="border-t border-themed pt-4">
           <MicroLabel>Attachments</MicroLabel>
           <div className="mt-2 flex flex-wrap gap-2">
-            {[
-              ...attachments.map((url, i) => ({ url, label: `From reporter ${i + 1}` })),
-              ...adminAttachments.map((url, i) => ({ url, label: `From admin ${i + 1}` })),
-            ].map((a, i) => (
-              <a
+            {attachmentItems.map((a, i) => (
+              // Opens in the portal rather than a new tab: working a queue should not leave a
+              // stack of storage tabs behind every ticket.
+              <button
                 key={`${a.url}-${i}`}
-                href={a.url}
-                target="_blank"
-                // These are third-party storage origins. Without noopener the page we open keeps a
-                // handle on window.opener and can navigate this portal somewhere else.
-                rel="noopener noreferrer"
+                type="button"
+                onClick={() => setViewing(i)}
                 className={cn(
                   CHIP,
-                  'border-themed-2 bg-line/[0.06] text-text-dim transition-colors hover:border-brand-cyan/40 hover:text-brand-cyan'
+                  'border-themed-2 bg-line/[0.06] text-text-dim transition-colors hover:border-brand-cyan/40 hover:text-brand-cyan',
+                  'focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-cyan/50'
                 )}
               >
                 <Paperclip className="h-2.5 w-2.5" />
                 {a.label}
-              </a>
+              </button>
             ))}
           </div>
+          <TicketAttachmentViewer
+            items={attachmentItems}
+            index={viewing}
+            onIndex={setViewing}
+            onClose={() => setViewing(null)}
+          />
         </div>
       )}
 
