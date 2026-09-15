@@ -110,10 +110,13 @@ const TicketAttachmentViewer: React.FC<Props> = ({ items, index, onIndex, onClos
 
   const path = current ? attachmentPath(current.url) : '';
   const broken = !!current && failed === path;
-  if (current && path && !held.current.has(path)) held.current.set(path, current.url);
+  // Only while open: a render during the close animation must not re-remember the old URL.
+  if (open && current && path && !held.current.has(path)) held.current.set(path, current.url);
   const src = (path && held.current.get(path)) || current?.url || '';
   const onMediaError = () => {
-    if (!current) return;
+    // A load that fails during the close animation says nothing about the next opening. Recording
+    // it here, after the close cleared `failed`, kept a recovered file marked removed on reopen.
+    if (!current || !open) return;
     // The held URL may simply be older than the one we have now: try that before giving up.
     if (held.current.get(path) !== current.url) {
       held.current.set(path, current.url);

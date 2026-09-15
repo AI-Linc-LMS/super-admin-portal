@@ -1177,6 +1177,12 @@ const TicketDetail: React.FC<{ ticket: Ticket }> = ({ ticket }) => {
     [attachments.join('\n'), adminAttachments.join('\n')]
   );
   const [viewing, setViewing] = useState<number | null>(null);
+  // Owned here, not in the viewer: when a refetch leaves no attachments the whole section, viewer
+  // included, unmounts, so only this component can drop an index that would reopen the viewer by
+  // itself once they come back.
+  useEffect(() => {
+    if (viewing !== null && viewing >= attachmentItems.length) setViewing(null);
+  }, [viewing, attachmentItems.length]);
 
   return (
     <div className="space-y-5 rounded-xl border border-themed bg-ink-1/40 p-5">
