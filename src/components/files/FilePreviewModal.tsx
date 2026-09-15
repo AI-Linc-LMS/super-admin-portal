@@ -1,5 +1,5 @@
 import React from 'react';
-import { Download, ExternalLink, Trash2 } from 'lucide-react';
+import { Download, ExternalLink, FileText, Trash2 } from 'lucide-react';
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
 import type { FileObject } from '../../types/clientFiles';
@@ -37,11 +37,28 @@ const FilePreviewModal: React.FC<Props> = ({ file, onClose, onDelete }) => {
               className="mx-auto max-h-[60vh] w-auto rounded-lg object-contain"
             />
           ) : isPdf && file.url ? (
-            <iframe
-              src={file.url}
-              title={displayName}
-              className="h-[70vh] w-full rounded-lg bg-white"
-            />
+            // Not embedded. This browser lists LEARNER uploads too (ticket reports, job applications,
+            // forum files), and Chrome's PDF viewer follows a link inside the document by navigating
+            // the TOP window: one invisible page-sized link replaces this super-admin tab with a fake
+            // sign-in page on a single click. Chrome will not render PDFs in a sandboxed frame, so no
+            // frame setting makes it safe. Same rule as the ticket attachment viewer.
+            <div className="flex flex-col items-center gap-3 py-10 text-center">
+              <FileText className="h-8 w-8 text-text-mute" strokeWidth={1.5} />
+              <p className="max-w-sm text-[13px] text-text-dim">
+                PDFs open in their own tab. An uploaded document can contain links, and they must not
+                be able to take over the portal.
+              </p>
+              <a
+                href={file.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-brand-cyan/40 bg-brand-cyan/10
+                  px-3 py-1.5 text-[13px] font-medium text-brand-cyan transition-colors hover:bg-brand-cyan/15"
+              >
+                <ExternalLink className="h-3.5 w-3.5" strokeWidth={1.75} />
+                Open PDF
+              </a>
+            </div>
           ) : isVideo && file.url ? (
             <video
               src={file.url}
@@ -51,9 +68,13 @@ const FilePreviewModal: React.FC<Props> = ({ file, onClose, onDelete }) => {
           ) : isAudio && file.url ? (
             <audio src={file.url} controls className="w-full" />
           ) : isText && file.url ? (
+            // Fully sandboxed: `text/*` includes text/html, and an uploaded page must not be able to
+            // run script or navigate this tab. Plain text still renders in a sandboxed frame.
             <iframe
               src={file.url}
               title={displayName}
+              sandbox=""
+              referrerPolicy="no-referrer"
               className="h-[60vh] w-full rounded-lg bg-ink-0"
             />
           ) : (
@@ -65,7 +86,7 @@ const FilePreviewModal: React.FC<Props> = ({ file, onClose, onDelete }) => {
                 <a
                   href={file.url}
                   target="_blank"
-                  rel="noreferrer"
+                  rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 rounded-lg border border-themed-2
                     bg-transparent px-4 py-2 font-mono text-[11px] font-semibold uppercase
                     tracking-widest2 text-text-dim hover:border-brand-cyan/40 hover:text-text"
@@ -100,7 +121,7 @@ const FilePreviewModal: React.FC<Props> = ({ file, onClose, onDelete }) => {
             <a
               href={file.url}
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
               className="inline-flex items-center gap-2 rounded-lg border border-themed-2
                 bg-transparent px-4 py-2 text-[13px] font-medium text-text-dim
                 transition-colors hover:border-brand-cyan/40 hover:text-text"
