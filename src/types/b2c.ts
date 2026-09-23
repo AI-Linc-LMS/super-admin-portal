@@ -17,7 +17,7 @@ export interface B2CFeaturePricing {
   feature_key: string;
   is_enabled: boolean;
   free_allowance: number;
-  /** Only for features with no product row of their own (interviews, ATS checks). */
+  /** Only for features with no product row of their own (mock interviews, roadmap builds). */
   unit_price: string | null;
   currency: string;
   /** Roadmaps: how much of a locked path opens as a taste. */
@@ -61,5 +61,4 @@ export const B2C_FEATURE_LABELS: Record<string, string> = {
   assessment: 'Assessments',
   mock_interview: 'Mock interviews',
   roadmap: 'Roadmaps',
-  resume_ats: 'Resume ATS check',
 };
