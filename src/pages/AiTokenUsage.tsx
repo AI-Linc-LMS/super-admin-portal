@@ -11,7 +11,14 @@ import {
 } from 'lucide-react';
 import StatsCard from '../components/charts/StatsCard';
 import AnalyticsChart from '../components/charts/AnalyticsChart';
-import { useAiTokenUsage } from '../hooks/useAiTokenUsage';
+import {
+  useAiTokenUsage,
+  useAiUsageIntegrity,
+  useAiUsageModule,
+} from '../hooks/useAiTokenUsage';
+import ModuleBreakdown from '../components/ai-usage/ModuleBreakdown';
+import LedgerCoverage from '../components/ai-usage/LedgerCoverage';
+import ModuleDrilldown from '../components/ai-usage/ModuleDrilldown';
 import { formatNumber, cn } from '../utils/helpers';
 
 const MONTH_OPTIONS = [
@@ -53,6 +60,10 @@ const AiTokenUsage: React.FC = () => {
   const [clientId, setClientId] = React.useState<number | ''>('');
   const [model, setModel] = React.useState('');
   const [feature, setFeature] = React.useState('');
+  const [moduleKey, setModuleKey] = React.useState('');
+  /** Which module's drill-down panel is open. Independent of the filter above: you can read
+   *  one module in depth without narrowing every other chart on the page. */
+  const [openModule, setOpenModule] = React.useState<string | null>(null);
 
   const params = React.useMemo(
     () => ({
@@ -60,11 +71,13 @@ const AiTokenUsage: React.FC = () => {
       ...(clientId !== '' ? { client_id: clientId } : {}),
       ...(model ? { model } : {}),
       ...(feature ? { feature } : {}),
+      ...(moduleKey ? { module: moduleKey } : {}),
     }),
-    [months, clientId, model, feature]
+    [months, clientId, model, feature, moduleKey]
   );
 
   const { data, isLoading, error, isFetching } = useAiTokenUsage(params);
+  const integrity = useAiUsageIntegrity();
 
   const monthly = data?.monthly ?? [];
   const totals = data?.totals;
@@ -132,12 +145,34 @@ const AiTokenUsage: React.FC = () => {
           ))}
         </select>
 
-        <select className={selectClass} value={feature} onChange={(e) => setFeature(e.target.value)}>
-          <option value="">All surfaces</option>
-          {(data?.available_features ?? []).map((f) => (
-            <option key={f} value={f}>
-              {prettyFeature(f)}
-            </option>
+        {/* Module first, surfaces nested inside it. The flat list this replaces was 25 rows
+            of raw `feature` strings — the shape of the ledger, not of the product. A value of
+            `m:<key>` selects a whole module; a bare value selects one surface. */}
+        <select
+          className={selectClass}
+          value={moduleKey ? `m:${moduleKey}` : feature}
+          onChange={(e) => {
+            const v = e.target.value;
+            if (v.startsWith('m:')) {
+              setModuleKey(v.slice(2));
+              setFeature('');
+            } else {
+              setModuleKey('');
+              setFeature(v);
+            }
+          }}
+        >
+          <option value="">All modules &amp; surfaces</option>
+          {(data?.available_modules ?? []).map((m) => (
+            <optgroup key={m.module} label={m.module_label}>
+              <option value={`m:${m.module}`}>All of {m.module_label}</option>
+              {m.surfaces.map((sf) => (
+                <option key={sf.feature} value={sf.feature}>
+                  {'\u00a0\u00a0'}
+                  {sf.surface_label}
+                </option>
+              ))}
+            </optgroup>
           ))}
         </select>
 
@@ -191,6 +226,9 @@ const AiTokenUsage: React.FC = () => {
             />
           </div>
 
+          {/* The headline figure's error bar, next to the headline figure. */}
+          <LedgerCoverage query={integrity} />
+
           {/* Monthly charts */}
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <AnalyticsChart
@@ -237,21 +275,24 @@ const AiTokenUsage: React.FC = () => {
                 events: r.events,
               }))}
             />
-            <BreakdownTable
-              title="By surface / feature"
-              icon={<Layers className="h-3.5 w-3.5" />}
-              rows={(data?.by_feature ?? []).map((r) => ({
-                key: r.feature,
-                label: prettyFeature(r.feature),
-                tokens: r.total_tokens,
-                cost: r.cost_usd,
-                events: r.events,
-              }))}
-            />
             <MonthlyTable
               rows={[...monthly].reverse()}
             />
           </div>
+
+          {/* Where the money actually goes, by product module. */}
+          <ModuleBreakdown
+            modules={data?.by_module ?? []}
+            openModule={openModule}
+            onToggle={(key) => setOpenModule((cur) => (cur === key ? null : key))}
+            renderDetail={(key) => (
+              <ModuleDrilldown
+                moduleKey={key}
+                months={months}
+                clientId={clientId === '' ? undefined : clientId}
+              />
+            )}
+          />
         </>
       )}
     </div>

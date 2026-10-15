@@ -20,7 +20,9 @@ import {
   AdaptiveSubModule,
   TenantMapping,
 } from '../types/adaptiveCourse';
-import { AiTokenUsageParams, AiTokenUsageSummary } from '../types/aiTokenUsage';
+import { AiTokenUsageParams, AiTokenUsageSummary,
+  AiUsageIntegrity,
+  AiUsageModuleDetail } from '../types/aiTokenUsage';
 import type {
   ClientTutorConfigResponse,
   ClientTutorConfigUpdate,
@@ -508,6 +510,18 @@ class ApiService {
 
   async getAiTokenUsage(params?: AiTokenUsageParams): Promise<AiTokenUsageSummary> {
     return await this.get<AiTokenUsageSummary>(API_ENDPOINTS.AI_TOKEN_USAGE, params);
+  }
+
+  /** The gaps in the spend ledger — what the headline figure cannot account for. */
+  async getAiUsageIntegrity(): Promise<AiUsageIntegrity> {
+    return await this.get<AiUsageIntegrity>(API_ENDPOINTS.AI_USAGE_INTEGRITY);
+  }
+
+  async getAiUsageModule(
+    moduleKey: string,
+    params?: { months?: number; client_id?: number }
+  ): Promise<AiUsageModuleDetail> {
+    return await this.get<AiUsageModuleDetail>(API_ENDPOINTS.AI_USAGE_MODULE(moduleKey), params);
   }
 
   // ---------- AI Tutor per-tenant config ----------

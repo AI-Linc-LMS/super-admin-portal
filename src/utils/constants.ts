@@ -23,6 +23,8 @@ export const API_ENDPOINTS = {
 
   // AI token/cost usage (cross-tenant)
   AI_TOKEN_USAGE: '/superadmin/api/ai-usage/summary/',
+  AI_USAGE_INTEGRITY: '/superadmin/api/ai-usage/integrity/',
+  AI_USAGE_MODULE: (key: string) => `/superadmin/api/ai-usage/modules/${key}/`,
 
   // Payments (cross-tenant)
   PAYMENTS_SUMMARY: '/superadmin/api/payments/summary/',
