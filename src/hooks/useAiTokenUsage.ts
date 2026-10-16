@@ -31,7 +31,7 @@ export const useAiUsageIntegrity = () => {
 /** Drill-down for one module. Disabled until a module is actually selected. */
 export const useAiUsageModule = (
   moduleKey: string | null,
-  params?: { months?: number; client_id?: number }
+  params?: { months?: number; days?: number; weeks?: number; client_id?: number }
 ) => {
   return useQuery({
     queryKey: ['ai-usage-module', moduleKey, params],

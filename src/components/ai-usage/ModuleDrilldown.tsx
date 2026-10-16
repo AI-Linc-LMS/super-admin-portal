@@ -36,13 +36,15 @@ const Panel: React.FC<{ title: string; children: React.ReactNode }> = ({ title, 
 
 interface Props {
   moduleKey: string;
-  months: number;
+  /** The page's window, so the drill-down covers the same period as the row above it. */
+  windowUnit: 'days' | 'weeks' | 'months';
+  windowValue: number;
   clientId?: number;
 }
 
-const ModuleDrilldown: React.FC<Props> = ({ moduleKey, months, clientId }) => {
+const ModuleDrilldown: React.FC<Props> = ({ moduleKey, windowUnit, windowValue, clientId }) => {
   const { data, isLoading, error } = useAiUsageModule(moduleKey, {
-    months,
+    [windowUnit]: windowValue,
     ...(clientId !== undefined ? { client_id: clientId } : {}),
   });
 

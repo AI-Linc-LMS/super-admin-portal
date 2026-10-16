@@ -20,6 +20,13 @@ export interface AiUsageCurrentMonth extends AiUsageRow {
 
 export interface AiUsageMonthlyPoint extends AiUsageRow {
   year_month: string;
+  /** Granularity-neutral key: `YYYY-MM` for months, an ISO date for days and weeks. */
+  bucket?: string;
+}
+
+/** One point of the time series, whatever the granularity. */
+export interface AiUsageSeriesPoint extends AiUsageRow {
+  bucket: string;
 }
 
 export interface AiUsageByClient extends AiUsageRow {
@@ -131,6 +138,10 @@ export interface AiUsageClientOption {
 
 export interface AiTokenUsageParams {
   months?: number;
+  /** Day window. Wins over `weeks` and `months` when sent. */
+  days?: number;
+  /** Week window (ISO weeks, Monday-based). Wins over `months`. */
+  weeks?: number;
   client_id?: number;
   model?: string;
   feature?: string;
@@ -144,10 +155,14 @@ export interface AiTokenUsageSummary {
     model: string | null;
     feature: string | null;
     module: string | null;
+    days?: number | null;
+    weeks?: number | null;
   };
   totals: AiUsageTotals;
   current_month: AiUsageCurrentMonth;
   monthly: AiUsageMonthlyPoint[];
+  series: AiUsageSeriesPoint[];
+  granularity: 'day' | 'week' | 'month';
   by_client: AiUsageByClient[];
   by_model: AiUsageByModel[];
   by_feature: AiUsageByFeature[];
