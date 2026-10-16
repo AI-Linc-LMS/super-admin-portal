@@ -21,12 +21,43 @@ import LedgerCoverage from '../components/ai-usage/LedgerCoverage';
 import ModuleDrilldown from '../components/ai-usage/ModuleDrilldown';
 import { formatNumber, cn } from '../utils/helpers';
 
-const MONTH_OPTIONS = [
-  { label: 'Last 3 months', value: 3 },
-  { label: 'Last 6 months', value: 6 },
-  { label: 'Last 12 months', value: 12 },
-  { label: 'Last 24 months', value: 24 },
+/**
+ * The window options, each carrying the query param it sends.
+ *
+ * A month is the wrong unit for watching a bill. By the time a monthly bar moves you have
+ * already spent the money, and "is today unusual?" has no answer at all. Days and weeks are
+ * what you reach for when a number looks wrong; months are for the trend.
+ */
+type WindowUnit = 'days' | 'weeks' | 'months';
+interface WindowOption {
+  label: string;
+  unit: WindowUnit;
+  value: number;
+}
+
+const WINDOW_OPTIONS: WindowOption[] = [
+  { label: 'Today', unit: 'days', value: 1 },
+  { label: 'Last 3 days', unit: 'days', value: 3 },
+  { label: 'Last 7 days', unit: 'days', value: 7 },
+  { label: 'Last 15 days', unit: 'days', value: 15 },
+  { label: 'Last 30 days', unit: 'days', value: 30 },
+  { label: 'Last 4 weeks', unit: 'weeks', value: 4 },
+  { label: 'Last 8 weeks', unit: 'weeks', value: 8 },
+  { label: 'Last 12 weeks', unit: 'weeks', value: 12 },
+  { label: 'Last 3 months', unit: 'months', value: 3 },
+  { label: 'Last 6 months', unit: 'months', value: 6 },
+  { label: 'Last 12 months', unit: 'months', value: 12 },
+  { label: 'Last 24 months', unit: 'months', value: 24 },
 ];
+
+const WINDOW_GROUPS: { label: string; unit: WindowUnit }[] = [
+  { label: 'By day', unit: 'days' },
+  { label: 'By week', unit: 'weeks' },
+  { label: 'By month', unit: 'months' },
+];
+
+/** `days=7` etc. — the key the option carries, so adding a unit needs no change here. */
+const windowKey = (o: WindowOption): string => `${o.unit}:${o.value}`;
 
 /** USD formatter — costs are in dollars; the shared formatCurrency helper is INR. */
 const usd = (n: number): string => {
@@ -46,6 +77,23 @@ const prettyMonth = (ym: string): string => {
   return d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
 };
 
+/**
+ * Label one bucket. The backend sends `YYYY-MM` for months and an ISO date for days and weeks,
+ * so the granularity decides how to read it rather than guessing from the string.
+ */
+const prettyBucket = (bucket: string, granularity: string): string => {
+  if (granularity === 'month') return prettyMonth(bucket);
+  const d = new Date(`${bucket}T00:00:00`);
+  if (Number.isNaN(d.getTime())) return bucket;
+  const label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  // A week bucket is its Monday; say so, or "Oct 12" reads as a single day.
+  return granularity === 'week' ? `w/c ${label}` : label;
+};
+
+/** "day" -> "per day", for the chart titles. */
+const perUnit = (granularity: string): string =>
+  granularity === 'day' ? 'per day' : granularity === 'week' ? 'per week' : 'per month';
+
 const prettyFeature = (f: string): string =>
   (f || 'other')
     .replace(/_/g, ' ')
@@ -56,7 +104,9 @@ const selectClass =
   'focus:border-brand-cyan/50 focus:outline-none';
 
 const AiTokenUsage: React.FC = () => {
-  const [months, setMonths] = React.useState(12);
+  const [window_, setWindow] = React.useState<WindowOption>(
+    WINDOW_OPTIONS.find((o) => o.unit === 'months' && o.value === 12) as WindowOption
+  );
   const [clientId, setClientId] = React.useState<number | ''>('');
   const [model, setModel] = React.useState('');
   const [feature, setFeature] = React.useState('');
@@ -67,19 +117,25 @@ const AiTokenUsage: React.FC = () => {
 
   const params = React.useMemo(
     () => ({
-      months,
+      [window_.unit]: window_.value,
       ...(clientId !== '' ? { client_id: clientId } : {}),
       ...(model ? { model } : {}),
       ...(feature ? { feature } : {}),
       ...(moduleKey ? { module: moduleKey } : {}),
     }),
-    [months, clientId, model, feature, moduleKey]
+    [window_, clientId, model, feature, moduleKey]
   );
 
   const { data, isLoading, error, isFetching } = useAiTokenUsage(params);
   const integrity = useAiUsageIntegrity();
 
-  const monthly = data?.monthly ?? [];
+  // `series` is the granularity-neutral list; `monthly` is the legacy key and carries the same
+  // data, so an older backend still renders rather than showing an empty chart.
+  const granularity = data?.granularity ?? 'month';
+  const series = (data?.series ?? data?.monthly ?? []).map((b) => ({
+    ...b,
+    bucket: (b as { bucket?: string }).bucket ?? (b as { year_month: string }).year_month,
+  }));
   const totals = data?.totals;
   const current = data?.current_month;
 
@@ -113,13 +169,20 @@ const AiTokenUsage: React.FC = () => {
       <div className="flex flex-wrap items-center gap-3">
         <select
           className={selectClass}
-          value={months}
-          onChange={(e) => setMonths(Number(e.target.value))}
+          value={windowKey(window_)}
+          onChange={(e) => {
+            const next = WINDOW_OPTIONS.find((o) => windowKey(o) === e.target.value);
+            if (next) setWindow(next);
+          }}
         >
-          {MONTH_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
+          {WINDOW_GROUPS.map((g) => (
+            <optgroup key={g.unit} label={g.label}>
+              {WINDOW_OPTIONS.filter((o) => o.unit === g.unit).map((o) => (
+                <option key={windowKey(o)} value={windowKey(o)}>
+                  {o.label}
+                </option>
+              ))}
+            </optgroup>
           ))}
         </select>
 
@@ -201,19 +264,25 @@ const AiTokenUsage: React.FC = () => {
           {/* KPI cards */}
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
             <StatsCard
-              title="Total cost (window)"
+              title={`Total cost · ${window_.label.toLowerCase()}`}
               value={usd(totals?.cost_usd ?? 0)}
               icon={CircleDollarSign}
               color="accent"
             />
             <StatsCard
-              title="Total tokens (window)"
+              title={`Total tokens · ${window_.label.toLowerCase()}`}
               value={totals?.total_tokens ?? 0}
               icon={Coins}
               color="secondary"
             />
             <StatsCard
-              title={`This month · ${current ? prettyMonth(current.year_month) : ''}`}
+              title={
+                granularity === 'month'
+                  ? `This month · ${current ? prettyMonth(current.year_month) : ''}`
+                  : granularity === 'week'
+                    ? 'This week'
+                    : 'Today'
+              }
               value={usd(current?.cost_usd ?? 0)}
               icon={CalendarClock}
               color="primary"
@@ -232,19 +301,19 @@ const AiTokenUsage: React.FC = () => {
           {/* Monthly charts */}
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <AnalyticsChart
-              title="Tokens per month"
+              title={`Tokens ${perUnit(granularity)}`}
               kicker="Consumption"
               type="bar"
-              data={monthly.map((m) => ({ ...m, label: prettyMonth(m.year_month) }))}
+              data={series.map((m) => ({ ...m, label: prettyBucket(m.bucket, granularity) }))}
               dataKey="total_tokens"
               xAxisKey="label"
               color="#00e0ff"
             />
             <AnalyticsChart
-              title="Cost per month (USD)"
+              title={`Cost ${perUnit(granularity)} (USD)`}
               kicker="Spend"
               type="area"
-              data={monthly.map((m) => ({ ...m, label: prettyMonth(m.year_month) }))}
+              data={series.map((m) => ({ ...m, label: prettyBucket(m.bucket, granularity) }))}
               dataKey="cost_usd"
               xAxisKey="label"
               color="#ffc66d"
@@ -276,7 +345,8 @@ const AiTokenUsage: React.FC = () => {
               }))}
             />
             <MonthlyTable
-              rows={[...monthly].reverse()}
+              rows={[...series].reverse()}
+              granularity={granularity}
             />
           </div>
 
@@ -288,7 +358,8 @@ const AiTokenUsage: React.FC = () => {
             renderDetail={(key) => (
               <ModuleDrilldown
                 moduleKey={key}
-                months={months}
+                windowUnit={window_.unit}
+                windowValue={window_.value}
                 clientId={clientId === '' ? undefined : clientId}
               />
             )}
@@ -370,15 +441,16 @@ const BreakdownTable: React.FC<{
 );
 
 const MonthlyTable: React.FC<{
-  rows: { year_month: string; total_tokens: number; cost_usd: number; events: number }[];
-}> = ({ rows }) => (
+  rows: { bucket: string; total_tokens: number; cost_usd: number; events: number }[];
+  granularity: string;
+}> = ({ rows, granularity }) => (
   <div className="overflow-hidden rounded-xl border border-themed surface-card">
     <div className="flex items-center gap-2 border-b border-themed px-5 py-3.5">
       <span className="text-brand-cyan">
         <CalendarClock className="h-3.5 w-3.5" />
       </span>
       <h3 className="font-mono text-[11px] font-semibold uppercase tracking-widest2 text-text-dim">
-        Monthly ledger
+        {granularity === 'day' ? 'Daily' : granularity === 'week' ? 'Weekly' : 'Monthly'} ledger
       </h3>
     </div>
     <div className="max-h-[360px] overflow-y-auto">
@@ -386,7 +458,7 @@ const MonthlyTable: React.FC<{
         <thead className="sticky top-0 bg-line/[0.03] backdrop-blur">
           <tr className="text-left">
             <th className="px-5 py-2.5 text-[10px] font-semibold uppercase tracking-widest2 text-text-mute">
-              Month
+              {granularity === 'day' ? 'Day' : granularity === 'week' ? 'Week' : 'Month'}
             </th>
             <th className="px-5 py-2.5 text-right text-[10px] font-semibold uppercase tracking-widest2 text-text-mute">
               Tokens
@@ -402,10 +474,12 @@ const MonthlyTable: React.FC<{
         <tbody>
           {rows.map((r) => (
             <tr
-              key={r.year_month}
+              key={r.bucket}
               className="border-t border-themed/60 transition-colors hover:bg-line/[0.03]"
             >
-              <td className={cn('px-5 py-3 text-sm text-text')}>{prettyMonth(r.year_month)}</td>
+              <td className={cn('px-5 py-3 text-sm text-text')}>
+                {prettyBucket(r.bucket, granularity)}
+              </td>
               <td className="px-5 py-3 text-right font-mono text-sm text-text-dim">
                 {formatNumber(r.total_tokens)}
               </td>

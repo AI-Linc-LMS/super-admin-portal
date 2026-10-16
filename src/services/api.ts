@@ -519,7 +519,7 @@ class ApiService {
 
   async getAiUsageModule(
     moduleKey: string,
-    params?: { months?: number; client_id?: number }
+    params?: { months?: number; days?: number; weeks?: number; client_id?: number }
   ): Promise<AiUsageModuleDetail> {
     return await this.get<AiUsageModuleDetail>(API_ENDPOINTS.AI_USAGE_MODULE(moduleKey), params);
   }
