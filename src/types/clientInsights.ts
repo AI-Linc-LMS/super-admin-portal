@@ -75,3 +75,41 @@ export interface ClientInsights {
   people: InsightPerson[];
   people_truncated: boolean;
 }
+
+
+/** One tenant's row in the fleet overview. */
+export interface FleetClientRow {
+  id: number;
+  name: string;
+  slug: string;
+  is_active: boolean | null;
+  active_users: number;
+  active_days: number;
+  peak_day_users: number;
+  today_users: number;
+  minutes: number;
+  learning_minutes: number;
+  cost_usd: number;
+  /** The share of cost_usd a named person accounts for. */
+  attributed_usd: number;
+  tokens: number;
+  events: number;
+  /** Daily active learners, zero-filled across window.dates. */
+  spark: number[];
+}
+
+export interface FleetInsights {
+  window: ClientInsightsWindow & { dates: string[] };
+  sort: string;
+  clients: FleetClientRow[];
+  totals: {
+    clients_with_activity: number;
+    clients_with_spend: number;
+    active_users: number;
+    cost_usd: number;
+    tokens: number;
+    /** Spend belonging to NO client - platform work. Not spread across tenants. */
+    unowned_cost_usd: number;
+    unowned_events: number;
+  };
+}

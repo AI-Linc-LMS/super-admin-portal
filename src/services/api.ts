@@ -20,7 +20,7 @@ import {
   AdaptiveSubModule,
   TenantMapping,
 } from '../types/adaptiveCourse';
-import type { ClientInsights } from '../types/clientInsights';
+import type { ClientInsights, FleetInsights } from '../types/clientInsights';
 import { AiTokenUsageParams, AiTokenUsageSummary,
   AiUsageIntegrity,
   AiUsageModuleDetail } from '../types/aiTokenUsage';
@@ -518,6 +518,12 @@ class ApiService {
    * `days` is clamped server-side to 1..180, so an out-of-range value returns the biggest
    * honest answer rather than an error.
    */
+  /** Every tenant's activity and spend in one call - four aggregates server-side, not four
+   *  per tenant, so this does not get slower as clients are signed. */
+  async getFleetInsights(days = 14, sort = 'active'): Promise<FleetInsights> {
+    return await this.get<FleetInsights>('/superadmin/api/insights/clients/', { days, sort });
+  }
+
   async getClientInsights(clientId: number, days = 30): Promise<ClientInsights> {
     return await this.get<ClientInsights>(
       `/superadmin/api/clients/${clientId}/insights/`,
