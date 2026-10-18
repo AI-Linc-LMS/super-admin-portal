@@ -69,6 +69,7 @@ import B2CModePanel from '../components/ui/B2CModePanel';
 import AiTutorSettingsPanel from '../components/ui/AiTutorSettingsPanel';
 import StatusToggle from '../components/ui/StatusToggle';
 import ClientFilesBrowser from '../components/files/ClientFilesBrowser';
+import { ClientInsightsPanel } from '../components/clients/ClientInsightsPanel';
 
 /**
  * Why a derived site address is shown differently from a configured one.
@@ -756,6 +757,11 @@ const ClientDetails: React.FC = () => {
           icon={ShieldCheck}
         />
       </motion.div>
+
+      {/* Engagement + spend: who is turning up and what they cost. Placed above the
+        * deployment/config cards because it answers the first question anyone opening a
+        * client page actually has. */}
+      <ClientInsightsPanel clientId={clientId} />
 
       {/* Netlify Deployment Section */}
       <motion.div

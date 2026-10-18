@@ -20,6 +20,7 @@ import {
   AdaptiveSubModule,
   TenantMapping,
 } from '../types/adaptiveCourse';
+import type { ClientInsights } from '../types/clientInsights';
 import { AiTokenUsageParams, AiTokenUsageSummary,
   AiUsageIntegrity,
   AiUsageModuleDetail } from '../types/aiTokenUsage';
@@ -510,6 +511,18 @@ class ApiService {
 
   async getAiTokenUsage(params?: AiTokenUsageParams): Promise<AiTokenUsageSummary> {
     return await this.get<AiTokenUsageSummary>(API_ENDPOINTS.AI_TOKEN_USAGE, params);
+  }
+
+  /**
+   * Per-client active-learner and AI-spend trends, plus the people behind both.
+   * `days` is clamped server-side to 1..180, so an out-of-range value returns the biggest
+   * honest answer rather than an error.
+   */
+  async getClientInsights(clientId: number, days = 30): Promise<ClientInsights> {
+    return await this.get<ClientInsights>(
+      `/superadmin/api/clients/${clientId}/insights/`,
+      { days },
+    );
   }
 
   /** The gaps in the spend ledger — what the headline figure cannot account for. */
