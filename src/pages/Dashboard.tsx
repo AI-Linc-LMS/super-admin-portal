@@ -17,6 +17,7 @@ import {
 import StatsCard from '../components/charts/StatsCard';
 import { useDashboardStats, useCourses, useClients } from '../hooks/useApi';
 import { cn } from '../utils/helpers';
+import { FleetInsights } from '../components/dashboard/FleetInsights';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -329,6 +330,9 @@ const Dashboard: React.FC = () => {
 
         {clients.length === 0 && <EmptyState icon={Building2} label={t('clients.noClientsAvailable')} />}
       </motion.section>
+
+      {/* Which client to look at, before looking at one. */}
+      <FleetInsights />
     </div>
   );
 };
