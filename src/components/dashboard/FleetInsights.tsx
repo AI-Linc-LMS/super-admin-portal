@@ -16,11 +16,13 @@ import type { FleetInsights as FleetData, FleetClientRow } from '../../types/cli
  */
 
 const WINDOWS = [7, 14, 30, 90] as const;
-type SortKey = 'active' | 'cost' | 'tokens' | 'name';
+type SortKey = 'active' | 'cost' | 'tokens' | 'students' | 'cost_per_student' | 'name';
 
 const SORTS: { key: SortKey; label: string }[] = [
+  { key: 'students', label: 'Most students' },
   { key: 'active', label: 'Most active' },
   { key: 'cost', label: 'Most spend' },
+  { key: 'cost_per_student', label: 'Most spend per student' },
   { key: 'tokens', label: 'Most tokens' },
   { key: 'name', label: 'Name' },
 ];
@@ -28,6 +30,17 @@ const SORTS: { key: SortKey; label: string }[] = [
 function money(n: number): string {
   if (!n) return '$0.00';
   return n < 0.01 ? `$${n.toFixed(4)}` : `$${n.toFixed(2)}`;
+}
+
+/** Per-head cost runs to fractions of a cent, so it gets its own precision. */
+function perHead(n: number | null): string {
+  if (n === null) return '—';
+  if (n === 0) return '$0';
+  return n < 0.01 ? `$${n.toFixed(4)}` : `$${n.toFixed(2)}`;
+}
+
+function rate(n: number | null): string {
+  return n === null ? '—' : `${(n * 100).toFixed(n < 0.1 ? 1 : 0)}%`;
 }
 
 function compact(n: number): string {
@@ -86,7 +99,8 @@ export function FleetInsights() {
           <span className="kicker mb-2">Across every client</span>
           <h3 className="serif-display text-[20px] text-text">Who is active, and who is costing</h3>
           <p className="text-xs text-muted mt-1">
-            A student counts as active on any day they open the platform. Click a client for the detail.
+            Students on the platform, how many turned up, and what they cost. A student counts
+            as active on any day they open the platform. Click a client for the detail.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -127,13 +141,15 @@ export function FleetInsights() {
       {data && !loading && !error && (
         <>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
-            <Stat icon={<Users size={14} />} label="Active students"
-                  value={String(data.totals.active_users)}
-                  sub={`across ${data.totals.clients_with_activity} client${data.totals.clients_with_activity === 1 ? '' : 's'}`} />
+            <Stat icon={<Users size={14} />} label="Students"
+                  value={data.totals.students.toLocaleString()}
+                  sub={`${data.totals.active_users} active in ${data.window.days}d`} />
             <Stat icon={<Coins size={14} />} label="AI spend"
                   value={money(data.totals.cost_usd)}
                   sub={`${data.totals.clients_with_spend} client${data.totals.clients_with_spend === 1 ? '' : 's'} spending`} />
-            <Stat label="Tokens" value={compact(data.totals.tokens)} sub={`last ${data.window.days} days`} />
+            <Stat label="Per student"
+                  value={perHead(data.totals.students ? data.totals.cost_usd / data.totals.students : null)}
+                  sub={`${compact(data.totals.tokens)} tokens`} />
             <Stat label="Platform-level" value={money(data.totals.unowned_cost_usd)}
                   sub="no client attached" />
           </div>
@@ -161,10 +177,11 @@ export function FleetInsights() {
                   <tr className="text-left text-[11px] uppercase tracking-wide text-muted">
                     <th className="py-2 pr-3 font-semibold">Client</th>
                     <th className="py-2 px-3 font-semibold">Trend</th>
+                    <th className="py-2 px-3 font-semibold text-right">Students</th>
                     <th className="py-2 px-3 font-semibold text-right">Active</th>
-                    <th className="py-2 px-3 font-semibold text-right">Peak/day</th>
                     <th className="py-2 px-3 font-semibold text-right">Tokens</th>
                     <th className="py-2 px-3 font-semibold text-right">Spend</th>
+                    <th className="py-2 px-3 font-semibold text-right">Per student</th>
                     <th className="py-2 pl-3" />
                   </tr>
                 </thead>
@@ -190,16 +207,25 @@ export function FleetInsights() {
                       </td>
                       <td className="py-2.5 px-3"><Spark values={r.spark} /></td>
                       <td className="py-2.5 px-3 text-right tabular-nums font-semibold text-text">
-                        {r.active_users || '—'}
+                        {r.students ? r.students.toLocaleString() : '—'}
                       </td>
-                      <td className="py-2.5 px-3 text-right tabular-nums text-muted">
-                        {r.peak_day_users || '—'}
+                      <td className="py-2.5 px-3 text-right tabular-nums text-text">
+                        {r.active_users || '—'}
+                        {/* The share of the roll that showed up. A big tenant at 0% is the
+                            finding this column exists for, and it is invisible in the raw
+                            counts beside it. */}
+                        {r.active_rate !== null && r.students > 0 && (
+                          <span className="block text-[11px] text-muted">{rate(r.active_rate)}</span>
+                        )}
                       </td>
                       <td className="py-2.5 px-3 text-right tabular-nums text-muted">
                         {r.tokens ? compact(r.tokens) : '—'}
                       </td>
                       <td className="py-2.5 px-3 text-right tabular-nums font-semibold text-text">
                         {r.cost_usd ? money(r.cost_usd) : '—'}
+                      </td>
+                      <td className="py-2.5 px-3 text-right tabular-nums text-muted">
+                        {perHead(r.cost_per_student)}
                       </td>
                       <td className="py-2.5 pl-3 text-muted"><ChevronRight size={15} /></td>
                     </tr>
