@@ -27,6 +27,14 @@ const MARKERS = [
   { feature: "Fleet insights API call", needle: "/superadmin/api/insights/clients/" },
   { feature: "Per-client insights panel (client page)", needle: "Who is here, and what it costs" },
   { feature: "Per-client insights section label", needle: "Engagement & spend" },
+  // These four came later. Without a marker from the NEWEST release this script passes against a
+  // months-old bundle - every marker it knows about was already in it - which is precisely the
+  // false reassurance it exists to prevent. Add one with each release, do not only add one with
+  // each feature.
+  { feature: "Fleet table: turnout column", needle: "Turned up" },
+  { feature: "Fleet table: coursework time", needle: "on site" },
+  { feature: "Fleet table: quiet-tenant segment", needle: "Has students, nobody turned up" },
+  { feature: "Fleet table: expandable row detail", needle: "Spend by a named person" },
 ];
 
 async function main() {
