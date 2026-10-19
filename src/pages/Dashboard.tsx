@@ -182,6 +182,11 @@ const Dashboard: React.FC = () => {
         />
       </motion.section>
 
+      {/* Which client to look at, before looking at one. This is the question the dashboard
+          exists to answer, so it sits directly under the totals rather than below two
+          recency lists - the per-client module was invisible at the bottom of the page. */}
+      <FleetInsights />
+
       {/* Recent Courses */}
       <motion.section
         initial={{ opacity: 0, y: 12 }}
@@ -331,8 +336,6 @@ const Dashboard: React.FC = () => {
         {clients.length === 0 && <EmptyState icon={Building2} label={t('clients.noClientsAvailable')} />}
       </motion.section>
 
-      {/* Which client to look at, before looking at one. */}
-      <FleetInsights />
     </div>
   );
 };
