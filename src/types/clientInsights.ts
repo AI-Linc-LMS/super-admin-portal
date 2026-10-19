@@ -83,6 +83,15 @@ export interface FleetClientRow {
   name: string;
   slug: string;
   is_active: boolean | null;
+  /**
+   * Everyone ON the platform, active or not. Uses the SAME predicate the client page's own
+   * `total_students` uses (`role='student', is_active=True`) so the two screens cannot disagree.
+   */
+  students: number;
+  /** Spend divided by HEADCOUNT, not by actives. Null when the tenant has no students. */
+  cost_per_student: number | null;
+  /** active_users / students, 0..1. Null when the tenant has no students. */
+  active_rate: number | null;
   active_users: number;
   active_days: number;
   peak_day_users: number;
@@ -105,6 +114,7 @@ export interface FleetInsights {
   totals: {
     clients_with_activity: number;
     clients_with_spend: number;
+    students: number;
     active_users: number;
     cost_usd: number;
     tokens: number;
