@@ -24,6 +24,7 @@ export const API_ENDPOINTS = {
   // AI token/cost usage (cross-tenant)
   AI_TOKEN_USAGE: '/superadmin/api/ai-usage/summary/',
   AI_USAGE_INTEGRITY: '/superadmin/api/ai-usage/integrity/',
+  AI_COST_DAILY: '/superadmin/api/ai-usage/daily-matrix/',
   AI_USAGE_MODULE: (key: string) => `/superadmin/api/ai-usage/modules/${key}/`,
 
   // Payments (cross-tenant)
@@ -85,6 +86,7 @@ export const ROUTES = {
   ADAPTIVE_COURSE_DETAILS: (id: string | number) => `/adaptive-courses/${id}`,
   QUESTION_BANK: '/question-bank',
   AI_TOKEN_USAGE: '/ai-token-usage',
+  AI_COST_DAILY: '/ai-daily-cost',
   PAYMENTS: '/payments',
   VIMEO_LIBRARY: '/vimeo-library',
   CHATBOTS: '/chatbots',

@@ -21,6 +21,7 @@ import {
   TenantMapping,
 } from '../types/adaptiveCourse';
 import type { ClientInsights, FleetInsights } from '../types/clientInsights';
+import { AiCostDailyMatrix, AiCostDailyParams } from '../types/aiCostDaily';
 import { AiTokenUsageParams, AiTokenUsageSummary,
   AiUsageIntegrity,
   AiUsageModuleDetail } from '../types/aiTokenUsage';
@@ -511,6 +512,15 @@ class ApiService {
 
   async getAiTokenUsage(params?: AiTokenUsageParams): Promise<AiTokenUsageSummary> {
     return await this.get<AiTokenUsageSummary>(API_ENDPOINTS.AI_TOKEN_USAGE, params);
+  }
+
+  /**
+   * Daily AI spend for every tenant at once - the date x client matrix behind the heatmap.
+   * `days` is clamped server-side to 1..180, so an out-of-range value returns the biggest
+   * honest answer rather than an error.
+   */
+  async getAiCostDaily(params?: AiCostDailyParams): Promise<AiCostDailyMatrix> {
+    return await this.get<AiCostDailyMatrix>(API_ENDPOINTS.AI_COST_DAILY, params);
   }
 
   /**
