@@ -35,6 +35,10 @@ const MARKERS = [
   { feature: "Fleet table: coursework time", needle: "on site" },
   { feature: "Fleet table: quiet-tenant segment", needle: "Has students, nobody turned up" },
   { feature: "Fleet table: expandable row detail", needle: "Spend by a named person" },
+  // Daily AI cost module.
+  { feature: "Daily cost page heading", needle: "Daily Cost by Client" },
+  { feature: "Daily cost API call", needle: "/superadmin/api/ai-usage/daily-matrix/" },
+  { feature: "Daily cost heatmap copy", needle: "One row per tenant, one cell per day" },
 ];
 
 async function main() {

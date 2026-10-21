@@ -16,6 +16,7 @@ import Tickets from './pages/Tickets';
 import AdaptiveCourseDetails from './pages/AdaptiveCourseDetails';
 import QuestionBank from './pages/QuestionBank';
 import AiTokenUsage from './pages/AiTokenUsage';
+import AiCostDaily from './pages/AiCostDaily';
 import Payments from './pages/Payments';
 import VimeoLibrary from './pages/VimeoLibrary';
 import Chatbots from './pages/Chatbots';
@@ -96,6 +97,7 @@ function App() {
               <Route path="adaptive-courses/:id" element={<AdaptiveCourseDetails />} />
               <Route path="question-bank" element={<QuestionBank />} />
               <Route path="ai-token-usage" element={<AiTokenUsage />} />
+              <Route path="ai-daily-cost" element={<AiCostDaily />} />
               <Route path="payments" element={<Payments />} />
               <Route path="vimeo-library" element={<VimeoLibrary />} />
               <Route path="chatbots" element={<Chatbots />} />
