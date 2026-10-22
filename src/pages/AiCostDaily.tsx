@@ -5,6 +5,7 @@ import { Flame, CalendarDays, Building2, Coins } from 'lucide-react';
 import StatsCard from '../components/charts/StatsCard';
 import AnalyticsChart from '../components/charts/AnalyticsChart';
 import { CostHeatmap } from '../components/ai-usage/CostHeatmap';
+import SurfaceBreakdown from '../components/ai-usage/SurfaceBreakdown';
 import { useAiCostDaily } from '../hooks/useAiCostDaily';
 import { cn } from '../utils/helpers';
 
@@ -39,14 +40,25 @@ const selectClass =
   'rounded-lg border border-themed bg-line/[0.03] px-3 py-2 text-sm text-text ' +
   'focus:border-brand-cyan/50 focus:outline-none';
 
-const AiCostDaily: React.FC<{ embedded?: boolean }> = ({ embedded }) => {
+interface CostDailyProps {
+  embedded?: boolean;
+  /** A range chosen for the whole module. When set it wins over the local preset, and the
+   *  preset is disabled rather than hidden, so it is obvious which control is in force. */
+  range?: { start: string; end: string } | null;
+}
+
+const AiCostDaily: React.FC<CostDailyProps> = ({ embedded, range }) => {
   const [days, setDays] = React.useState<number>(30);
   const [feature, setFeature] = React.useState<string>('');
   const [model, setModel] = React.useState<string>('');
 
   const params = React.useMemo(
-    () => ({ days, ...(feature ? { feature } : {}), ...(model ? { model } : {}) }),
-    [days, feature, model],
+    () => ({
+      ...(range ? { start: range.start, end: range.end } : { days }),
+      ...(feature ? { feature } : {}),
+      ...(model ? { model } : {}),
+    }),
+    [days, feature, model, range],
   );
   const { data, isLoading, error, isFetching } = useAiCostDaily(params);
 
@@ -89,6 +101,8 @@ const AiCostDaily: React.FC<{ embedded?: boolean }> = ({ embedded }) => {
           value={days}
           onChange={(e) => setDays(Number(e.target.value))}
           aria-label="Window"
+          disabled={Boolean(range)}
+          title={range ? 'A date range is set for the whole module' : undefined}
         >
           {WINDOWS.map((w) => (
             <option key={w.value} value={w.value}>{w.label}</option>
@@ -229,6 +243,8 @@ const AiCostDaily: React.FC<{ embedded?: boolean }> = ({ embedded }) => {
               briefings. It is in the total and is deliberately not counted as a tenant.
             </p>
           </div>
+
+          <SurfaceBreakdown surfaces={data.by_surface ?? []} />
         </>
       ) : null}
     </div>
