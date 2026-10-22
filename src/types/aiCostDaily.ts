@@ -78,6 +78,41 @@ export interface AiStaffSpender {
  * Unlike `people`, this IS derived from the usage ledger, so it responds to the
  * feature/model/module filters exactly as the rest of the page does.
  */
+export interface AiTokenUser extends AiStaffSpender {
+  /** False for a learner, and false for someone with no profile on the spend's tenant. */
+  is_staff: boolean;
+}
+
+/** One person on one day: whether they visited, what they spent, and whose tenant they are. */
+export interface AiDayPerson {
+  user_id: number;
+  client_id: number | null;
+  client_name: string;
+  email: string;
+  name: string;
+  role: string;
+  is_staff: boolean;
+  /** False means they spent without a tracked session - a background task acting for them. */
+  visited: boolean;
+  minutes: number;
+  learning_minutes: number;
+  cost_usd: number;
+  tokens: number;
+  events: number;
+}
+
+export interface AiDayDetail {
+  date: string;
+  people: AiDayPerson[];
+  totals: {
+    people: number;
+    visited: number;
+    spenders: number;
+    cost_usd: number;
+    tokens: number;
+  };
+}
+
 export interface AiStaffUsage {
   cost_usd: number;
   tokens: number;
@@ -94,8 +129,12 @@ export interface AiCostDailyMatrix {
   daily_totals: AiCostDayTotal[];
   /** Platform-wide active people per day. Unaffected by the feature/model/module filters. */
   people: AiPeopleSeries;
-  /** Who among staff is spending on AI. Filtered like the rest of the ledger. */
+  /** Who among staff is spending on AI. A derived SUBSET of `token_users`. */
   staff_ai: AiStaffUsage;
+  /** Everyone who spent, learners included, each with the tenant they belong to. */
+  token_users: { cost_usd: number; tokens: number; events: number; people: AiTokenUser[] };
+  /** Present only when `date` was requested. A drill-down, not a filter. */
+  day_detail: AiDayDetail | null;
   totals: {
     cost_usd: number;
     tokens: number;
@@ -116,4 +155,6 @@ export interface AiCostDailyParams {
   feature?: string;
   model?: string;
   module?: string;
+  /** YYYY-MM-DD. Opens one day's people detail; ignored if outside the window. */
+  date?: string;
 }
