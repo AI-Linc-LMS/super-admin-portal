@@ -58,6 +58,12 @@ const AiUsage: React.FC = () => {
     [peopleDays, from, to],
   );
   const ranged = Boolean(from && to);
+  // One object, shared by all three tabs. Null unless BOTH ends are set, so a half-filled
+  // picker leaves every tab on its own preset rather than blanking the module mid-edit.
+  const globalRange = React.useMemo(
+    () => (from && to ? { start: from, end: to } : null),
+    [from, to],
+  );
 
   const active = TABS.find((t) => t.key === tab) ?? TABS[0];
 
@@ -84,6 +90,50 @@ const AiUsage: React.FC = () => {
         </p>
       </motion.div>
 
+      <div className="flex flex-wrap items-center gap-3 rounded-xl border border-themed p-3">
+        <span className="text-xs uppercase tracking-wide text-text-dim">Date range</span>
+        <input
+          type="date"
+          className="rounded-lg border border-themed bg-line/[0.03] px-3 py-2 text-sm text-text focus:border-brand-cyan/50 focus:outline-none"
+          value={from}
+          max={to || undefined}
+          onChange={(e) => setFrom(e.target.value)}
+          aria-label="From date"
+        />
+        <span className="text-xs text-text-dim">to</span>
+        <input
+          type="date"
+          className="rounded-lg border border-themed bg-line/[0.03] px-3 py-2 text-sm text-text focus:border-brand-cyan/50 focus:outline-none"
+          value={to}
+          min={from || undefined}
+          onChange={(e) => setTo(e.target.value)}
+          aria-label="To date"
+        />
+        {(from || to) && (
+          <button
+            type="button"
+            onClick={() => { setFrom(''); setTo(''); }}
+            className="rounded-lg border border-themed px-3 py-2 text-sm text-text-dim hover:text-text"
+          >
+            Clear
+          </button>
+        )}
+        {ranged ? (
+          <span className="text-xs text-brand-cyan">
+            Applied to all three tabs. Each tab&apos;s own window picker is disabled while this
+            is set.
+          </span>
+        ) : from || to ? (
+          <span className="text-xs text-amber-300">
+            Pick both ends. Until then each tab uses its own window.
+          </span>
+        ) : (
+          <span className="text-xs text-text-dim">
+            Optional. Leave it empty and each tab keeps its own window.
+          </span>
+        )}
+      </div>
+
       <div className="flex flex-wrap gap-1 rounded-xl border border-themed p-1" role="tablist">
         {TABS.map(({ key, label, icon: Icon }) => (
           <button
@@ -104,8 +154,8 @@ const AiUsage: React.FC = () => {
         ))}
       </div>
 
-      {tab === 'overview' && <AiTokenUsage embedded />}
-      {tab === 'daily' && <AiCostDaily embedded />}
+      {tab === 'overview' && <AiTokenUsage embedded range={globalRange} />}
+      {tab === 'daily' && <AiCostDaily embedded range={globalRange} />}
       {tab === 'people' && (
         <div className="space-y-6">
           <div className="flex flex-wrap items-center gap-3">
@@ -118,48 +168,12 @@ const AiUsage: React.FC = () => {
               onChange={(e) => setPeopleDays(Number(e.target.value))}
               aria-label="Window"
               disabled={ranged}
+              title={ranged ? 'A date range is set for the whole module' : undefined}
             >
               {WINDOWS.map((w) => (
                 <option key={w.value} value={w.value}>{w.label}</option>
               ))}
             </select>
-
-            <span className="text-xs text-text-dim">or</span>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <input
-                type="date"
-                className="rounded-lg border border-themed bg-line/[0.03] px-3 py-2 text-sm text-text focus:border-brand-cyan/50 focus:outline-none"
-                value={from}
-                max={to || undefined}
-                onChange={(e) => setFrom(e.target.value)}
-                aria-label="From date"
-              />
-              <span className="text-xs text-text-dim">to</span>
-              <input
-                type="date"
-                className="rounded-lg border border-themed bg-line/[0.03] px-3 py-2 text-sm text-text focus:border-brand-cyan/50 focus:outline-none"
-                value={to}
-                min={from || undefined}
-                onChange={(e) => setTo(e.target.value)}
-                aria-label="To date"
-              />
-              {(from || to) && (
-                <button
-                  type="button"
-                  onClick={() => { setFrom(''); setTo(''); }}
-                  className="rounded-lg border border-themed px-3 py-2 text-sm text-text-dim hover:text-text"
-                >
-                  Clear
-                </button>
-              )}
-            </div>
-
-            {from && !to && (
-              <span className="text-xs text-amber-300">
-                Pick an end date too. Until then the rolling window above is what is shown.
-              </span>
-            )}
           </div>
           <PeoplePanel params={peopleParams} />
         </div>

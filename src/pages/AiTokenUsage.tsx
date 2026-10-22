@@ -103,7 +103,14 @@ const selectClass =
   'rounded-lg border border-themed bg-line/[0.03] px-3 py-2 text-sm text-text ' +
   'focus:border-brand-cyan/50 focus:outline-none';
 
-const AiTokenUsage: React.FC<{ embedded?: boolean }> = ({ embedded }) => {
+interface TokenUsageProps {
+  embedded?: boolean;
+  /** A range chosen for the whole module. It overrides the day/week/month preset, which is
+   *  disabled rather than hidden so the active control is obvious. */
+  range?: { start: string; end: string } | null;
+}
+
+const AiTokenUsage: React.FC<TokenUsageProps> = ({ embedded, range }) => {
   const [window_, setWindow] = React.useState<WindowOption>(
     WINDOW_OPTIONS.find((o) => o.unit === 'months' && o.value === 12) as WindowOption
   );
@@ -117,7 +124,7 @@ const AiTokenUsage: React.FC<{ embedded?: boolean }> = ({ embedded }) => {
 
   const params = React.useMemo(
     () => ({
-      [window_.unit]: window_.value,
+      ...(range ? { start: range.start, end: range.end } : { [window_.unit]: window_.value }),
       ...(clientId !== '' ? { client_id: clientId } : {}),
       ...(model ? { model } : {}),
       ...(feature ? { feature } : {}),
@@ -172,6 +179,8 @@ const AiTokenUsage: React.FC<{ embedded?: boolean }> = ({ embedded }) => {
         <select
           className={selectClass}
           value={windowKey(window_)}
+          disabled={Boolean(range)}
+          title={range ? 'A date range is set for the whole module' : undefined}
           onChange={(e) => {
             const next = WINDOW_OPTIONS.find((o) => windowKey(o) === e.target.value);
             if (next) setWindow(next);

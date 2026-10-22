@@ -151,6 +151,8 @@ export interface AiCostDailyMatrix {
   day_detail: AiDayDetail | null;
   /** Everyone active across the whole window, one row per person. */
   roster: AiRoster;
+  /** Spend by surface, biggest first, unlabelled last. Accounts for every dollar. */
+  by_surface: AiSurface[];
   totals: {
     cost_usd: number;
     tokens: number;
@@ -237,6 +239,35 @@ export interface AiRoster {
     cost_usd: number;
     tokens: number;
   };
+}
+
+/** One tenant's slice of one surface. */
+export interface AiSurfaceClient {
+  client_id: number | null;
+  client_name: string;
+  is_platform: boolean;
+  cost_usd: number;
+  tokens: number;
+  events: number;
+}
+
+/** What the money was spent on, and which tenants spent it there. */
+export interface AiSurface {
+  /** Null when no surface was recorded: a gap to close, not a surface to compare. */
+  feature: string | null;
+  label: string;
+  module: string;
+  module_label: string;
+  is_unlabelled: boolean;
+  cost_usd: number;
+  tokens: number;
+  events: number;
+  /** Of the whole window's spend, so the column adds to 100. */
+  share_pct: number;
+  client_count: number;
+  top_client: AiSurfaceClient | null;
+  /** Capped at eight, biggest first. */
+  clients: AiSurfaceClient[];
 }
 
 export interface AiCostDailyParams {
