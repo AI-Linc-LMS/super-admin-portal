@@ -107,6 +107,9 @@ export interface AiDayDetail {
   totals: {
     people: number;
     visited: number;
+    /** In `people` and in the spend totals, but NOT in `students`/`staff`: no tracked
+     *  session in this window, so counting them would make "active" not mean active. */
+    spend_only: number;
     spenders: number;
     cost_usd: number;
     tokens: number;
@@ -201,6 +204,9 @@ export interface AiRoster {
     staff: number;
     unknown: number;
     visited: number;
+    /** In `people` and in the spend totals, but NOT in `students`/`staff`: no tracked
+     *  session in this window, so counting them would make "active" not mean active. */
+    spend_only: number;
     spenders: number;
     cost_usd: number;
     tokens: number;

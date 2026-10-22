@@ -284,6 +284,16 @@ export const PeoplePanel: React.FC<Props> = ({ params }) => {
             One row per person for the whole window, not one per visit. Somebody who came on
             twenty days appears once, with twenty in the days column: summing a per-day roster
             would count them twenty times, which is the usual way this number gets overstated.
+            {roster.totals.spend_only > 0 && (
+              <>
+                {' '}
+                <strong>{roster.totals.spend_only}</strong>{' '}
+                {roster.totals.spend_only === 1 ? 'person' : 'people'} below spent without any
+                tracked session, shown as &quot;none&quot; in the days column. They are in the
+                spend figures but not in the two headcounts, because a figure labelled active
+                has to mean active.
+              </>
+            )}
           </p>
 
           <div className="mb-5 grid grid-cols-2 gap-5 sm:grid-cols-4">
