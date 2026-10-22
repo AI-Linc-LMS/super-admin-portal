@@ -85,6 +85,8 @@ export const ROUTES = {
   TICKETS: '/tickets',
   ADAPTIVE_COURSE_DETAILS: (id: string | number) => `/adaptive-courses/${id}`,
   QUESTION_BANK: '/question-bank',
+  AI_USAGE: '/ai-usage',
+  // Kept so old bookmarks and links still resolve; both redirect to AI_USAGE.
   AI_TOKEN_USAGE: '/ai-token-usage',
   AI_COST_DAILY: '/ai-daily-cost',
   PAYMENTS: '/payments',

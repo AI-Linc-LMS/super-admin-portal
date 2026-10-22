@@ -103,7 +103,7 @@ const selectClass =
   'rounded-lg border border-themed bg-line/[0.03] px-3 py-2 text-sm text-text ' +
   'focus:border-brand-cyan/50 focus:outline-none';
 
-const AiTokenUsage: React.FC = () => {
+const AiTokenUsage: React.FC<{ embedded?: boolean }> = ({ embedded }) => {
   const [window_, setWindow] = React.useState<WindowOption>(
     WINDOW_OPTIONS.find((o) => o.unit === 'months' && o.value === 12) as WindowOption
   );
@@ -142,28 +142,30 @@ const AiTokenUsage: React.FC = () => {
   return (
     <div className="space-y-8">
       {/* Hero */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="relative overflow-hidden rounded-2xl border border-themed surface-card p-7"
-      >
-        <span
-          aria-hidden
-          className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-brand-cyan/10 blur-3xl"
-        />
-        <p className="kicker mb-2 flex items-center gap-2 text-brand-cyan">
-          <Coins className="h-3.5 w-3.5" /> AI Spend · Cross-tenant
-        </p>
-        <h1 className="serif-display text-[32px] font-medium leading-tight text-text">
-          AI Token Usage &amp; Cost
-        </h1>
-        <p className="mt-2 max-w-2xl text-sm text-text-dim">
-          Every AI call across the platform — content generation, in-session tutoring,
-          assessments &amp; feedback, the code mentor, the video companion, mock interviews,
-          the support bot, TTS and images — metered per client, model, surface and month.
-        </p>
-      </motion.div>
+      {!embedded && (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="relative overflow-hidden rounded-2xl border border-themed surface-card p-7"
+        >
+          <span
+            aria-hidden
+            className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-brand-cyan/10 blur-3xl"
+          />
+          <p className="kicker mb-2 flex items-center gap-2 text-brand-cyan">
+            <Coins className="h-3.5 w-3.5" /> AI Spend · Cross-tenant
+          </p>
+          <h1 className="serif-display text-[32px] font-medium leading-tight text-text">
+            AI Token Usage &amp; Cost
+          </h1>
+          <p className="mt-2 max-w-2xl text-sm text-text-dim">
+            Every AI call across the platform — content generation, in-session tutoring,
+            assessments &amp; feedback, the code mentor, the video companion, mock interviews,
+            the support bot, TTS and images — metered per client, model, surface and month.
+          </p>
+        </motion.div>
+      )}
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">

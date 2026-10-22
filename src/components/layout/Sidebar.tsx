@@ -14,7 +14,6 @@ import {
   Sparkles,
   Video,
   Coins,
-  Flame,
   Wallet,
   Database,
   ClipboardCheck,
@@ -42,8 +41,8 @@ const Sidebar: React.FC = () => {
     { name: 'Course Requests', href: ROUTES.COURSE_REQUESTS, icon: ClipboardCheck },
     { name: 'Tickets', href: ROUTES.TICKETS, icon: LifeBuoy },
     { name: 'Question Bank', href: ROUTES.QUESTION_BANK, icon: Database },
-    { name: 'AI Token Usage', href: ROUTES.AI_TOKEN_USAGE, icon: Coins },
-    { name: 'Daily AI Cost', href: ROUTES.AI_COST_DAILY, icon: Flame },
+    // One entry, not two: both old pages read the same ledger.
+    { name: 'AI Usage', href: ROUTES.AI_USAGE, icon: Coins },
     { name: 'Payments', href: ROUTES.PAYMENTS, icon: Wallet },
     { name: 'Vimeo Library', href: ROUTES.VIMEO_LIBRARY, icon: Video },
     { name: t('navigation.chatbots'), href: ROUTES.CHATBOTS, icon: Bot },
