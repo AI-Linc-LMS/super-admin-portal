@@ -48,6 +48,16 @@ const WINDOWS = [
 const AiUsage: React.FC = () => {
   const [tab, setTab] = React.useState<TabKey>('overview');
   const [peopleDays, setPeopleDays] = React.useState<number>(30);
+  // An explicit range, used only when BOTH ends are set. A half-filled picker keeps showing
+  // the rolling window rather than blanking the page while somebody types the second date.
+  const [from, setFrom] = React.useState<string>('');
+  const [to, setTo] = React.useState<string>('');
+
+  const peopleParams = React.useMemo(
+    () => (from && to ? { days: peopleDays, start: from, end: to } : { days: peopleDays }),
+    [peopleDays, from, to],
+  );
+  const ranged = Boolean(from && to);
 
   const active = TABS.find((t) => t.key === tab) ?? TABS[0];
 
@@ -100,17 +110,58 @@ const AiUsage: React.FC = () => {
         <div className="space-y-6">
           <div className="flex flex-wrap items-center gap-3">
             <select
-              className="rounded-lg border border-themed bg-line/[0.03] px-3 py-2 text-sm text-text focus:border-brand-cyan/50 focus:outline-none"
+              className={cn(
+                'rounded-lg border border-themed bg-line/[0.03] px-3 py-2 text-sm focus:border-brand-cyan/50 focus:outline-none',
+                ranged ? 'text-text-dim' : 'text-text',
+              )}
               value={peopleDays}
               onChange={(e) => setPeopleDays(Number(e.target.value))}
               aria-label="Window"
+              disabled={ranged}
             >
               {WINDOWS.map((w) => (
                 <option key={w.value} value={w.value}>{w.label}</option>
               ))}
             </select>
+
+            <span className="text-xs text-text-dim">or</span>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                type="date"
+                className="rounded-lg border border-themed bg-line/[0.03] px-3 py-2 text-sm text-text focus:border-brand-cyan/50 focus:outline-none"
+                value={from}
+                max={to || undefined}
+                onChange={(e) => setFrom(e.target.value)}
+                aria-label="From date"
+              />
+              <span className="text-xs text-text-dim">to</span>
+              <input
+                type="date"
+                className="rounded-lg border border-themed bg-line/[0.03] px-3 py-2 text-sm text-text focus:border-brand-cyan/50 focus:outline-none"
+                value={to}
+                min={from || undefined}
+                onChange={(e) => setTo(e.target.value)}
+                aria-label="To date"
+              />
+              {(from || to) && (
+                <button
+                  type="button"
+                  onClick={() => { setFrom(''); setTo(''); }}
+                  className="rounded-lg border border-themed px-3 py-2 text-sm text-text-dim hover:text-text"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+
+            {from && !to && (
+              <span className="text-xs text-amber-300">
+                Pick an end date too. Until then the rolling window above is what is shown.
+              </span>
+            )}
           </div>
-          <PeoplePanel params={{ days: peopleDays }} />
+          <PeoplePanel params={peopleParams} />
         </div>
       )}
     </div>

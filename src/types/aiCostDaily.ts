@@ -121,7 +121,16 @@ export interface AiStaffUsage {
 }
 
 export interface AiCostDailyMatrix {
-  filters: { days: number; feature: string | null; model: string | null; module: string | null };
+  filters: {
+    days: number;
+    start: string;
+    end: string;
+    /** Whether an explicit range was APPLIED, not merely sent. */
+    requested_range: boolean;
+    feature: string | null;
+    model: string | null;
+    module: string | null;
+  };
   window: { start: string; end: string; days: number };
   /** Every date in the window, in order. The heatmap's x axis. */
   dates: string[];
@@ -135,6 +144,8 @@ export interface AiCostDailyMatrix {
   token_users: { cost_usd: number; tokens: number; events: number; people: AiTokenUser[] };
   /** Present only when `date` was requested. A drill-down, not a filter. */
   day_detail: AiDayDetail | null;
+  /** Everyone active across the whole window, one row per person. */
+  roster: AiRoster;
   totals: {
     cost_usd: number;
     tokens: number;
@@ -160,6 +171,42 @@ export interface AiPickableClient {
   is_platform: boolean;
 }
 
+/** One person over the WHOLE window: how many days they turned up, and what they spent. */
+export interface AiRosterPerson {
+  user_id: number;
+  client_id: number | null;
+  client_name: string;
+  email: string;
+  name: string;
+  role: string;
+  is_staff: boolean;
+  /** Days with tracked time in the window. 0 means they spent without a tracked session. */
+  active_days: number;
+  minutes: number;
+  learning_minutes: number;
+  last_active: string | null;
+  cost_usd: number;
+  tokens: number;
+  events: number;
+}
+
+export interface AiRoster {
+  people: AiRosterPerson[];
+  /** True when more people exist than the response carries. */
+  truncated: boolean;
+  totals: {
+    /** Distinct PEOPLE, never the sum of a per-day series. */
+    people: number;
+    students: number;
+    staff: number;
+    unknown: number;
+    visited: number;
+    spenders: number;
+    cost_usd: number;
+    tokens: number;
+  };
+}
+
 export interface AiCostDailyParams {
   days?: number;
   feature?: string;
@@ -169,4 +216,7 @@ export interface AiCostDailyParams {
   date?: string;
   /** A tenant id, or "platform". Narrows people, spend and the day detail alike. */
   client_id?: number | 'platform';
+  /** YYYY-MM-DD. With `end`, picks an explicit window and overrides `days`. */
+  start?: string;
+  end?: string;
 }
