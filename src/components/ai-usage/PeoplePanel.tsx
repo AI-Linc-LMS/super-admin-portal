@@ -296,12 +296,72 @@ export const PeoplePanel: React.FC<Props> = ({ params }) => {
             )}
           </p>
 
-          <div className="mb-5 grid grid-cols-2 gap-5 sm:grid-cols-4">
+          <div className="mb-5 grid grid-cols-2 gap-5 sm:grid-cols-3 xl:grid-cols-5">
+            <StatsCard title="Clients active" value={roster.clients_active} icon={Building2} color="primary" />
             <StatsCard title="Students active" value={roster.totals.students} icon={Users} color="primary" />
             <StatsCard title="Staff active" value={roster.totals.staff} icon={UserCog} color="secondary" />
             <StatsCard title="Spent on AI" value={roster.totals.spenders} suffix=" people" icon={Coins} color="accent" />
             <StatsCard title="Spend in window" value={usd(roster.totals.cost_usd)} icon={Coins} color="danger" />
           </div>
+
+          {roster.clients.length > 0 && (
+            <div className="mb-6 rounded-xl border border-themed bg-line/[0.02] p-5">
+              <h3 className="mb-1 text-sm font-medium text-text">
+                {roster.clients_active} client{roster.clients_active === 1 ? '' : 's'} had
+                somebody on {roster.clients_active === 1 ? 'it' : 'them'}
+                {roster.totals.clients_listed > roster.clients_active && (
+                  <span className="text-text-dim">
+                    {' '}· {roster.totals.clients_listed - roster.clients_active} more had spend
+                    but nobody on them
+                  </span>
+                )}
+              </h3>
+              <p className="mb-4 text-xs text-text-dim">
+                Active means somebody turned up, not that money was spent. A tenant with
+                learners and no AI spend is a live tenant, and the cost heatmap cannot show
+                that because it is built from the spend ledger alone.
+              </p>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-themed text-left text-xs uppercase tracking-wide text-text-dim">
+                      <th className="pb-2 pr-4 font-medium">Client</th>
+                      <th className="pb-2 pr-4 text-right font-medium">Students</th>
+                      <th className="pb-2 pr-4 text-right font-medium">Staff</th>
+                      <th className="pb-2 pr-4 text-right font-medium">Minutes</th>
+                      <th className="pb-2 pr-4 font-medium">Last seen</th>
+                      <th className="pb-2 text-right font-medium">Spend</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {roster.clients.map((c) => (
+                      <tr
+                        key={String(c.client_id ?? 'platform')}
+                        className={cn(
+                          'border-b border-themed/50 last:border-0',
+                          !c.people && 'opacity-60',
+                        )}
+                      >
+                        <td className={cn('py-2 pr-4', c.is_platform ? 'italic text-text-dim' : 'text-text')}>
+                          {c.client_name}
+                          {!c.people && (
+                            <span className="ml-2 text-xs text-text-dim" title="Spend recorded, but nobody had a tracked session.">
+                              nobody on it
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-2 pr-4 text-right tabular-nums text-text">{c.students.toLocaleString()}</td>
+                        <td className="py-2 pr-4 text-right tabular-nums text-text-dim">{c.staff.toLocaleString()}</td>
+                        <td className="py-2 pr-4 text-right tabular-nums text-text-dim">{c.minutes.toLocaleString()}</td>
+                        <td className="py-2 pr-4 text-text-dim">{c.last_active ?? '-'}</td>
+                        <td className="py-2 text-right tabular-nums text-text">{c.cost_usd ? usd(c.cost_usd) : '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
 
           <div className="overflow-x-auto">
             <table className="w-full text-sm">

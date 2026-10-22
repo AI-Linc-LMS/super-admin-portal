@@ -111,6 +111,8 @@ export interface AiDayDetail {
      *  session in this window, so counting them would make "active" not mean active. */
     spend_only: number;
     spenders: number;
+    clients_active: number;
+    clients_listed: number;
     cost_usd: number;
     tokens: number;
   };
@@ -193,7 +195,29 @@ export interface AiRosterPerson {
   events: number;
 }
 
+/** One tenant over the window, grouped from the roster rows so the two cannot disagree. */
+export interface AiRosterClient {
+  client_id: number | null;
+  client_name: string;
+  is_platform: boolean;
+  students: number;
+  staff: number;
+  /** People who actually turned up. Zero means the tenant is listed but not active. */
+  people: number;
+  minutes: number;
+  learning_minutes: number;
+  cost_usd: number;
+  tokens: number;
+  events: number;
+  spend_only: number;
+  last_active: string | null;
+}
+
 export interface AiRoster {
+  /** Every tenant with a row, active or spend-only, best first. */
+  clients: AiRosterClient[];
+  /** Tenants somebody was actually ON. Never the same as `clients.length`. */
+  clients_active: number;
   people: AiRosterPerson[];
   /** True when more people exist than the response carries. */
   truncated: boolean;
@@ -208,6 +232,8 @@ export interface AiRoster {
      *  session in this window, so counting them would make "active" not mean active. */
     spend_only: number;
     spenders: number;
+    clients_active: number;
+    clients_listed: number;
     cost_usd: number;
     tokens: number;
   };
