@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users, UserCog, CalendarDays, Coins, Eye } from 'lucide-react';
+import { Users, UserCog, CalendarDays, Coins, Eye, Building2 } from 'lucide-react';
 
 import StatsCard from '../charts/StatsCard';
 import AnalyticsChart from '../charts/AnalyticsChart';
@@ -33,16 +33,29 @@ interface Props {
 export const PeoplePanel: React.FC<Props> = ({ params }) => {
   const [mode, setMode] = React.useState<PeopleMode>('users');
   const [picked, setPicked] = React.useState<string | null>(null);
+  const [client, setClient] = React.useState<string>('');
 
-  const windowQuery = useAiCostDaily(params);
+  // The tenant selection narrows everything on this tab at once: both headcounts, the
+  // calendar, the day detail and the spend table. Narrowing only some of them would put two
+  // populations on one screen and invite reading a ratio between them.
+  const scoped = React.useMemo(
+    () => (client
+      ? { ...params, client_id: (client === 'platform' ? 'platform' : Number(client)) as number | 'platform' }
+      : params),
+    [params, client],
+  );
+
+  const windowQuery = useAiCostDaily(scoped);
   // A second request carrying `date`. Keeping it separate means opening a day never refetches
   // the window, and the calendar does not flicker while the detail loads.
-  const dayQuery = useAiCostDaily(picked ? { ...params, date: picked } : params);
+  const dayQuery = useAiCostDaily(picked ? { ...scoped, date: picked } : scoped);
 
   const data = windowQuery.data;
   const people = data?.people;
   const series = people?.series ?? [];
   const tokenUsers = data?.token_users;
+  const pickable = data?.available_clients ?? [];
+  const chosen = pickable.find((c) => String(c.client_id) === client) ?? null;
   const detail = picked ? dayQuery.data?.day_detail ?? null : null;
   const detailLoading = Boolean(picked) && dayQuery.isFetching && !detail;
 
@@ -60,7 +73,10 @@ export const PeoplePanel: React.FC<Props> = ({ params }) => {
         <div className="mb-4 flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="kicker mb-1 text-brand-cyan">Who was here</p>
-            <h2 className="text-lg font-medium text-text">People on the platform, by day</h2>
+            <h2 className="text-lg font-medium text-text">
+              People on the platform, by day
+              {chosen && <span className="text-text-dim"> · {chosen.client_name}</span>}
+            </h2>
             <p className="mt-1 max-w-2xl text-xs text-text-dim">
               Distinct people with tracked time that day, students and staff counted separately.
               This is <strong>not</strong> a login count: nothing records a login, so a sign-in
@@ -69,7 +85,24 @@ export const PeoplePanel: React.FC<Props> = ({ params }) => {
               spend below them does respect the filters.
             </p>
           </div>
-          <div className="flex rounded-lg border border-themed p-0.5" role="group" aria-label="Population">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="relative">
+              <Building2 className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-text-dim" />
+              <select
+                className="rounded-lg border border-themed bg-line/[0.03] py-2 pl-9 pr-3 text-sm text-text focus:border-brand-cyan/50 focus:outline-none"
+                value={client}
+                onChange={(e) => { setClient(e.target.value); setPicked(null); }}
+                aria-label="Client"
+              >
+                <option value="">All clients</option>
+                {pickable.map((c) => (
+                  <option key={String(c.client_id)} value={String(c.client_id)}>
+                    {c.client_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex rounded-lg border border-themed p-0.5" role="group" aria-label="Population">
             {([
               { key: 'users' as PeopleMode, label: 'Students', icon: Users },
               { key: 'staff' as PeopleMode, label: 'Staff', icon: UserCog },
@@ -86,9 +119,18 @@ export const PeoplePanel: React.FC<Props> = ({ params }) => {
               >
                 <Icon className="h-3.5 w-3.5" /> {label}
               </button>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
+
+        {chosen?.is_platform && (
+          <div className="mb-5 rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 text-xs text-amber-300">
+            Platform / internal is real spend with no tenant behind it, so it has nobody on a
+            platform. The two headcounts below are zero by definition rather than by a quiet
+            failure; the spend figures are the ones that mean something here.
+          </div>
+        )}
 
         <div className="mb-6 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
           <StatsCard title="Students in window" value={people?.distinct_total ?? 0} suffix=" distinct" icon={Users} color="primary" />
@@ -111,7 +153,7 @@ export const PeoplePanel: React.FC<Props> = ({ params }) => {
 
         <AnalyticsChart
           title={mode === 'staff' ? 'Active staff per day' : 'Active students per day'}
-          kicker="All tenants"
+          kicker={chosen ? chosen.client_name : 'All tenants'}
           data={series.map((d) => ({ bucket: d.date, users: d.users, staff: d.staff }))}
           type="area"
           dataKey={mode}
@@ -220,7 +262,9 @@ export const PeoplePanel: React.FC<Props> = ({ params }) => {
       {tokenUsers && tokenUsers.people.length > 0 && (
         <div className="rounded-2xl border border-themed surface-card p-6">
           <p className="kicker mb-1 text-brand-cyan">Across the window</p>
-          <h2 className="mb-1 text-lg font-medium text-text">Who spent, and for which tenant</h2>
+          <h2 className="mb-1 text-lg font-medium text-text">
+            Who spent{chosen ? ` on ${chosen.client_name}` : ', and for which tenant'}
+          </h2>
           <p className="mb-4 max-w-3xl text-xs text-text-dim">
             Every person with AI spend attributed to them, learners and staff alike, each with
             the tenant the spend belongs to. Role is resolved against <em>that</em> tenant, so
