@@ -27,7 +27,14 @@ const usd = (n: number): string => {
 
 interface Props {
   /** The same filters the rest of the module is showing, so the numbers agree. */
-  params: { days: number; feature?: string; model?: string; module?: string };
+  params: {
+    days: number;
+    feature?: string;
+    model?: string;
+    module?: string;
+    start?: string;
+    end?: string;
+  };
 }
 
 export const PeoplePanel: React.FC<Props> = ({ params }) => {
@@ -55,6 +62,8 @@ export const PeoplePanel: React.FC<Props> = ({ params }) => {
   const series = people?.series ?? [];
   const tokenUsers = data?.token_users;
   const pickable = data?.available_clients ?? [];
+  const roster = data?.roster;
+  const win = data?.window;
   const chosen = pickable.find((c) => String(c.client_id) === client) ?? null;
   const detail = picked ? dayQuery.data?.day_detail ?? null : null;
   const detailLoading = Boolean(picked) && dayQuery.isFetching && !detail;
@@ -77,6 +86,12 @@ export const PeoplePanel: React.FC<Props> = ({ params }) => {
               People on the platform, by day
               {chosen && <span className="text-text-dim"> · {chosen.client_name}</span>}
             </h2>
+            {win && (
+              <p className="mt-1 text-xs text-brand-cyan">
+                {win.start} to {win.end} · {win.days} day{win.days === 1 ? '' : 's'}
+                {data?.filters?.requested_range ? ' · your range' : ' · rolling window'}
+              </p>
+            )}
             <p className="mt-1 max-w-2xl text-xs text-text-dim">
               Distinct people with tracked time that day, students and staff counted separately.
               This is <strong>not</strong> a login count: nothing records a login, so a sign-in
@@ -255,6 +270,87 @@ export const PeoplePanel: React.FC<Props> = ({ params }) => {
             </div>
           ) : (
             <p className="py-6 text-sm text-text-dim">Nobody was on the platform on this day.</p>
+          )}
+        </div>
+      )}
+
+      {roster && roster.people.length > 0 && (
+        <div className="rounded-2xl border border-themed surface-card p-6">
+          <p className="kicker mb-1 text-brand-cyan">Across the window</p>
+          <h2 className="mb-1 text-lg font-medium text-text">
+            Who was active{chosen ? ` on ${chosen.client_name}` : ''}
+          </h2>
+          <p className="mb-4 max-w-3xl text-xs text-text-dim">
+            One row per person for the whole window, not one per visit. Somebody who came on
+            twenty days appears once, with twenty in the days column: summing a per-day roster
+            would count them twenty times, which is the usual way this number gets overstated.
+            {roster.totals.spend_only > 0 && (
+              <>
+                {' '}
+                <strong>{roster.totals.spend_only}</strong>{' '}
+                {roster.totals.spend_only === 1 ? 'person' : 'people'} below spent without any
+                tracked session, shown as &quot;none&quot; in the days column. They are in the
+                spend figures but not in the two headcounts, because a figure labelled active
+                has to mean active.
+              </>
+            )}
+          </p>
+
+          <div className="mb-5 grid grid-cols-2 gap-5 sm:grid-cols-4">
+            <StatsCard title="Students active" value={roster.totals.students} icon={Users} color="primary" />
+            <StatsCard title="Staff active" value={roster.totals.staff} icon={UserCog} color="secondary" />
+            <StatsCard title="Spent on AI" value={roster.totals.spenders} suffix=" people" icon={Coins} color="accent" />
+            <StatsCard title="Spend in window" value={usd(roster.totals.cost_usd)} icon={Coins} color="danger" />
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-themed text-left text-xs uppercase tracking-wide text-text-dim">
+                  <th className="pb-2 pr-4 font-medium">Person</th>
+                  <th className="pb-2 pr-4 font-medium">Role</th>
+                  <th className="pb-2 pr-4 font-medium">Client</th>
+                  <th className="pb-2 pr-4 text-right font-medium">Days active</th>
+                  <th className="pb-2 pr-4 text-right font-medium">Minutes</th>
+                  <th className="pb-2 pr-4 font-medium">Last seen</th>
+                  <th className="pb-2 text-right font-medium">Spend</th>
+                </tr>
+              </thead>
+              <tbody>
+                {roster.people.map((p) => (
+                  <tr key={`${p.user_id}-${p.client_id ?? 'platform'}`} className="border-b border-themed/50 last:border-0">
+                    <td className="py-2 pr-4">
+                      <span className="text-text">{p.name || p.email}</span>
+                      {p.name && <span className="block text-xs text-text-dim">{p.email}</span>}
+                    </td>
+                    <td className="py-2 pr-4">
+                      <span className={cn('text-xs', p.is_staff ? 'text-amber-400' : 'text-text-dim')}>
+                        {p.role}
+                      </span>
+                    </td>
+                    <td className={cn('py-2 pr-4 text-text-dim', p.client_id === null && 'italic')}>
+                      {p.client_name}
+                    </td>
+                    <td className="py-2 pr-4 text-right tabular-nums text-text">
+                      {p.active_days || (
+                        <span className="text-text-dim/70" title="Spent without any tracked session in this window.">
+                          none
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-2 pr-4 text-right tabular-nums text-text-dim">{p.minutes.toLocaleString()}</td>
+                    <td className="py-2 pr-4 text-text-dim">{p.last_active ?? '-'}</td>
+                    <td className="py-2 text-right tabular-nums text-text">{p.cost_usd ? usd(p.cost_usd) : '-'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {roster.truncated && (
+            <p className="mt-3 text-xs text-amber-300">
+              Showing the first {roster.people.length} of {roster.totals.people} people. Narrow
+              the window or pick a client to see the rest.
+            </p>
           )}
         </div>
       )}
