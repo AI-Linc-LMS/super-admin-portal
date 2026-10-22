@@ -145,9 +145,19 @@ export interface AiCostDailyMatrix {
     busiest_day: AiCostDayTotal | null;
     peak_cell_usd: number;
   };
+  /** Every tenant selectable for this window. Built BEFORE the client filter is applied, so
+   *  choosing one never collapses the list to that single option. */
+  available_clients: AiPickableClient[];
   available_features: string[];
   available_models: string[];
   available_modules: { module: string; module_label: string; blurb?: string }[];
+}
+
+/** An option for the tenant picker. `client_id` is "platform" for untenanted work. */
+export interface AiPickableClient {
+  client_id: number | 'platform';
+  client_name: string;
+  is_platform: boolean;
 }
 
 export interface AiCostDailyParams {
@@ -157,4 +167,6 @@ export interface AiCostDailyParams {
   module?: string;
   /** YYYY-MM-DD. Opens one day's people detail; ignored if outside the window. */
   date?: string;
+  /** A tenant id, or "platform". Narrows people, spend and the day detail alike. */
+  client_id?: number | 'platform';
 }
