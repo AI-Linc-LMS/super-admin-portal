@@ -25,6 +25,66 @@ export interface AiCostDayTotal extends AiCostCell {
   active_clients: number;
 }
 
+/**
+ * One day's count of people who were ON the platform.
+ *
+ * NOT logins. Nothing records a login: `User.last_login` is overwritten on every sign-in, so it
+ * holds one timestamp per person and cannot say who signed in on a given past day. This is the
+ * same measure the per-client insights panel shows - distinct learners with tracked time - and
+ * it excludes admins and instructors.
+ */
+export interface AiPeopleDay {
+  date: string;        // YYYY-MM-DD
+  /** Distinct students active that day. */
+  users: number;
+  /** Distinct STAFF active that day - admins, instructors, course managers. Never pooled with
+   *  `users`: pooling is what once reported a tenant at 137.5% engaged, and on a cost page it
+   *  would make staff work look like learner demand. */
+  staff: number;
+  minutes: number;
+  learning_minutes: number;
+  staff_minutes: number;
+}
+
+export interface AiPeopleSeries {
+  /** One entry per day in the window, zero-filled. Same length and order as `dates`. */
+  series: AiPeopleDay[];
+  /** Distinct people over the WHOLE window. Never the sum of `series` - returning learners. */
+  distinct_total: number;
+  staff_distinct_total: number;
+  peak_day: { date: string; users: number } | null;
+  today_users: number;
+  today_staff: number;
+  active_days: number;
+}
+
+/** One member of staff who spent money on AI in the window. */
+export interface AiStaffSpender {
+  user_id: number;
+  client_id: number | null;
+  client_name: string;
+  email: string;
+  name: string;
+  /** 'admin' | 'instructor' | 'course_manager' | 'superadmin' | 'recruiter' | 'unknown'. */
+  role: string;
+  cost_usd: number;
+  tokens: number;
+  events: number;
+}
+
+/**
+ * AI spend attributable to staff rather than learners.
+ *
+ * Unlike `people`, this IS derived from the usage ledger, so it responds to the
+ * feature/model/module filters exactly as the rest of the page does.
+ */
+export interface AiStaffUsage {
+  cost_usd: number;
+  tokens: number;
+  events: number;
+  people: AiStaffSpender[];
+}
+
 export interface AiCostDailyMatrix {
   filters: { days: number; feature: string | null; model: string | null; module: string | null };
   window: { start: string; end: string; days: number };
@@ -32,6 +92,10 @@ export interface AiCostDailyMatrix {
   dates: string[];
   clients: AiCostClientRow[];
   daily_totals: AiCostDayTotal[];
+  /** Platform-wide active people per day. Unaffected by the feature/model/module filters. */
+  people: AiPeopleSeries;
+  /** Who among staff is spending on AI. Filtered like the rest of the ledger. */
+  staff_ai: AiStaffUsage;
   totals: {
     cost_usd: number;
     tokens: number;

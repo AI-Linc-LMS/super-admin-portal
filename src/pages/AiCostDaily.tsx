@@ -1,10 +1,11 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Flame, CalendarDays, Building2, Coins } from 'lucide-react';
+import { Flame, CalendarDays, Building2, Coins, Users, UserCog } from 'lucide-react';
 
 import StatsCard from '../components/charts/StatsCard';
 import AnalyticsChart from '../components/charts/AnalyticsChart';
 import { CostHeatmap } from '../components/ai-usage/CostHeatmap';
+import { PeopleCalendar, PeopleMode } from '../components/ai-usage/PeopleCalendar';
 import { useAiCostDaily } from '../hooks/useAiCostDaily';
 import { cn } from '../utils/helpers';
 
@@ -43,6 +44,8 @@ const AiCostDaily: React.FC = () => {
   const [days, setDays] = React.useState<number>(30);
   const [feature, setFeature] = React.useState<string>('');
   const [model, setModel] = React.useState<string>('');
+  const [peopleMode, setPeopleMode] = React.useState<PeopleMode>('users');
+  const [pickedDay, setPickedDay] = React.useState<string | null>(null);
 
   const params = React.useMemo(
     () => ({ days, ...(feature ? { feature } : {}), ...(model ? { model } : {}) }),
@@ -51,6 +54,17 @@ const AiCostDaily: React.FC = () => {
   const { data, isLoading, error, isFetching } = useAiCostDaily(params);
 
   const totals = data?.totals;
+  const people = data?.people;
+  const staffAi = data?.staff_ai;
+  const peopleSeries = people?.series ?? [];
+  const pickedCost = React.useMemo(
+    () => (pickedDay ? data?.daily_totals.find((d) => d.date === pickedDay) ?? null : null),
+    [pickedDay, data],
+  );
+  const pickedPeople = React.useMemo(
+    () => (pickedDay ? peopleSeries.find((d) => d.date === pickedDay) ?? null : null),
+    [pickedDay, peopleSeries],
+  );
   const series = (data?.daily_totals ?? []).map((d) => ({
     bucket: d.date,
     cost_usd: d.cost_usd,
@@ -184,6 +198,183 @@ const AiCostDaily: React.FC = () => {
               height={260}
             />
           </div>
+
+          <div className="rounded-2xl border border-themed surface-card p-6">
+            <div className="mb-4 flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <p className="kicker mb-1 text-brand-cyan">Who was here</p>
+                <h2 className="text-lg font-medium text-text">People on the platform, by day</h2>
+                <p className="mt-1 max-w-2xl text-xs text-text-dim">
+                  Distinct people with tracked time that day, students and staff counted
+                  separately. This is <strong>not</strong> a login count: nothing records a
+                  login, so a sign-in that left no activity is not here. It also does not
+                  respond to the surface and model filters above, because being on the platform
+                  is not an AI call.
+                </p>
+              </div>
+              <div className="flex rounded-lg border border-themed p-0.5" role="group" aria-label="Population">
+                {([
+                  { key: 'users' as PeopleMode, label: 'Students', icon: Users },
+                  { key: 'staff' as PeopleMode, label: 'Staff', icon: UserCog },
+                ]).map(({ key, label, icon: Icon }) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setPeopleMode(key)}
+                    aria-pressed={peopleMode === key}
+                    className={cn(
+                      'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition',
+                      peopleMode === key
+                        ? 'bg-brand-cyan/15 text-brand-cyan'
+                        : 'text-text-dim hover:text-text',
+                    )}
+                  >
+                    <Icon className="h-3.5 w-3.5" /> {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="mb-6 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+              <StatsCard
+                title="Students in window"
+                value={people?.distinct_total ?? 0}
+                suffix=" distinct"
+                icon={Users}
+                color="primary"
+              />
+              <StatsCard
+                title="Staff in window"
+                value={people?.staff_distinct_total ?? 0}
+                suffix=" distinct"
+                icon={UserCog}
+                color="secondary"
+              />
+              <StatsCard
+                title="Busiest day"
+                value={people?.peak_day?.users ?? 0}
+                suffix={people?.peak_day ? ` · ${people.peak_day.date}` : undefined}
+                icon={CalendarDays}
+                color="accent"
+              />
+              <StatsCard
+                title="Staff AI spend"
+                value={usd(staffAi?.cost_usd ?? 0)}
+                suffix={staffAi?.events ? ` · ${staffAi.events.toLocaleString()} calls` : undefined}
+                icon={Coins}
+                color="danger"
+              />
+            </div>
+
+            <AnalyticsChart
+              title={peopleMode === 'staff' ? 'Active staff per day' : 'Active students per day'}
+              kicker="All tenants"
+              data={peopleSeries.map((d) => ({ bucket: d.date, users: d.users, staff: d.staff }))}
+              type="area"
+              dataKey={peopleMode}
+              xAxisKey="bucket"
+              height={260}
+            />
+
+            <div className="mt-8">
+              <p className="kicker mb-1 text-brand-cyan">Calendar</p>
+              <h3 className="mb-1 text-base font-medium text-text">
+                {peopleMode === 'staff' ? 'Staff' : 'Students'} by date
+              </h3>
+              <p className="mb-4 text-xs text-text-dim">
+                The same numbers on real month grids, so a quiet Saturday reads as a weekend
+                rather than as a dip. Click a day to pin it; hover for the full breakdown.
+              </p>
+              <PeopleCalendar
+                days={peopleSeries}
+                mode={peopleMode}
+                selected={pickedDay}
+                onSelect={setPickedDay}
+              />
+              {pickedPeople && (
+                <div className="mt-5 rounded-xl border border-brand-cyan/30 bg-brand-cyan/5 p-4">
+                  <p className="text-sm font-medium text-text">{pickedPeople.date}</p>
+                  <div className="mt-2 grid grid-cols-2 gap-x-6 gap-y-1 text-sm sm:grid-cols-3 lg:grid-cols-5">
+                    <p className="text-text-dim">
+                      Students <span className="tabular-nums text-text">{pickedPeople.users}</span>
+                    </p>
+                    <p className="text-text-dim">
+                      Staff <span className="tabular-nums text-text">{pickedPeople.staff}</span>
+                    </p>
+                    <p className="text-text-dim">
+                      Student minutes{' '}
+                      <span className="tabular-nums text-text">
+                        {pickedPeople.minutes.toLocaleString()}
+                      </span>
+                    </p>
+                    <p className="text-text-dim">
+                      Staff minutes{' '}
+                      <span className="tabular-nums text-text">
+                        {pickedPeople.staff_minutes.toLocaleString()}
+                      </span>
+                    </p>
+                    <p className="text-text-dim">
+                      AI spend{' '}
+                      <span className="tabular-nums text-text">
+                        {pickedCost ? usd(pickedCost.cost_usd) : '-'}
+                      </span>
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {staffAi && staffAi.people.length > 0 && (
+            <div className="rounded-2xl border border-themed surface-card p-6">
+              <p className="kicker mb-1 text-brand-cyan">Staff AI usage</p>
+              <h2 className="mb-1 text-lg font-medium text-text">Staff spending on AI</h2>
+              <p className="mb-4 max-w-3xl text-xs text-text-dim">
+                Spend attributed to an admin, instructor or course manager rather than a learner:
+                course builds, sweeps, admin tooling. It is already inside every total on this
+                page and is broken out because it is not learner demand, and one person&apos;s
+                build can outweigh a tenant&apos;s entire learner traffic. Role is resolved
+                against the tenant the spend belongs to, so somebody who is staff on one tenant
+                and a learner on another appears only for the first.
+              </p>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-themed text-left text-xs uppercase tracking-wide text-text-dim">
+                      <th className="pb-2 pr-4 font-medium">Person</th>
+                      <th className="pb-2 pr-4 font-medium">Role</th>
+                      <th className="pb-2 pr-4 font-medium">Tenant</th>
+                      <th className="pb-2 pr-4 text-right font-medium">Spend</th>
+                      <th className="pb-2 pr-4 text-right font-medium">Tokens</th>
+                      <th className="pb-2 text-right font-medium">Calls</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {staffAi.people.map((sp) => (
+                      <tr
+                        key={`${sp.user_id}-${sp.client_id ?? 'platform'}`}
+                        className="border-b border-themed/50 last:border-0"
+                      >
+                        <td className="py-2 pr-4">
+                          <span className="text-text">{sp.name || sp.email}</span>
+                          {sp.name && (
+                            <span className="block text-xs text-text-dim">{sp.email}</span>
+                          )}
+                        </td>
+                        <td className="py-2 pr-4 text-text-dim">{sp.role}</td>
+                        <td className={cn('py-2 pr-4', sp.client_id === null ? 'italic text-text-dim' : 'text-text-dim')}>
+                          {sp.client_name}
+                        </td>
+                        <td className="py-2 pr-4 text-right tabular-nums text-text">{usd(sp.cost_usd)}</td>
+                        <td className="py-2 pr-4 text-right tabular-nums text-text-dim">{sp.tokens.toLocaleString()}</td>
+                        <td className="py-2 text-right tabular-nums text-text-dim">{sp.events.toLocaleString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
 
           <div className="rounded-2xl border border-themed surface-card p-6">
             <p className="kicker mb-1 text-brand-cyan">Per tenant</p>
