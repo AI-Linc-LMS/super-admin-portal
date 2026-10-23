@@ -63,6 +63,11 @@ export interface Client {
   is_active?: boolean;
   /** When on, AI illustrations are generated for this client's adaptive articles. Default off. */
   generate_adaptive_article_images?: boolean;
+  /** When on, only people who already hold a profile in this tenant can sign in: self-signup,
+   *  Google sign-in and SSO stop creating accounts, and removing someone from Manage Students ends
+   *  their session on its next request. Forward-looking: it does not evict existing self-signups.
+   *  Superadmins are always exempt. Default off. */
+  restrict_login_to_added_members?: boolean;
   created_at?: string;
   updated_at?: string;
   /** Orphaned. No superadmin endpoint has ever populated this, so it is null for every tenant in
