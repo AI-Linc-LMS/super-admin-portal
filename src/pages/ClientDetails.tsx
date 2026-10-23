@@ -186,6 +186,27 @@ const ClientDetails: React.FC = () => {
     }
   };
 
+  // The sign-in gate. PATCH, like the toggle above, so no other client field is clobbered. The
+  // backend re-reads this on every authenticated request, so the switch takes effect at once for
+  // sign-in and within its cache window for sessions already open.
+  const handleToggleRestrictLogin = async (next: boolean) => {
+    try {
+      await updateClientMutation.mutateAsync({
+        id: clientId,
+        data: { restrict_login_to_added_members: next },
+        method: 'PATCH',
+      });
+      toast.success(
+        next
+          ? 'Sign-in restricted: only people added to this client can sign in now.'
+          : 'Sign-in restriction off: self-signup and Google sign-in are open again.'
+      );
+    } catch (error) {
+      console.error('Failed to update the sign-in restriction:', error);
+      toast.error('Could not change the sign-in restriction.');
+    }
+  };
+
   // Update selectedCourseForDetails when client data changes (e.g., after course manager assignment)
   useEffect(() => {
     if (selectedCourseForDetails && client?.courses) {
@@ -856,6 +877,38 @@ const ClientDetails: React.FC = () => {
             <StatusToggle
               isActive={client?.generate_adaptive_article_images ?? false}
               onToggle={handleToggleArticleImages}
+              disabled={updateClientMutation.isLoading}
+              size="lg"
+            />
+          </div>
+        </Card>
+      </motion.div>
+
+      {/* Sign-in access */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.3 }}
+      >
+        <Card glassmorphism className="mb-6">
+          <div className="flex items-center gap-4 mb-4">
+            <ShieldCheck className="w-6 h-6 text-brand-cyan" />
+            <h2 className="text-lg font-bold">Sign-in access</h2>
+          </div>
+          <div className="flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <p className="font-semibold">Only people added to this client can sign in</p>
+              <p className="text-sm text-gray-400">
+                When on, nobody can create their own account here: email sign-up, Google sign-in
+                and SSO only admit people an admin has already added, and removing a student from
+                Manage Students ends their session on its next request. It does not remove anyone
+                who signed up before it was switched on; use Manage Students for that. Superadmins
+                are never locked out. Off by default.
+              </p>
+            </div>
+            <StatusToggle
+              isActive={client?.restrict_login_to_added_members ?? false}
+              onToggle={handleToggleRestrictLogin}
               disabled={updateClientMutation.isLoading}
               size="lg"
             />
